@@ -55,5 +55,6 @@
       "source": "/calendar",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "ignoreCommand": "if git log -1 --pretty=%B | grep -Fq '[skip vercel]'; then exit 0; else exit 1; fi"
 }

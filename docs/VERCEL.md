@@ -9,6 +9,6 @@ The latest deployment uses the `tutel-vercel-public` directory and the calendar 
 - Output Directory: `.`
 - Runtime: Node.js 24
 - Private Blob store connected to the project
-- Server environment: `BLOB_READ_WRITE_TOKEN` and `CALENDAR_SYNC_SECRET`
+- Server environment: `BLOB_STORE_ID` (OIDC) or legacy `BLOB_READ_WRITE_TOKEN`, plus `CALENDAR_SYNC_SECRET`
 
 GitHub updates deploy source changes. Event updates only write a public snapshot through the authenticated API, without deploying source.

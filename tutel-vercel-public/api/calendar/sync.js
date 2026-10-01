@@ -4,7 +4,7 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed.'});}
  const secret=process.env.CALENDAR_SYNC_SECRET;
- if(!secret||!(process.env.BLOB_READ_WRITE_TOKEN||(process.env.BLOB_STORE_ID&&process.env.VERCEL_OIDC_TOKEN)))return res.status(503).json({error:'Calendar sync is not configured.'});
+ if(!secret||!(process.env.BLOB_READ_WRITE_TOKEN||process.env.BLOB_STORE_ID))return res.status(503).json({error:'Calendar sync is not configured.'});
  const provided=String(req.headers.authorization||'');
  const digest=x=>createHash('sha256').update(x).digest();
  if(!timingSafeEqual(digest(provided),digest('Bearer '+secret)))return res.status(401).json({error:'Unauthorized.'});

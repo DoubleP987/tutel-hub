@@ -11,18 +11,12 @@ The homeserver SQLite database remains authoritative. Event changes trigger a sy
 - All exported events are public, including custom events. Do not enter confidential details intended to remain private.
 
 ## 1. Vercel data store
-Open the Vercel project → Storage → Create Store / Create Database → Blob. Name it `tutel-calendar-data`, choose **Private**, select Singapore (`sin1`) if available. Connect it to this project for Production and Preview. Vercel creates `BLOB_READ_WRITE_TOKEN` automatically.
+Open the Vercel project → Storage → Create Store / Create Database → Blob. Name it `tutel-calendar-data`, choose **Private**, select Singapore (`sin1`) if available. Connect it to this project for Production and Preview. Vercel creates `BLOB_STORE_ID` (OIDC) or `BLOB_READ_WRITE_TOKEN` automatically.
 
 ## 2. Shared secret
-A private generated secret is stored locally in `private/calendar-api-setup.env` and the root `.env`. These are ignored by Git.
-Copy ONLY the secret to the clipboard with PowerShell (the command does not print it):
+Generate the shared secret on the homeserver and keep it in the homeserver `.env`. Set the same value in the Vercel server-side environment variable `CALENDAR_SYNC_SECRET` for Production and Preview. Never commit it or put it in frontend JavaScript. Local `.env.example` files contain blank placeholders only. Existing deployments must be redeployed after environment changes.
 
-```powershell
-(Get-Content D:\tutel-bot\private\calendar-api-setup.env | Where-Object { $_.StartsWith('CALENDAR_SYNC_SECRET=') }) -replace '^CALENDAR_SYNC_SECRET=', '' | Set-Clipboard
-```
-
-In Vercel → Settings → Environment Variables, add `CALENDAR_SYNC_SECRET`, paste the copied value, and select Production and Preview. Never put it in frontend JS or prefix it with `NEXT_PUBLIC_`.
-The homeserver must use exactly the same secret. The deployment token is not used by the new data sender.
+Modern Blob connections create `BLOB_STORE_ID` and use Vercel runtime OIDC credentials automatically. Older connections create `BLOB_READ_WRITE_TOKEN`. The app supports both. Do not copy Blob credentials to the homeserver: only the authenticated receiver uses them. The Vercel deployment token is not used by the data sender.
 
 ## 3. Deploy the public app
 Import the GitHub repository. Set Root Directory to `tutel-vercel-public`, Framework to Other, Install Command to `npm ci --omit=dev`, Build Command empty and Output Directory to `.`. `vercel.json` already supplies these settings. Deploy after configuring the store and environment variables.
@@ -30,7 +24,7 @@ The public app includes a separate package.json/package-lock.json for @vercel/bl
 The calendar may show a waiting message until the first homeserver sync.
 
 ## 4. Enable the homeserver sender AFTER the new API is deployed
-The files in this working copy are ready; the running homeserver has not been migrated in this phase.
+For a new installation, enable the sender after deploying the receiver. Existing Tutel credentials are configured on the server only.
 Install/copy the changed sender and admin code to the homeserver, then configure its existing `.env`:
 
 ```dotenv
@@ -73,11 +67,11 @@ Ensure no `.env`, `private/`, database, passwords or tokens appear in the staged
 
 ### ลำดับตั้งค่า
 1. สร้าง Blob แบบ **Private** และเชื่อมกับโปรเจกต์ Production/Preview
-2. คัดลอก secret จากไฟล์ `private/calendar-api-setup.env` ด้วยคำสั่งด้านบน แล้วเพิ่ม `CALENDAR_SYNC_SECRET` ใน Vercel
+2. สร้าง secret บน homeserver และตั้ง `CALENDAR_SYNC_SECRET` ค่าเดียวกันใน Vercel โดยไม่ใส่รหัสลง Git
 3. Push GitHub และ deploy โฟลเดอร์ `tutel-vercel-public` บน Vercel
 4. หลัง API deploy แล้ว ค่อยอัปเดตโค้ดฝั่ง homeserver และตั้ง `.env` ตามตัวอย่าง โดยใช้ secret เดียวกัน
 5. รีสตาร์ต service แล้วกด **ซิงก์ปฏิทินตอนนี้** ใน admin
 
 การเปลี่ยนแปลงอาจใช้ประมาณ 1–3 นาทีจึงแสดงบนเว็บ ขึ้นกับรอบตรวจและแคช หากส่งไม่สำเร็จจะลองใหม่อัตโนมัติ หน้า public ยังแสดงข้อมูลก่อนหน้าที่ส่งสำเร็จ
 
-ยังไม่ได้ deploy หรือทดสอบ API จริงในขั้นตอนนี้ เพราะผู้ใช้เลือกอัปผ่าน GitHub/Vercel เอง ระบบที่รันอยู่บน homeserver ยังไม่เปลี่ยนไปใช้ API นี้
+ข้อมูลส่วนตัวและ secret อยู่บน homeserver/Vercel เท่านั้น โค้ดใน GitHub มีเฉพาะตัวอย่างการตั้งค่าและไฟล์โปรแกรม

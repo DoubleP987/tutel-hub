@@ -28,14 +28,16 @@ function changeMonth(offset){state.month=new Date(Date.UTC(state.month.getUTCFul
 async function loadSnapshot(){
  const request=++state.request;
  try{
-  const response=await fetch('/calendar.json',{cache:'no-store'});if(!response.ok)throw new Error('โหลดข้อมูล HTTP '+response.status);
+  const response=await fetch('/api/calendar',{cache:'no-cache',headers:state.snapshot?.contentHash?{'If-None-Match':'\"'+state.snapshot.contentHash+'\"'}:{}});if(response.status===304)return;if(!response.ok)throw new Error('โหลดข้อมูล HTTP '+response.status);
   const data=await response.json();if(!Array.isArray(data.events))throw new Error('รูปแบบข้อมูลปฏิทินไม่ถูกต้อง');if(request!==state.request)return;
-  state.events=data.events;state.snapshot=data;renderCalendar();
+  const changed=state.snapshot?.contentHash!==data.contentHash;state.events=data.events;state.snapshot=data;if(changed||!workspace)renderCalendar();
   $('#sync-status').textContent='ข้อมูลล่าสุด '+new Intl.DateTimeFormat('th-TH',{timeZone:TZ,dateStyle:'medium',timeStyle:'short'}).format(new Date(data.generatedAt));
   if(query.get('event')&&!state.opened){const event=state.events.find(e=>String(e.id)===query.get('event')&&(query.get('at')?e.occurrence_at===query.get('at'):occursOn(e,state.day)));if(event){showDetails(event);state.opened=true;}else if(request===1)toast('ยังไม่พบรายการนี้ อาจรอซิงก์หรือถูกลบแล้ว');}
- }catch(error){$('#sync-status').textContent='โหลดปฏิทินไม่สำเร็จ: '+error.message;if(request===1)toast('ตรวจว่าอัปโหลด calendar.json มาพร้อมโฟลเดอร์เว็บ');}
+ }catch(error){$('#sync-status').textContent='โหลดปฏิทินไม่สำเร็จ: '+error.message;if(request===1)toast('ยังโหลดข้อมูลไม่ได้ กรุณาลองใหม่อีกครั้ง');}
 }
 $('#close-details').onclick=()=>$('#details-dialog').close();
 void loadSnapshot();setInterval(()=>void loadSnapshot(),60000);
 
 window.addEventListener('tutel:display',()=>renderCalendar());
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void loadSnapshot();});

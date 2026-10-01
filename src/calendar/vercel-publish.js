@@ -7,11 +7,12 @@ export async function publishVercel(directory,{request=fetch}={}){
  const token=process.env.VERCEL_TOKEN,project=process.env.VERCEL_PROJECT_ID;
  if(!token?.trim()||!project?.trim())return {pending:true,provider:'vercel'};
  const team=process.env.VERCEL_TEAM_ID?.trim(),scope=team?'?teamId='+encodeURIComponent(team):'';
- const content=files.map(file=>({file,data:readFileSync(resolve(directory,file)).toString('base64'),encoding:'base64'}));
+ const root=process.env.VERCEL_ROOT_DIRECTORY?.trim().replace(/^\/+|\/+$/g,'')||'';
+ const content=files.map(file=>({file:root?root+'/'+file:file,data:readFileSync(resolve(directory,file)).toString('base64'),encoding:'base64'}));
  const identity=project+'|'+(team||''),hash=createHash('sha256').update(JSON.stringify(content)).digest('hex');
  if(setting('vercel_public_hash')===hash&&setting('vercel_public_project')===identity)return {unchanged:true,provider:'vercel'};
  const headers={Authorization:'Bearer '+token,'Content-Type':'application/json'};
- const response=await request('https://api.vercel.com/v13/deployments'+scope,{method:'POST',headers,body:JSON.stringify({name:process.env.VERCEL_PROJECT_NAME||'tutel-calendar',project,target:'production',files:content,projectSettings:{framework:null,buildCommand:'',installCommand:'',outputDirectory:'.'}}),signal:AbortSignal.timeout(30000)});
+ const response=await request('https://api.vercel.com/v13/deployments'+scope,{method:'POST',headers,body:JSON.stringify({name:process.env.VERCEL_PROJECT_NAME||'tutel-calendar',project,target:'production',files:content,projectSettings:{framework:null,buildCommand:'',installCommand:'',outputDirectory:'.',rootDirectory:root||null}}),signal:AbortSignal.timeout(30000)});
  let deployment=await response.json();if(!response.ok)throw new Error('Vercel deploy HTTP '+response.status+': '+(deployment.error?.message||'request rejected'));
  if(!deployment.id)throw new Error('Vercel did not return a deployment ID.');
  for(let n=0;deployment.readyState!=='READY'&&n<45;n++){

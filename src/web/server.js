@@ -1,3 +1,4 @@
+import {publicSyncStatus,requestCalendarSync,syncCalendarNow} from '../calendar/publish.js';
 import express from 'express';
 import { checkCalendarSetupPin } from '../calendar/setup-pin.js';
 import helmet from 'helmet';
@@ -100,13 +101,13 @@ app.get('/api/events',auth,(req,res)=>{
  } catch(error) {res.status(400).json({error:error.message});}
 });
 app.post('/api/events',auth,admin,csrf,(req,res)=>{
- try {const {secretPin,id,...event}=req.body;res.json({id:saveEvent(event,req.auth.user.id)});} catch(error){res.status(400).json({error:error.message});}
+ try {const {secretPin,id:ignoredId,...event}=req.body;const id=saveEvent(event,req.auth.user.id);requestCalendarSync();res.json({id});} catch(error){res.status(400).json({error:error.message});}
 });
 app.put('/api/events/:id',auth,admin,csrf,(req,res)=>{
- try {res.json({id:saveEvent({...req.body,id:req.params.id},req.auth.user.id)});} catch(error){res.status(400).json({error:error.message});}
+ try {const id=saveEvent({...req.body,id:req.params.id},req.auth.user.id);requestCalendarSync();res.json({id});} catch(error){res.status(400).json({error:error.message});}
 });
 app.delete('/api/events/:id',auth,admin,csrf,(req,res)=>{
- try {deleteEvent(req.params.id);res.json({ok:true});} catch(error){res.status(404).json({error:error.message});}
+ try {deleteEvent(req.params.id);requestCalendarSync();res.json({ok:true});} catch(error){res.status(404).json({error:error.message});}
 });
 app.get('/api/preferences',auth,(req,res)=>{let prefs={};try{prefs=JSON.parse(setting('preferences:'+req.auth.user.id)||'{}');}catch{}res.json(prefs);});
 app.put('/api/preferences',auth,csrf,(req,res)=>{
@@ -115,11 +116,16 @@ app.put('/api/preferences',auth,csrf,(req,res)=>{
  setSetting('preferences:'+req.auth.user.id,JSON.stringify({theme,filters}));res.json({ok:true});
 });
 for(const file of ['calendar-view.js','preferences.js','manifest.webmanifest','sw.js','icon.png','app-icon.png'])app.get('/'+file,(req,res)=>res.sendFile(resolve(publicPath,file)));
+app.get('/api/calendar-sync',auth,admin,(req,res)=>res.json(publicSyncStatus()));
+app.post('/api/calendar-sync',auth,admin,csrf,async(req,res)=>{
+ try{const result=await syncCalendarNow();res.json({...result,status:publicSyncStatus()});}
+ catch(error){res.status(502).json({error:error.message,status:publicSyncStatus()});}
+});
 app.get('/api/guilds',auth,admin,(req,res)=>{
  const client=getDiscordClient();
  if(!client?.isReady())return res.status(503).json({error:'บอทยังไม่ออนไลน์ เปิดบอทในหน้าควบคุมบอทก่อน'});
  const guilds=client?Array.from(client.guilds.cache.values()).map(g=>({id:g.id,name:g.name})): [];
- res.json({guilds,configs:listGuildConfigs().map(c=>({...c,options:reminderOptions(c.guild_id)})),categories,publicCalendarUrl:setting('public_calendar_url')||process.env.PUBLIC_CALENDAR_URL||'https://cskru.netlify.app',netlify:{provider:process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?'Vercel':'Netlify',configured:process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?!!(process.env.VERCEL_TOKEN?.trim()&&process.env.VERCEL_PROJECT_ID?.trim()):!!process.env.NETLIFY_AUTH_TOKEN?.trim(),lastSync:setting((process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?'vercel':'netlify')+'_last_sync_at'),error:setting((process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?'vercel':'netlify')+'_last_error')}});
+ res.json({guilds,configs:listGuildConfigs().map(c=>({...c,options:reminderOptions(c.guild_id)})),categories,publicCalendarUrl:setting('public_calendar_url')||process.env.PUBLIC_CALENDAR_URL||'https://cskru.netlify.app',netlify:publicSyncStatus()});
 });
 app.get('/api/guilds/:id/channels',auth,admin,async(req,res)=>{
  const client=getDiscordClient(),guild=client?.guilds.cache.get(req.params.id);

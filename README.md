@@ -196,3 +196,7 @@ Desktop: selected-day cards below the calendar are hidden. Scroll the mouse whee
 ## Vercel
 
 The current alternative public hosting bundle is `vercel-public/`. See [Vercel setup](docs/VERCEL.md). Use this folder for Vercel and the previous `netlify-public/` only for Netlify.
+
+## Public calendar API / API ปฏิทิน public
+
+See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `tutel-vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.

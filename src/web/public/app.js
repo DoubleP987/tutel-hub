@@ -12,6 +12,8 @@ function startOfWeek(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate(
 async function init(){try{const s=await api('/api/session');state.user=s.user;state.csrf=s.csrf;const savedPrefs=await api('/api/preferences');if(savedPrefs.theme){TutelPrefs.set(savedPrefs);}$('#role-badge').textContent=s.user.role==='admin'?'ADMIN':'VIEW ONLY';$$('.admin-only').forEach(x=>x.classList.toggle('hidden',s.user.role!=='admin'));if(s.user.mustChange)await forcePasswordChange();wire();await loadGuilds();await loadEvents();}catch(e){if(e.message!=='กรุณาเข้าสู่ระบบใหม่')toast(e.message);}}
 async function forcePasswordChange(){while(true){const current=prompt('บัญชีเริ่มต้นต้องเปลี่ยนรหัสผ่านก่อนใช้งาน\\nกรอกรหัสผ่านปัจจุบัน');if(current===null){location.href='/login';return;}const next=prompt('ตั้งรหัสผ่านใหม่อย่างน้อย 10 ตัวอักษร');if(next===null){location.href='/login';return;}try{const result=await api('/api/password',{method:'POST',body:{currentPassword:current,newPassword:next}});state.csrf=result.csrf;toast('เปลี่ยนรหัสผ่านแล้ว');return;}catch(e){alert(e.message);}}}
 function wire(){
+ void loadPublicSync();setInterval(()=>{if(state.user?.role==='admin'&&!document.hidden)void loadPublicSync();},60000);
+ $('#sync-public-calendar').onclick=async()=>{const button=$('#sync-public-calendar');button.disabled=true;try{const result=await api('/api/calendar-sync',{method:'POST'});toast(result.pending?'รอเชื่อมการซิงก์ปฏิทิน':'ส่งข้อมูลปฏิทินแล้ว');await loadPublicSync();}catch(error){toast(error.message);}finally{button.disabled=false;}};
  $$('.nav-item').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
  $('#new-event').onclick=()=>openEvent();$('#close-dialog').onclick=$('#cancel-dialog').onclick=()=>$('#event-dialog').close();
  $('#event-form').onsubmit=saveEventForm;$('#delete-event').onclick=deleteCurrentEvent;
@@ -57,3 +59,5 @@ window.addEventListener('tutel:display',event=>{if(state.user){renderCalendar();
 
 function syncEventColor(){const color=field($('#event-form'),'color').value;$$('[data-event-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.eventColor===color)));}
 init();
+
+async function loadPublicSync(){if(state.user?.role!=='admin')return;try{const status=await api('/api/calendar-sync');$('#netlify-status').textContent=status.configured?(status.lastSync?'ส่งข้อมูลล่าสุด '+new Date(status.lastSync).toLocaleString('th-TH'):'รอส่งข้อมูลครั้งแรก')+(status.error?' · '+status.error:''):'ยังไม่ได้เชื่อมการส่งข้อมูลปฏิทิน';}catch(error){$('#netlify-status').textContent=error.message;}}

@@ -81,5 +81,5 @@ body{padding-bottom:env(safe-area-inset-bottom)}.topbar,.sidebar{background:var(
 @media(min-width:650px){.calendar-header .calendar-tools [data-action=fullscreen]{display:flex}}
 @media(max-width:749px){.calendar-header .calendar-search{flex:1;width:auto;max-width:none}.calendar-header .calendar-search input{font-size:16px}.calendar-header .calendar-view-trigger{width:106px;min-width:106px}.calendar-header .calendar-tools{gap:8px}}
 
-/* Desktop keeps the calendar canvas only; selected-day cards are a mobile feature. */
-@media(min-width:750px){#calendar-page>.below-calendar,.public-content>.public-list{display:none}.calendar-header .calendar-tools{flex-wrap:nowrap}}
+/* Selected-day details are available on desktop and mobile. */
+@media(min-width:750px){#calendar-page>.below-calendar{display:grid}.public-content>.public-list{display:block}.calendar-header .calendar-tools{flex-wrap:nowrap}}

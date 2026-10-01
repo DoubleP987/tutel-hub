@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import {syncCalendarApi} from './api-sync.js';
 import { publishVercel } from './vercel-publish.js';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
@@ -45,7 +46,8 @@ export function publicZip(directory) {
  const directoryBuffer=Buffer.concat(central),end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50);end.writeUInt16LE(siteFiles.length,8);end.writeUInt16LE(siteFiles.length,10);end.writeUInt32LE(directoryBuffer.length,12);end.writeUInt32LE(offset,16);
  return Buffer.concat([...locals,directoryBuffer,end]);
 }
-export async function publishSnapshot(directory,{request=fetch,token=process.env.NETLIFY_AUTH_TOKEN,site=process.env.NETLIFY_SITE_ID}={}) {
+export async function publishSnapshot(directory,{request=fetch,token=process.env.NETLIFY_AUTH_TOKEN,site=process.env.NETLIFY_SITE_ID,force=false}={}) {
+ if(process.env.PUBLIC_DEPLOY_PROVIDER==='calendar-api')return syncCalendarApi(directory,{request,force});
  if(process.env.PUBLIC_DEPLOY_PROVIDER==='vercel')return publishVercel(directory,{request});
  if(!token?.trim())return {pending:true};
  if(!site?.trim())throw new Error('Set NETLIFY_SITE_ID before publishing.');
@@ -66,15 +68,35 @@ export async function publishSnapshot(directory,{request=fetch,token=process.env
  setSetting('netlify_public_hash',hash);setSetting('netlify_public_site',site);setSetting('netlify_last_sync_at',new Date().toISOString());setSetting('netlify_last_error','');
  return {ready:true,id:deploy.id};
 }
+let currentSync=null,changeTimer=null;
+const syncPrefix=()=>process.env.PUBLIC_DEPLOY_PROVIDER==='calendar-api'?'calendar_api':process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?'vercel':'netlify';
+export function publicSyncStatus(){
+ const provider=process.env.PUBLIC_DEPLOY_PROVIDER;
+ return {provider:provider==='calendar-api'?'Calendar API':provider==='vercel'?'Vercel':'Netlify',configured:provider==='calendar-api'?!!(process.env.CALENDAR_SYNC_URL?.trim()&&process.env.CALENDAR_SYNC_SECRET?.trim()):provider==='vercel'?!!(process.env.VERCEL_TOKEN?.trim()&&process.env.VERCEL_PROJECT_ID?.trim()):!!process.env.NETLIFY_AUTH_TOKEN?.trim(),lastSync:setting(syncPrefix()+'_last_sync_at'),error:setting(syncPrefix()+'_last_error')};
+}
+export function requestCalendarSync(){
+ clearTimeout(changeTimer);changeTimer=setTimeout(()=>{changeTimer=null;if(currentSync)void currentSync();},5000);changeTimer.unref();
+}
+export async function syncCalendarNow(){
+ if(currentSync)return currentSync(true);
+ const {path}=exportSnapshot();
+ try{return await publishSnapshot(resolve(path,'..'),{force:true});}
+ catch(error){setSetting(syncPrefix()+'_last_error',error.message);throw error;}
+}
 export function startCalendarPublisher() {
- let busy=false,stopped=false,retryAfter=0;
- const tick=async()=>{
-  if(busy||stopped)return;busy=true;
-  try{const {path}=exportSnapshot();if(Date.now()>=retryAfter)await publishSnapshot(resolve(path,'..'));}
-  catch(error){retryAfter=Date.now()+300000;setSetting((process.env.PUBLIC_DEPLOY_PROVIDER==='vercel'?'vercel':'netlify')+'_last_error',error.message);console.error('[calendar] public sync:',error.message);}
+ let busy=false,stopped=false,retryAfter=0,failures=0;
+ const tick=async(force=false)=>{
+  if(busy||stopped)return {pending:true};busy=true;
+  try{
+   const {path}=exportSnapshot();
+   if(!force&&Date.now()<retryAfter)return {pending:true};
+   const result=await publishSnapshot(resolve(path,'..'),{force});failures=0;retryAfter=0;return result;
+  }catch(error){failures++;retryAfter=Date.now()+Math.min(300000,15000*2**Math.min(failures-1,5));setSetting(syncPrefix()+'_last_error',error.message);console.error('[calendar] public sync:',error.message);if(force)throw error;return {pending:true};}
   finally{busy=false;}
  };
- const timer=setInterval(()=>void tick(),60000);timer.unref();void tick();return ()=>{stopped=true;clearInterval(timer);};
+ currentSync=tick;
+ const timer=setInterval(()=>void tick(),60000);timer.unref();void tick();
+ return ()=>{stopped=true;clearInterval(timer);clearTimeout(changeTimer);if(currentSync===tick)currentSync=null;};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const {path,snapshot}=exportSnapshot(process.argv[3]||undefined);console.log('Exported '+snapshot.events.length+' public entries to '+path);

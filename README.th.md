@@ -208,3 +208,7 @@ UI มือถือ: เมนูเลือกมุมมองตามธ
 ## Vercel
 
 ชุดเว็บ public สำหรับย้ายโฮสต์อยู่ใน `vercel-public/` ดู [คู่มือ Vercel](docs/VERCEL.md) โฟลเดอร์ `netlify-public/` ยังเก็บชุดเดิมไว้สำหรับ Netlify
+
+## Public calendar API / API ปฏิทิน public
+
+See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `tutel-vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.

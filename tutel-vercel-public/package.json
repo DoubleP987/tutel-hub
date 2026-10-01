@@ -1,0 +1,11 @@
+{
+  "name": "tutel-public-calendar",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.0"
+  }
+}

@@ -37,3 +37,6 @@ Thumbs.db
 .vercel/
 /vercel-public/calendar.json
 /vercel-public/calendar.json.tmp
+
+/tutel-vercel-public/calendar.json
+/tutel-vercel-public/calendar.json.tmp

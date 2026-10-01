@@ -1,9 +1,9 @@
 # Vercel public calendar
 
-The latest deployment uses the `tutel-vercel-public` directory and the calendar data API. Follow [CALENDAR-API.md](CALENDAR-API.md) for current setup instructions in English and Thai.
+The latest deployment uses the `vercel-public` directory and the calendar data API. Follow [CALENDAR-API.md](CALENDAR-API.md) for current setup instructions in English and Thai.
 
 - Framework: Other
-- Root Directory: `tutel-vercel-public`
+- Root Directory: `vercel-public`
 - Install Command: `npm ci --omit=dev`
 - Build Command: empty
 - Output Directory: `.`

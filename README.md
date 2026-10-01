@@ -12,8 +12,8 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 - Queue, playback controls, and continuous random music.
 - Thai holidays, important days, Buddhist holy days, recurring/custom events, and Discord channel reminders.
 - Full-width month/week/day/agenda calendar, event colors (blue by default), stacked events, timed overlaps, search, filters, dark/light/device theme, and mobile layouts.
-- Private authenticated admin panel; separate read-only public calendar on Netlify. Home-screen web app support.
-- SQLite storage and optional outbound Netlify snapshot deployment. No Google Calendar API is required.
+- Private authenticated admin panel; separate read-only public calendar on Vercel. Home-screen web app support.
+- SQLite storage and outbound API snapshot synchronization. No Google Calendar API is required.
 
 ## Requirements
 
@@ -56,7 +56,7 @@ CONTROL_PORT=3000
 DATABASE_PATH=./data/tutel.sqlite
 DATA_DIR=./data
 CALENDAR_SETUP_PIN=your-private-setup-pin
-PUBLIC_SITE_DIR=./netlify-public
+PUBLIC_SITE_DIR=./vercel-public
 ```
 
 - `CLIENT_ID`: Discord application ID. `GUILD_ID`: optional test server ID, used only for guild registration.
@@ -88,15 +88,15 @@ npm run register:guild
 
 Registration writes slash commands to Discord; it does not start or invite the bot. Global commands work across installed servers. Avoid registering the same commands globally and in a guild if duplicate entries are confusing.
 
-| Command | Purpose |
-| --- | --- |
-| `/play`, `/queue`, `/skip`, `/stop` | Search/play, inspect queue, skip, clear playback |
-| `/pause`, `/resume`, `/nowplaying`, `/leave` | Playback controls and leave voice |
-| `/randommusic` | Continue playing random SoundCloud tracks |
-| `/radio list`, `/radio play` | List/live radio by station and area |
-| `/calendar setup` | Choose reminder channel; requires setup PIN |
-| `/calendar add`, `/calendar list`, `/calendar delete` | Manage events |
-| `/calendar config`, `/calendar test` | Reminder offset and real channel test message |
+| Command                                               | Purpose                                          |
+| ----------------------------------------------------- | ------------------------------------------------ |
+| `/play`, `/queue`, `/skip`, `/stop`                   | Search/play, inspect queue, skip, clear playback |
+| `/pause`, `/resume`, `/nowplaying`, `/leave`          | Playback controls and leave voice                |
+| `/randommusic`                                        | Continue playing random SoundCloud tracks        |
+| `/radio list`, `/radio play`                          | List/live radio by station and area              |
+| `/calendar setup`                                     | Choose reminder channel; requires setup PIN      |
+| `/calendar add`, `/calendar list`, `/calendar delete` | Manage events                                    |
+| `/calendar config`, `/calendar test`                  | Reminder offset and real channel test message    |
 
 PIN is for channel setup/change, not event creation. In the admin panel select reminder categories, day-before/day-of times, message template, and Discord embed color.
 
@@ -199,4 +199,10 @@ The current alternative public hosting bundle is `vercel-public/`. See [Vercel s
 
 ## Public calendar API / API ปฏิทิน public
 
-See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `tutel-vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.
+See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.
+
+## Maintainer documentation
+
+See [architecture](docs/ARCHITECTURE.md), the [English handbook](docs/manuals/Tutel-Hub-Handbook-EN.pdf), and the [Thai handbook](docs/manuals/Tutel-Hub-Handbook-TH.pdf). The current public provider is `calendar-api`; legacy Netlify instructions below are retained for that adapter only.
+
+Shared browser assets are edited under `src/web/public/`; run `npm run assets:sync` after changing them. Use `npm run format` for consistent source style. Vercel Root Directory is `vercel-public`.

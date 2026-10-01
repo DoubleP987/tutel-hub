@@ -1,0 +1,10 @@
+node_modules/
+private/
+data/
+backups/
+.vercel/
+.env
+.env.*
+package-lock.json
+src/calendar/holy-days.json
+**/calendar.json

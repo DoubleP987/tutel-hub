@@ -13,19 +13,25 @@
     "register:guild": "node src/deploy-commands.js --guild",
     "calendar:export": "node src/calendar/publish.js --export",
     "calendar:publish": "node src/calendar/publish.js --publish",
-    "db:backup": "node scripts/backup-db.js"
+    "db:backup": "node scripts/backup-db.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "assets:sync": "node scripts/sync-public-assets.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
+    "date-holidays": "^3.27.0",
     "discord.js": "^14.19.3",
     "dotenv": "^16.4.7",
-    "ffmpeg-static": "^5.2.0",
-    "opusscript": "^0.0.8",
     "express": "^5.1.0",
+    "ffmpeg-static": "^5.2.0",
     "helmet": "^8.1.0",
-    "date-holidays": "^3.27.0"
+    "opusscript": "^0.0.8"
   },
   "allowScripts": {
     "ffmpeg-static@5.3.0": true
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
   }
 }

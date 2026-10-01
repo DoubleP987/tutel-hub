@@ -113,15 +113,15 @@ npm run register:guild
 
 `register` ส่งคำสั่งไป Discord ไม่ได้เชิญหรือเริ่มบอท Global commands ใช้กับทุก server ที่ติดตั้งบอท ระวังรายการซ้ำหากลงทะเบียนทั้ง global และ guild
 
-| คำสั่ง | การทำงาน |
-| --- | --- |
-| `/play`, `/queue`, `/skip`, `/stop` | เล่นเพลง ดูคิว ข้าม และหยุด/ล้างคิว |
-| `/pause`, `/resume`, `/nowplaying`, `/leave` | ควบคุมเพลงและออกจากห้องเสียง |
-| `/randommusic` | สุ่มเพลง SoundCloud ต่อเนื่อง |
-| `/radio list`, `/radio play` | ดูสถานีและฟังวิทยุสดตามพื้นที่ |
-| `/calendar setup` | ตั้ง channel แจ้งเตือน ต้องใส่ PIN |
-| `/calendar add`, `/calendar list`, `/calendar delete` | จัดการกิจกรรม |
-| `/calendar config`, `/calendar test` | ตั้งเวลาเตือน/ส่งข้อความทดสอบจริง |
+| คำสั่ง                                                | การทำงาน                            |
+| ----------------------------------------------------- | ----------------------------------- |
+| `/play`, `/queue`, `/skip`, `/stop`                   | เล่นเพลง ดูคิว ข้าม และหยุด/ล้างคิว |
+| `/pause`, `/resume`, `/nowplaying`, `/leave`          | ควบคุมเพลงและออกจากห้องเสียง        |
+| `/randommusic`                                        | สุ่มเพลง SoundCloud ต่อเนื่อง       |
+| `/radio list`, `/radio play`                          | ดูสถานีและฟังวิทยุสดตามพื้นที่      |
+| `/calendar setup`                                     | ตั้ง channel แจ้งเตือน ต้องใส่ PIN  |
+| `/calendar add`, `/calendar list`, `/calendar delete` | จัดการกิจกรรม                       |
+| `/calendar config`, `/calendar test`                  | ตั้งเวลาเตือน/ส่งข้อความทดสอบจริง   |
 
 PIN ใช้เฉพาะการตั้งหรือเปลี่ยน channel ไม่ได้ใช้ตอนสร้างกิจกรรม หน้า admin มีหมวดแจ้งเตือน เวลาเตือนก่อนวัน/วันจริง ข้อความและสี embed ให้ตั้งเอง
 
@@ -211,4 +211,10 @@ UI มือถือ: เมนูเลือกมุมมองตามธ
 
 ## Public calendar API / API ปฏิทิน public
 
-See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `tutel-vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.
+See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `vercel-public`; event changes send data to its API and private Blob instead of creating new deployments. Configure the store and shared secret before activating the homeserver sender.
+
+## คู่มือผู้ดูแลฉบับละเอียด
+
+อ่าน [โครงสร้าง](docs/ARCHITECTURE.md), [PDF ภาษาไทย](docs/manuals/Tutel-Hub-Handbook-TH.pdf), และ [PDF ภาษาอังกฤษ](docs/manuals/Tutel-Hub-Handbook-EN.pdf) ระบบ public ปัจจุบันใช้ `calendar-api` บน Vercel ส่วน Netlify เป็น adapter เดิม
+
+แก้ไฟล์ browser ร่วมที่ `src/web/public/` แล้วรัน `npm run assets:sync` จัดรูปแบบด้วย `npm run format` ตั้ง Root Directory ของ Vercel เป็น `vercel-public`

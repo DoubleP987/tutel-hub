@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.*
+private
+data
+backups
+netlify-public/calendar.json
+*.sqlite*
+*.db*
+*.zip
+*.tar.gz

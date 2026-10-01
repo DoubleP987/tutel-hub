@@ -1,0 +1,39 @@
+# Dependencies and build/cache output
+node_modules/
+.npm/
+.cache/
+coverage/
+*.log
+npm-debug.log*
+# Credentials and environment files
+.env
+.env.*
+!.env.example
+/private/
+**/*initial-password*.txt
+*.pem
+*.key
+*.p12
+# Runtime database, sessions, events, credentials, backups
+/data/
+/backups/
+*.sqlite
+*.sqlite-*
+*.sqlite.*
+*.db
+*.db-*
+*.db.*
+# Generated public snapshot may contain personal calendar details
+/netlify-public/calendar.json
+/netlify-public/calendar.json.tmp
+*.zip
+*.tar.gz
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+.vercel/
+/vercel-public/calendar.json
+/vercel-public/calendar.json.tmp

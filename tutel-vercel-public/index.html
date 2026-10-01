@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="th">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="description" content="ปฏิทินกิจกรรม วันหยุด และวันสำคัญไทย — Tutel Calendar by Double_P">
+ <title>Tutel Calendar · by Double_P</title><link rel="stylesheet" href="/app.css">
+<meta name="theme-color" content="#4285f4"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Tutel📅"><link rel="apple-touch-icon" href="/app-icon.png?v=2"><link rel="icon" href="/icon.png"><link rel="manifest" href="/manifest.webmanifest"><script src="/preferences.js"></script><script src="/calendar-view.js" defer></script></head>
+<body class="app-page public-page">
+ <header class="topbar"><a class="brand" href="/"><span class="brand-mark"><img src="/icon.png" alt="เต่า Tutel"></span><span><b>TUTEL</b><small>PUBLIC CALENDAR · by Double_P</small></span></a><span class="badge">ดูปฏิทิน</span></header>
+ <main class="content public-content">
+  <div class="page-heading"><div><p class="eyebrow">SKRU · TUTEL CALENDAR</p><h1>ปฏิทินกิจกรรม</h1><p class="muted">กิจกรรม วันหยุด และวันสำคัญ · เวลาไทย</p></div></div>
+  <p id="sync-status" class="sync-stamp" aria-live="polite">กำลังโหลดปฏิทิน…</p>
+  <div id="calendar-workspace"></div><section class="public-list"><h3 id="selected-title"></h3><div id="event-list" class="event-list"></div></section>
+  <p class="sync-stamp">ข้อมูลกิจกรรมซิงก์จากปฏิทินผู้ดูแล · วันหยุดพิเศษและเทศกาลที่เปลี่ยนวันใช้ข้อมูลประกาศรายปี</p>
+ </main>
+ <dialog id="details-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button id="close-details" class="icon-btn" aria-label="ปิดรายละเอียด">×</button></div><p id="detail-when" class="muted"></p><p id="detail-description"></p></dialog>
+ <div id="toast" class="toast" role="status"></div><script src="/calendar.js" defer></script>
+</body>
+</html>

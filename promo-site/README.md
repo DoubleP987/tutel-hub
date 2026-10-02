@@ -53,7 +53,7 @@ Light (white) is always the first-visit default, regardless of device theme. The
 
 Website: https://doublep987.github.io/tutel-hub/
 
-The workflow `.github/workflows/promo-pages.yml` uploads only `promo-site/`. No build, dependencies or bot secrets are published. Settings → Pages must use GitHub Actions.
+GitHub Pages serves the `gh-pages` branch. Only `promo-site/` is copied there; no dependencies or bot secrets are published. After committing changes on main, run `powershell -File scripts/publish-promo.ps1` from the project root to update the website. Settings → Pages uses Deploy from a branch, `gh-pages`, `/` (root).
 
 ## Version / เวอร์ชัน
 

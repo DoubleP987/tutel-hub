@@ -1214,3 +1214,16 @@ h1 em {
   font-size: 12px;
   white-space: nowrap;
 }
+
+:root[data-theme='dark'] .final-cta {
+  background: #233329;
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .steps article > span,
+:root[data-theme='dark'] .calendar-chip small,
+:root[data-theme='dark'] .docs-links > a > span:last-child {
+  color: var(--muted);
+}
+.release-version {
+  grid-column: 1 / -1;
+}

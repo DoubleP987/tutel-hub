@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#174f3d" />
+    <meta
+      name="description"
+      content="Tutel brings music, live radio and calendar reminders to your Discord server. Created by Double_P."
+    />
+    <meta property="og:title" content="Tutel — a little turtle, a better server" />
+    <meta
+      property="og:description"
+      content="Music. Live radio. A calendar that keeps everyone together. By Double_P."
+    />
+    <meta property="og:type" content="website" />
+    <title>Tutel · Music, radio & calendar</title>
+    <link rel="icon" href="assets/tutel.png" />
+    <script src="theme-init.js?v=2"></script>
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <script src="config.js" defer></script>
+    <script src="app.js?v=2" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+    <header class="header">
+      <div class="wrap navigation">
+        <a class="brand" href="#"
+          ><img src="assets/tutel.png" alt="" width="36" height="36" /><span
+            >Tutel<span class="brand-dot">.</span></span
+          ></a
+        >
+        <nav aria-label="Main navigation">
+          <a href="#features" data-i18n="navFeatures">Features</a>
+          <a href="#commands" data-i18n="navCommands">Commands</a>
+          <a href="#docs" data-i18n="navDocs">Docs</a>
+        </nav>
+        <div class="nav-actions">
+          <button
+            id="theme"
+            class="theme-toggle"
+            type="button"
+            aria-label="Switch to dark theme"
+            aria-pressed="false"
+          >
+            ☾
+          </button>
+          <button id="language" class="language" type="button" aria-label="Switch language">
+            ไทย</button
+          ><a class="button small primary" data-link="invite" data-i18n="inviteShort"
+            >Add Tutel ↗</a
+          >
+        </div>
+      </div>
+    </header>
+    <main id="main">
+      <section class="wrap hero">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="tiny-turtle">🐢</span
+            ><span data-i18n="eyebrow">YOUR SERVER’S LITTLE COMPANION</span>
+          </p>
+          <h1 data-i18n="heroTitle">
+            Good music.<br />Great company.<br /><em>A little Tutel.</em>
+          </h1>
+          <p class="hero-description" data-i18n="heroDescription">
+            Set the mood, tune into live radio, and keep your community’s plans in one place. A
+            friendly Discord bot, made for the everyday.
+          </p>
+          <div class="actions">
+            <a class="button primary" data-link="invite" data-i18n="invite">Add to Discord ↗</a
+            ><a class="button secondary" data-link="github"
+              ><span class="code-icon">&lt;/&gt;</span
+              ><span data-i18n="github">View on GitHub</span></a
+            >
+          </div>
+          <p class="quiet" data-i18n="heroNote">
+            Slash commands. Controls in chat. No song files saved.
+          </p>
+          <div class="hero-tags">
+            <span>♪ <span data-i18n="tagMusic">Music</span></span
+            ><span>◉ <span data-i18n="tagRadio">Live radio</span></span
+            ><span>▦ <span data-i18n="tagCalendar">Calendar</span></span>
+          </div>
+        </div>
+        <div class="showcase" aria-label="Illustrative Discord music panel">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="floating note">♫</div>
+          <div class="floating leaf">✦</div>
+          <div class="discord-card">
+            <div class="channel">
+              <span># listening-room</span><span class="demo-badge" data-i18n="demo">DEMO</span>
+            </div>
+            <div class="bot-line">
+              <img src="assets/tutel.png" width="40" height="40" alt="Tutel" />
+              <div>
+                <strong>Tutel<span class="bot-badge">APP</span></strong
+                ><small data-i18n="credit">by Double_P</small>
+              </div>
+            </div>
+            <div class="music-embed">
+              <div class="embed-heading"><span>🐢 Tutel Music</span><span>↗</span></div>
+              <p class="micro-label" data-i18n="nowPlaying">NOW PLAYING</p>
+              <h2 data-i18n="demoSong">A little soundtrack for today</h2>
+              <p class="track-detail" data-i18n="demoArtist">
+                Your favourite song · your favourite people
+              </p>
+              <div class="waveform" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
+                ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
+                ><i></i><i></i><i></i><i></i>
+              </div>
+              <div class="track-times"><span>1:24</span><span>3:42</span></div>
+              <div class="demo-controls">
+                <button id="demo-pause" type="button" aria-label="Pause visual demo">Ⅱ</button
+                ><span>▸▸</span><span>≡</span><span>＋</span><span>⇄</span>
+              </div>
+              <div class="embed-footer" data-i18n="demoHint">
+                Controls stay with your latest music message.
+              </div>
+            </div>
+          </div>
+          <div class="calendar-chip">
+            <span class="chip-icon">▦</span>
+            <div>
+              <strong data-i18n="chipTitle">Today, together.</strong
+              ><small data-i18n="chipText">One daily summary. All your events.</small>
+            </div>
+          </div>
+          <p class="showcase-caption" data-i18n="demoCaption">
+            A preview of the experience — not a live player.
+          </p>
+        </div>
+      </section>
+      <div class="wrap strip">
+        <span data-i18n="strip">Less switching tabs. More time together.</span>
+        <div>
+          <span>YouTube</span><span>SoundCloud</span><span data-i18n="stripRadio">Thai radio</span
+          ><span data-i18n="stripCalendar">Tutel Calendar</span>
+        </div>
+      </div>
+      <section class="wrap section" id="features">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="featureEyebrow">SMALL BOT. USEFUL THINGS.</p>
+          <h2 data-i18n="featureTitle">Make yourself at home.</h2>
+          <p data-i18n="featureDescription">
+            The essentials for a server that listens, hangs out and remembers.
+          </p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-icon">♫</div>
+            <span class="feature-number">01 / MUSIC</span>
+            <h3 data-i18n="musicTitle">Press play. Stay a while.</h3>
+            <p data-i18n="musicText">
+              Find a song by name or link. Choose YouTube or SoundCloud per server, build a queue,
+              or let random music keep things moving.
+            </p>
+            <div class="mini-command">/play <span data-i18n="songName">song name</span></div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon">◉</div>
+            <span class="feature-number">02 / RADIO</span>
+            <h3 data-i18n="radioTitle">A window into right now.</h3>
+            <p data-i18n="radioText">
+              Listen to live Thai radio. Search by station or frequency and choose an area to find
+              the right online stream.
+            </p>
+            <div class="mini-command">/radio list <span>area: hatyai</span></div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon">▦</div>
+            <span class="feature-number">03 / CALENDAR</span>
+            <h3 data-i18n="calendarTitle">Keep the day in the loop.</h3>
+            <p data-i18n="calendarText">
+              Thai holidays and your own events, with colours, repeat schedules and a daily Discord
+              summary. Share a read-only calendar with everyone.
+            </p>
+            <div class="mini-command">/calendar list</div>
+          </article>
+        </div>
+        <div class="feature-bottom">
+          <div>
+            <span>⌘</span>
+            <h3 data-i18n="controlTitle">Right there in chat.</h3>
+            <p data-i18n="controlText">
+              Pause, skip, view the queue and add music from buttons beneath the latest player
+              message.
+            </p>
+          </div>
+          <div>
+            <span>☷</span>
+            <h3 data-i18n="panelTitle">Your settings, your way.</h3>
+            <p data-i18n="panelText">
+              Manage events, notification categories, message colours and music through a private
+              admin panel.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="getting-started" id="start">
+        <div class="wrap section">
+          <div class="section-heading">
+            <p class="eyebrow" data-i18n="startEyebrow">UP AND RUNNING</p>
+            <h2 data-i18n="startTitle">Three steps. Then press play.</h2>
+          </div>
+          <div class="steps">
+            <article>
+              <span>01</span>
+              <h3 data-i18n="step1Title">Invite Tutel</h3>
+              <p data-i18n="step1Text">
+                Choose your Discord server and approve the requested text and voice permissions.
+              </p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3 data-i18n="step2Title">Join a voice channel</h3>
+              <p data-i18n="step2Text">
+                Pick a room where Tutel has permission to connect and speak.
+              </p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3 data-i18n="step3Title">Find your first song</h3>
+              <p data-i18n="step3Text">
+                Use /play with a song name or supported link. The player controls appear in chat.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="wrap section" id="commands">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="eyebrow" data-i18n="commandsEyebrow">NO GUESSWORK</p>
+            <h2 data-i18n="commandsTitle">A command for the moment.</h2>
+          </div>
+          <label class="command-search"
+            ><span>⌕</span
+            ><input
+              id="command-search"
+              type="search"
+              placeholder="Find a command"
+              data-i18n-placeholder="searchPlaceholder"
+          /></label>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Command categories">
+          <button role="tab" aria-selected="true" data-filter="all" data-i18n="all">All</button
+          ><button role="tab" aria-selected="false" data-filter="music" data-i18n="tagMusic">
+            Music</button
+          ><button role="tab" aria-selected="false" data-filter="radio" data-i18n="tagRadio">
+            Live radio</button
+          ><button role="tab" aria-selected="false" data-filter="calendar" data-i18n="tagCalendar">
+            Calendar
+          </button>
+        </div>
+        <div id="command-list" class="commands"></div>
+        <p id="empty-commands" hidden data-i18n="emptyCommands">
+          No matching commands. Try another search.
+        </p>
+        <p class="quiet" data-i18n="commandsNote">
+          Setup and configuration changes require the appropriate Discord permissions. Calendar
+          channel setup also requires the setup PIN.
+        </p>
+      </section>
+      <section class="wrap section docs-section" id="docs">
+        <div>
+          <p class="eyebrow" data-i18n="docsEyebrow">A LITTLE GUIDANCE</p>
+          <h2 data-i18n="docsTitle">Everything you need<br />to find your way.</h2>
+          <p data-i18n="docsText">
+            Quick help for server members. Full documentation for people who want to host, configure
+            or understand Tutel.
+          </p>
+          <a class="text-link" data-link="docs" data-i18n="docsLink"
+            >Read the project documentation ↗</a
+          >
+        </div>
+        <div class="docs-links">
+          <a href="guide.html#music"
+            ><span class="doc-symbol">♫</span>
+            <div>
+              <strong data-i18n="guideMusic">Music & radio guide</strong
+              ><small data-i18n="guideMusicText">Playback, sources and online stations</small>
+            </div>
+            <span>↗</span></a
+          ><a href="guide.html#calendar"
+            ><span class="doc-symbol">▦</span>
+            <div>
+              <strong data-i18n="guideCalendar">Calendar & notifications</strong
+              ><small data-i18n="guideCalendarText">Events, daily summaries and permissions</small>
+            </div>
+            <span>↗</span></a
+          ><a data-link="setup"
+            ><span class="doc-symbol">&lt;/&gt;</span>
+            <div>
+              <strong data-i18n="guideHost">Host your own Tutel</strong
+              ><small data-i18n="guideHostText">Setup instructions in English and Thai</small>
+            </div>
+            <span>↗</span></a
+          ><a data-link="calendar"
+            ><span class="doc-symbol">↗</span>
+            <div>
+              <strong data-i18n="guidePublic">Open the public calendar</strong
+              ><small data-i18n="guidePublicText">Browse the calendar without signing in</small>
+            </div>
+            <span>↗</span></a
+          >
+        </div>
+      </section>
+      <section class="wrap section" id="faq">
+        <div class="section-heading">
+          <p class="eyebrow">FAQ</p>
+          <h2 data-i18n="faqTitle">A few things you might wonder.</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary data-i18n="faq1">Does Tutel save song files?</summary>
+            <p data-i18n="answer1">
+              No. Audio is streamed through the server to Discord. Network traffic and temporary
+              in-memory buffers are still needed.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq2">Can I use YouTube links?</summary>
+            <p data-i18n="answer2">
+              Yes, when YouTube is available from the host. YouTube and SoundCloud searches can be
+              selected per server. Source availability and restrictions may vary.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq3">Can every FM frequency be played?</summary>
+            <p data-i18n="answer3">
+              Only stations with an accessible online audio stream can be played. Choose an area
+              with the frequency, because different stations can share a frequency.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq4">Who can change calendar settings?</summary>
+            <p data-i18n="answer4">
+              Authorised server managers can configure Discord notifications. Channel setup requires
+              the setup PIN. The web admin panel requires a separate login; the public calendar is
+              read-only.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq5">Why is a command or audio unavailable?</summary>
+            <p data-i18n="answer5">
+              Check that Tutel is online, your channel permissions allow it to connect and speak,
+              and the source is available. Registered slash commands may need a Discord refresh to
+              appear.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq6">Is Tutel affiliated with Discord?</summary>
+            <p data-i18n="answer6">
+              No. Tutel is an independent project by Double_P. Discord, YouTube and SoundCloud names
+              belong to their respective owners.
+            </p>
+          </details>
+        </div>
+      </section>
+      <section class="wrap final-cta">
+        <img src="assets/tutel.png" alt="" width="70" height="70" />
+        <p class="eyebrow" data-i18n="ctaEyebrow">SAVE A SPOT FOR THE TURTLE</p>
+        <h2 data-i18n="ctaTitle">A little more life<br />in your server.</h2>
+        <a class="button primary" data-link="invite" data-i18n="invite">Add to Discord ↗</a
+        ><span class="quiet" data-i18n="ctaNote">Made with care. By Double_P.</span>
+      </section>
+    </main>
+    <footer class="wrap footer">
+      <span class="release-version" data-version>v1.0.0</span>
+      <div>
+        <a class="brand" href="#"
+          ><img src="assets/tutel.png" alt="" width="30" height="30" />Tutel<span class="brand-dot"
+            >.</span
+          ></a
+        >
+        <p data-i18n="footerText">Music, moments & a little turtle.</p>
+        <small>© <span id="year"></span> Double_P</small>
+      </div>
+      <nav aria-label="Footer">
+        <a data-link="github">GitHub ↗</a><a href="#docs" data-i18n="navDocs">Docs</a
+        ><a href="guide.html#privacy" data-i18n="privacy">Privacy & data</a
+        ><a data-link="issues" data-i18n="reportIssue">Report an issue ↗</a>
+      </nav>
+      <p class="footer-credit" data-i18n="footerCredit">
+        Built with discord.js, @discordjs/voice, yt-dlp and FFmpeg. An independent project by
+        Double_P.
+      </p>
+    </footer>
+    <noscript
+      ><p class="wrap">
+        Tutel · Discord music, live radio and calendar. JavaScript enables language selection and
+        command search.
+        <a
+          href="https://discord.com/oauth2/authorize?client_id=1034099080302960733&amp;scope=bot%20applications.commands&amp;permissions=3263488"
+          >Invite Tutel</a
+        >
+        · <a href="https://github.com/DoubleP987/tutel-hub">GitHub</a>
+      </p></noscript
+    >
+  </body>
+</html>

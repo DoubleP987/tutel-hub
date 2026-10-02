@@ -19,9 +19,9 @@ export function clearCookie(res, name, httpOnly = true, secure = true) {
   if (secure) parts.push('Secure');
   res.append('Set-Cookie', parts.join('; '));
 }
-export function auth(req, res, next) {
+export async function auth(req, res, next) {
   const c = cookies(req),
-    session = getSession(c.tutel_sid);
+    session = await getSession(c.tutel_sid);
   if (!session) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
   req.auth = session;
   next();

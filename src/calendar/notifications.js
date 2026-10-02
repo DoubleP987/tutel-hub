@@ -1,3 +1,5 @@
+import { t } from '../i18n/bot.js';
+import { botLocale } from '../config/bot.js';
 import { randomBytes } from 'node:crypto';
 import {
   ActionRowBuilder,
@@ -6,9 +8,10 @@ import {
   MessageFlags,
   EmbedBuilder,
 } from 'discord.js';
-import { db, setting } from './db.js';
+import { data, setting } from './db.js';
 import { reminderOptions, notificationText } from './options.js';
 import { buildDailySummary } from './daily-summary.js';
+import { requireBotLease } from '../cluster/state.js';
 
 export function calendarUrl(eventKey, occurrenceAt) {
   const url = new URL(
@@ -31,25 +34,25 @@ export function calendarUrl(eventKey, occurrenceAt) {
   return url.toString();
 }
 export async function removeOldCalendarButtons(client, channelId) {
-  const latest = db
-    .prepare('SELECT message_id FROM calendar_latest WHERE channel_id=?')
-    .get(channelId);
+  const latest = await data.findOne('calendar_latest', { channel_id: channelId });
   if (!latest) return;
-  const rows = db
-    .prepare(
-      'SELECT id,message_id FROM calendar_deliveries WHERE channel_id=? AND active=1 AND message_id IS NOT NULL AND message_id<>?',
-    )
-    .all(channelId, latest.message_id);
+  const rows = (
+    await data.findMany('calendar_deliveries', {
+      channel_id: channelId,
+      active: 1,
+      message_id: { $ne: latest.message_id },
+    })
+  ).filter((row) => row.message_id);
   if (!rows.length) return;
   const channel = await client.channels.fetch(channelId);
   for (const row of rows) {
     try {
       const message = await channel.messages.fetch(row.message_id);
       await message.edit({ components: [] });
-      db.prepare('UPDATE calendar_deliveries SET active=0 WHERE id=?').run(row.id);
+      await data.update('calendar_deliveries', { id: row.id }, { active: 0 });
     } catch (error) {
       if (error.code === 10008)
-        db.prepare('UPDATE calendar_deliveries SET active=0 WHERE id=?').run(row.id);
+        await data.update('calendar_deliveries', { id: row.id }, { active: 0 });
       else console.error('[calendar] remove old button:', error.message);
     }
   }
@@ -63,17 +66,19 @@ export async function sendCalendarNotification(client, config, event, occurrence
     schedule.key,
   ];
   if (
-    db
-      .prepare(
-        'SELECT id FROM calendar_deliveries WHERE guild_id=? AND channel_id=? AND event_key=? AND occurrence_at=? AND schedule_key=?',
-      )
-      .get(...values)
+    await data.findOne('calendar_deliveries', {
+      guild_id: values[0],
+      channel_id: values[1],
+      event_key: values[2],
+      occurrence_at: values[3],
+      schedule_key: values[4],
+    })
   )
     return false;
   const channel = await client.channels.fetch(config.channel_id);
-  if (!channel?.isSendable?.()) throw new Error('channel นี้ส่งข้อความไม่ได้');
+  if (!channel?.isSendable?.()) throw new Error(t('channel นี้ส่งข้อความไม่ได้'));
   const id = randomBytes(10).toString('hex');
-  const when = new Intl.DateTimeFormat('th-TH', {
+  const when = new Intl.DateTimeFormat(botLocale, {
     timeZone: 'Asia/Bangkok',
     dateStyle: 'full',
     ...(event.all_day ? {} : { timeStyle: 'short' }),
@@ -82,9 +87,10 @@ export async function sendCalendarNotification(client, config, event, occurrence
   const embed = new EmbedBuilder()
     .setColor(options.color)
     .setDescription(
-      notificationText(event, when + (event.all_day ? ' · ทั้งวัน' : ''), schedule, options),
+      notificationText(event, when + (event.all_day ? t(' · ทั้งวัน') : ''), schedule, options),
     )
     .setFooter({ text: 'Tutel Calendar · by Double_P' });
+  requireBotLease();
   const message = await channel.send({
     embeds: [embed],
     allowedMentions: { parse: [] },
@@ -92,7 +98,7 @@ export async function sendCalendarNotification(client, config, event, occurrence
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('calendar:show:' + id)
-          .setLabel('ปฏิทิน')
+          .setLabel(t('ปฏิทิน'))
           .setStyle(ButtonStyle.Primary),
       ),
     ],
@@ -102,12 +108,21 @@ export async function sendCalendarNotification(client, config, event, occurrence
     description: event.description,
     allDay: !!event.all_day,
   });
-  db.prepare(
-    'INSERT INTO calendar_deliveries(id,guild_id,channel_id,event_key,occurrence_at,schedule_key,message_id,payload) VALUES(?,?,?,?,?,?,?,?)',
-  ).run(id, ...values, message.id, payload);
-  db.prepare(
-    'INSERT INTO calendar_latest(channel_id,message_id) VALUES(?,?) ON CONFLICT(channel_id) DO UPDATE SET message_id=excluded.message_id',
-  ).run(config.channel_id, message.id);
+  await data.insert('calendar_deliveries', {
+    id,
+    guild_id: values[0],
+    channel_id: values[1],
+    event_key: values[2],
+    occurrence_at: values[3],
+    schedule_key: values[4],
+    message_id: message.id,
+    payload,
+  });
+  await data.upsert(
+    'calendar_latest',
+    { channel_id: config.channel_id },
+    { message_id: message.id },
+  );
   await removeOldCalendarButtons(client, config.channel_id).catch((error) =>
     console.error('[calendar] button cleanup:', error.message),
   );
@@ -130,11 +145,13 @@ export async function sendDailyCalendarSummary(
     day.startsAt,
     scheduleKey,
   ];
-  const existing = db
-    .prepare(
-      'SELECT id,message_id,payload,active FROM calendar_deliveries WHERE guild_id=? AND channel_id=? AND event_key=? AND occurrence_at=? AND schedule_key=?',
-    )
-    .get(...values);
+  const existing = await data.findOne('calendar_deliveries', {
+    guild_id: values[0],
+    channel_id: values[1],
+    event_key: values[2],
+    occurrence_at: values[3],
+    schedule_key: values[4],
+  });
   // Empty days do not create notifications; an existing day's message can reflect removals.
   if (!events.length && !existing && !test) return { skipped: true };
   const summary = buildDailySummary(day, events, options, { test });
@@ -144,7 +161,7 @@ export async function sendDailyCalendarSummary(
     if (payload.hash === summary.hash) return { unchanged: true, messageId: existing.message_id };
   }
   const channel = await client.channels.fetch(config.channel_id);
-  if (!channel?.isSendable?.()) throw new Error('channel นี้ส่งข้อความไม่ได้');
+  if (!channel?.isSendable?.()) throw new Error(t('channel นี้ส่งข้อความไม่ได้'));
   const id = existing?.id || randomBytes(10).toString('hex');
   const embed = new EmbedBuilder()
     .setColor(options.color)
@@ -157,7 +174,7 @@ export async function sendDailyCalendarSummary(
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('calendar:show:' + id)
-          .setLabel('ปฏิทิน')
+          .setLabel(t('ปฏิทิน'))
           .setStyle(ButtonStyle.Primary),
       ),
     ],
@@ -166,35 +183,42 @@ export async function sendDailyCalendarSummary(
       : [],
   };
   if (existing) {
-    const latest = db
-      .prepare('SELECT message_id FROM calendar_latest WHERE channel_id=?')
-      .get(config.channel_id);
+    const latest = await data.findOne('calendar_latest', { channel_id: config.channel_id });
     if (latest?.message_id !== existing.message_id) body.components = [];
     try {
       const message = await channel.messages.fetch(existing.message_id);
       // Replace old overflow attachments too; never send a second message for edits.
+      requireBotLease();
       await message.edit({ ...body, attachments: [] });
     } catch (error) {
       if (error.code !== 10008) throw error;
-      db.prepare('UPDATE calendar_deliveries SET active=0,payload=? WHERE id=?').run(
-        JSON.stringify({ ...summary.payload, deleted: true }),
-        id,
+      await data.update(
+        'calendar_deliveries',
+        { id },
+        { active: 0, payload: JSON.stringify({ ...summary.payload, deleted: true }) },
       );
       return { skipped: true, deleted: true };
     }
-    db.prepare('UPDATE calendar_deliveries SET payload=? WHERE id=?').run(
-      JSON.stringify(summary.payload),
-      id,
-    );
+    await data.update('calendar_deliveries', { id }, { payload: JSON.stringify(summary.payload) });
     return { updated: true, messageId: existing.message_id, count: events.length };
   }
+  requireBotLease();
   const message = await channel.send(body);
-  db.prepare(
-    'INSERT INTO calendar_deliveries(id,guild_id,channel_id,event_key,occurrence_at,schedule_key,message_id,payload) VALUES(?,?,?,?,?,?,?,?)',
-  ).run(id, ...values, message.id, JSON.stringify(summary.payload));
-  db.prepare(
-    'INSERT INTO calendar_latest(channel_id,message_id) VALUES(?,?) ON CONFLICT(channel_id) DO UPDATE SET message_id=excluded.message_id',
-  ).run(config.channel_id, message.id);
+  await data.insert('calendar_deliveries', {
+    id,
+    guild_id: values[0],
+    channel_id: values[1],
+    event_key: values[2],
+    occurrence_at: values[3],
+    schedule_key: values[4],
+    message_id: message.id,
+    payload: JSON.stringify(summary.payload),
+  });
+  await data.upsert(
+    'calendar_latest',
+    { channel_id: config.channel_id },
+    { message_id: message.id },
+  );
   await removeOldCalendarButtons(client, config.channel_id).catch((error) =>
     console.error('[calendar] daily button cleanup:', error.message),
   );
@@ -205,7 +229,7 @@ export async function handleCalendarButton(interaction) {
   if (interaction.customId.startsWith('calendar:dismiss:')) {
     if (interaction.customId !== 'calendar:dismiss:' + interaction.user.id) {
       await interaction.reply({
-        content: 'ปุ่มนี้เป็นของผู้เปิดรายละเอียด',
+        content: t('ปุ่มนี้เป็นของผู้เปิดรายละเอียด'),
         flags: MessageFlags.Ephemeral,
       });
       return true;
@@ -215,11 +239,11 @@ export async function handleCalendarButton(interaction) {
     return true;
   }
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  const row = db
-    .prepare('SELECT * FROM calendar_deliveries WHERE id=?')
-    .get(interaction.customId.slice('calendar:show:'.length));
+  const row = await data.findOne('calendar_deliveries', {
+    id: interaction.customId.slice('calendar:show:'.length),
+  });
   if (!row) {
-    await interaction.editReply({ content: 'ไม่พบรายละเอียดแจ้งเตือนนี้', components: [] });
+    await interaction.editReply({ content: t('ไม่พบรายละเอียดแจ้งเตือนนี้'), components: [] });
     return true;
   }
   const event = JSON.parse(row.payload),
@@ -228,12 +252,12 @@ export async function handleCalendarButton(interaction) {
     content: (
       '📅 **' +
       event.title +
-      '**\nเปิดปฏิทินเพื่อดูรายละเอียด ข้อความนี้จะหายภายใน 30 วินาที'
+      t('**\nเปิดปฏิทินเพื่อดูรายละเอียด ข้อความนี้จะหายภายใน 30 วินาที')
     ).slice(0, 1900),
     allowedMentions: { parse: [] },
     components: [
       new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel('เปิดปฏิทิน').setStyle(ButtonStyle.Link).setURL(url),
+        new ButtonBuilder().setLabel(t('เปิดปฏิทิน')).setStyle(ButtonStyle.Link).setURL(url),
         new ButtonBuilder()
           .setLabel('Dismiss')
           .setCustomId('calendar:dismiss:' + interaction.user.id)

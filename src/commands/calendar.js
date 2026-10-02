@@ -1,3 +1,5 @@
+import { botLocale } from '../config/bot.js';
+import { t } from '../i18n/bot.js';
 import { checkCalendarSetupPin } from '../calendar/setup-pin.js';
 import {
   localDateTimeToIso,
@@ -26,15 +28,15 @@ export const calendarHandlers = {
       );
       if (pinError) return interaction.reply({ content: pinError, ephemeral: true });
       const channel = interaction.options.getChannel('channel');
-      const existing = listGuildConfigs().find((x) => x.guild_id === guildId);
-      saveGuildConfig(
+      const existing = (await listGuildConfigs()).find((x) => x.guild_id === guildId);
+      await saveGuildConfig(
         guildId,
         interaction.guild.name,
         channel.id,
         existing?.default_reminder ?? 15,
       );
       return interaction.reply({
-        content: 'ตั้ง channel แจ้งเตือนเป็น <#' + channel.id + '> แล้ว',
+        content: t('ตั้ง channel แจ้งเตือนเป็น <#') + channel.id + t('> แล้ว'),
         ephemeral: true,
       });
     }
@@ -56,9 +58,9 @@ export const calendarHandlers = {
           .format(end)
           .replace(', ', ' ');
         const repeat = interaction.options.getString('repeat') || 'none';
-        const cfg = listGuildConfigs().find((x) => x.guild_id === guildId);
+        const cfg = (await listGuildConfigs()).find((x) => x.guild_id === guildId);
         const reminder = interaction.options.getInteger('reminder') ?? cfg?.default_reminder ?? 15;
-        const id = saveEvent(
+        const id = await saveEvent(
           {
             guildId,
             title: interaction.options.getString('title', true),
@@ -71,11 +73,11 @@ export const calendarHandlers = {
           null,
         );
         return interaction.reply(
-          'เพิ่มกิจกรรม **' +
+          t('เพิ่มกิจกรรม **') +
             interaction.options.getString('title', true) +
             '** (ID ' +
             id +
-            ') แล้ว · ' +
+            t(') แล้ว · ') +
             formatThai(start),
         );
       } catch (error) {
@@ -85,14 +87,14 @@ export const calendarHandlers = {
     if (sub === 'list') {
       const from = new Date(calendarDay().startsAt),
         to = new Date(Date.now() + 30 * 86400000);
-      const all = listExpandedEvents(from, to, guildId);
+      const all = await listExpandedEvents(from, to, guildId);
       const items = all.slice(0, 10);
-      if (!items.length) return interaction.reply('ไม่มีรายการใน 30 วันนี้');
-      const date = new Intl.DateTimeFormat('th-TH', {
+      if (!items.length) return interaction.reply(t('ไม่มีรายการใน 30 วันนี้'));
+      const date = new Intl.DateTimeFormat(botLocale, {
         timeZone: 'Asia/Bangkok',
         dateStyle: 'long',
       });
-      const time = new Intl.DateTimeFormat('th-TH', {
+      const time = new Intl.DateTimeFormat(botLocale, {
         timeZone: 'Asia/Bangkok',
         hour: '2-digit',
         minute: '2-digit',
@@ -108,24 +110,28 @@ export const calendarHandlers = {
           .replace(/([\\`*_<>|])/g, '\\$1')
           .slice(0, 180);
         const id = typeof event.id === 'number' ? ` · ID ${event.id}` : '';
-        return `${heading}• ${event.all_day ? 'ทั้งวัน' : time.format(new Date(event.occurrence_at))} — ${title}${id}`;
+        return `${heading}• ${event.all_day ? t('ทั้งวัน') : time.format(new Date(event.occurrence_at))} — ${title}${id}`;
       });
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setColor(0x4285f4)
-            .setTitle('📅 ปฏิทิน · 30 วันข้างหน้า')
+            .setTitle(t('📅 ปฏิทิน · 30 วันข้างหน้า'))
             .setDescription(lines.join('\n').trim())
             .setFooter({
-              text: `แสดง ${items.length} จาก ${all.length} รายการ · ID ใช้ลบกิจกรรมที่เพิ่มเอง`,
+              text: t(
+                'แสดง {0} จาก {1} รายการ · ID ใช้ลบกิจกรรมที่เพิ่มเอง',
+                items.length,
+                all.length,
+              ),
             }),
         ],
       });
     }
     if (sub === 'delete') {
       try {
-        deleteEvent(interaction.options.getInteger('id', true), guildId);
-        return interaction.reply('ลบรายการแล้ว');
+        await deleteEvent(interaction.options.getInteger('id', true), guildId);
+        return interaction.reply(t('ลบรายการแล้ว'));
       } catch (error) {
         return interaction.reply({ content: error.message, ephemeral: true });
       }
@@ -133,46 +139,46 @@ export const calendarHandlers = {
     if (sub === 'config') {
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
         return interaction.reply({
-          content: 'ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนเวลาแจ้งเตือน',
+          content: t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนเวลาแจ้งเตือน'),
           ephemeral: true,
         });
-      const configs = listGuildConfigs(),
+      const configs = await listGuildConfigs(),
         cfg = configs.find((x) => x.guild_id === guildId);
       if (!cfg?.channel_id)
         return interaction.reply({
-          content: 'ตั้ง channel ก่อนด้วย /calendar setup',
+          content: t('ตั้ง channel ก่อนด้วย /calendar setup'),
           ephemeral: true,
         });
       const time = interaction.options.getString('time', true);
       try {
-        saveReminderOptions(guildId, {
+        await saveReminderOptions(guildId, {
           ...reminderOptions(guildId),
           dayEnabled: true,
           dayTime: time,
         });
-        return interaction.reply(`ตั้งเวลาส่งสรุปกิจกรรมวันนี้เป็น ${time} น. เวลาไทยแล้ว`);
+        return interaction.reply(t('ตั้งเวลาส่งสรุปกิจกรรมวันนี้เป็น {0} น. เวลาไทยแล้ว', time));
       } catch (error) {
         return interaction.reply({ content: error.message, ephemeral: true });
       }
     }
     if (sub === 'test') {
-      const cfg = listGuildConfigs().find((x) => x.guild_id === guildId);
+      const cfg = (await listGuildConfigs()).find((x) => x.guild_id === guildId);
       if (!cfg?.channel_id)
         return interaction.reply({
-          content: 'ตั้ง channel ก่อนด้วย /calendar setup',
+          content: t('ตั้ง channel ก่อนด้วย /calendar setup'),
           ephemeral: true,
         });
       await interaction.deferReply({ ephemeral: true });
       const day = calendarDay();
       const options = reminderOptions(guildId);
       const events = dailySummaryEvents(
-        listExpandedEvents(day.startsAt, day.endsAt, guildId),
+        await listExpandedEvents(day.startsAt, day.endsAt, guildId),
         day,
         cfg,
         options,
       );
       await sendDailyCalendarSummary(interaction.client, cfg, day, events, options, { test: true });
-      return interaction.editReply(`ส่งตัวอย่างสรุปวันนี้ ${events.length} รายการแล้ว`);
+      return interaction.editReply(t('ส่งตัวอย่างสรุปวันนี้ {0} รายการแล้ว', events.length));
     }
   },
 };

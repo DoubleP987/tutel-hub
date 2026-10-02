@@ -81,6 +81,7 @@ export function searchTracks(query, { flat = false, signal } = {}) {
               url,
               duration: Number(entry.duration) || 0,
               artist: entry.artist || entry.creator || entry.uploader || entry.channel || '',
+              thumbnail: entry.thumbnail || entry.thumbnails?.at(-1)?.url || null,
               live:
                 entry.is_live ||
                 entry.live_status === 'is_live' ||

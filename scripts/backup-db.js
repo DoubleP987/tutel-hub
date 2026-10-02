@@ -1,8 +1,43 @@
 import 'dotenv/config';
 import { DatabaseSync } from 'node:sqlite';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 const source = resolve(process.env.DATABASE_PATH || './data/tutel.sqlite');
+if (process.env.DATABASE_PROVIDER === 'mongodb') {
+  const { createDataStore } = await import('../src/database/store.js');
+  const data = await createDataStore();
+  try {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const destination = resolve(process.argv[2] || './backups/tutel-' + stamp + '.json');
+    mkdirSync(dirname(destination), { recursive: true });
+    const tables = [
+      'users',
+      'sessions',
+      'events',
+      'guild_config',
+      'reminder_log',
+      'app_settings',
+      'calendar_deliveries',
+      'calendar_latest',
+    ];
+    const collections = {};
+    for (const table of tables) collections[table] = await data.findMany(table);
+    writeFileSync(
+      destination,
+      JSON.stringify({
+        provider: 'mongodb',
+        version: 1,
+        createdAt: new Date().toISOString(),
+        collections,
+      }),
+      { flag: 'wx', mode: 0o600 },
+    );
+    console.log('Private MongoDB logical backup saved: ' + destination);
+  } finally {
+    await data.close();
+  }
+  process.exit(0);
+}
 if (!existsSync(source)) throw new Error('Database does not exist: ' + source);
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const output = resolve(process.argv[2] || './backups/tutel-' + stamp + '.sqlite');

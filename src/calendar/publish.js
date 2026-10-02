@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setting, setSetting } from './db.js';
+import { canRunBot } from '../cluster/state.js';
 import { exportSnapshot } from './public/snapshot.js';
 import { publicZip } from './public/archive.js';
 
@@ -54,10 +55,10 @@ export async function publishSnapshot(
     deploy = await check.json();
   }
   if (deploy.state !== 'ready') throw new Error('Netlify ยังประมวลผลไม่เสร็จ จะลองใหม่ภายหลัง');
-  setSetting('netlify_public_hash', hash);
-  setSetting('netlify_public_site', site);
-  setSetting('netlify_last_sync_at', new Date().toISOString());
-  setSetting('netlify_last_error', '');
+  await setSetting('netlify_public_hash', hash);
+  await setSetting('netlify_public_site', site);
+  await setSetting('netlify_last_sync_at', new Date().toISOString());
+  await setSetting('netlify_last_error', '');
   return { ready: true, id: deploy.id };
 }
 let currentSync = null,
@@ -93,11 +94,11 @@ export function requestCalendarSync() {
 }
 export async function syncCalendarNow() {
   if (currentSync) return currentSync(true);
-  const { path } = exportSnapshot();
+  const { path } = await exportSnapshot();
   try {
     return await publishSnapshot(resolve(path, '..'), { force: true });
   } catch (error) {
-    setSetting(syncPrefix() + '_last_error', error.message);
+    await setSetting(syncPrefix() + '_last_error', error.message);
     throw error;
   }
 }
@@ -107,10 +108,10 @@ export function startCalendarPublisher() {
     retryAfter = 0,
     failures = 0;
   const tick = async (force = false) => {
-    if (busy || stopped) return { pending: true };
+    if (busy || stopped || !canRunBot()) return { pending: true };
     busy = true;
     try {
-      const { path } = exportSnapshot();
+      const { path } = await exportSnapshot();
       if (!force && Date.now() < retryAfter) return { pending: true };
       const result = await publishSnapshot(resolve(path, '..'), { force });
       failures = 0;
@@ -119,7 +120,7 @@ export function startCalendarPublisher() {
     } catch (error) {
       failures++;
       retryAfter = Date.now() + Math.min(300000, 15000 * 2 ** Math.min(failures - 1, 5));
-      setSetting(syncPrefix() + '_last_error', error.message);
+      await setSetting(syncPrefix() + '_last_error', error.message);
       console.error('[calendar] public sync:', error.message);
       if (force) throw error;
       return { pending: true };
@@ -139,7 +140,7 @@ export function startCalendarPublisher() {
   };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { path, snapshot } = exportSnapshot(process.argv[3] || undefined);
+  const { path, snapshot } = await exportSnapshot(process.argv[3] || undefined);
   console.log('Exported ' + snapshot.events.length + ' public entries to ' + path);
   if (process.argv.includes('--publish')) console.log(await publishSnapshot(resolve(path, '..')));
 }

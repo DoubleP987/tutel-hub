@@ -17,6 +17,7 @@ npm-debug.log*
 # Runtime database, sessions, events, credentials, backups
 /data/
 /backups/
+*.mongodb-backup.json
 *.sqlite
 *.sqlite-*
 *.sqlite.*

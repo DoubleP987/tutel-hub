@@ -11,6 +11,7 @@ import { registerCalendarSyncRoutes } from './routes/calendar-sync.js';
 import { registerDiscordRoutes } from './routes/discord.js';
 import { registerBotRoutes } from './routes/bot.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerClusterRoutes } from './routes/cluster.js';
 
 const app = express(),
   here = fileURLToPath(new URL('.', import.meta.url));
@@ -50,6 +51,7 @@ registerCalendarSyncRoutes(app);
 registerDiscordRoutes(app);
 registerBotRoutes(app);
 registerHealthRoutes(app);
+registerClusterRoutes(app);
 
 export function publicEvent(e) {
   const {

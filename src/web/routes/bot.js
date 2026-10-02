@@ -10,14 +10,19 @@ import {
 } from '../../music/player.js';
 import { auth, admin, csrf } from '../middleware/security.js';
 import { getMusicSource, setMusicSource, musicSources } from '../../music/settings.js';
+import { clusterEnabled } from '../../cluster/state.js';
+import { clusterStatus, setClusterTarget } from '../../cluster/runtime.js';
+import { forwardActiveBot } from '../../cluster/jobs.js';
 
 export function registerBotRoutes(app) {
-  app.get('/api/bot', auth, admin, (req, res) => {
+  app.get('/api/bot', auth, admin, forwardActiveBot, async (req, res) => {
     const client = getDiscordClient(),
       guilds = client ? Array.from(client.guilds.cache.values()) : [];
     res.json({
       status: botStatus(),
-      configured: setting('bot_enabled') !== '0',
+      configured: clusterEnabled()
+        ? (await clusterStatus()).botEnabled
+        : setting('bot_enabled') !== '0',
       guilds: guilds.map((g) => ({ id: g.id, name: g.name })),
       music: guilds.map((g) => {
         const s = getPlayer(g.id);
@@ -33,26 +38,31 @@ export function registerBotRoutes(app) {
       }),
     });
   });
-  app.put('/api/control/music/source', auth, admin, csrf, (req, res) => {
+  app.put('/api/control/music/source', auth, admin, csrf, forwardActiveBot, async (req, res) => {
     const guildId = String(req.body.guildId || '');
     if (!getDiscordClient()?.guilds.cache.has(guildId))
       return res.status(404).json({ error: 'บอทไม่อยู่ในเซิร์ฟเวอร์นี้' });
     if (!musicSources.includes(req.body.source))
       return res.status(400).json({ error: 'เลือก YouTube หรือ SoundCloud' });
-    res.json({ ok: true, source: setMusicSource(guildId, req.body.source) });
+    res.json({ ok: true, source: await setMusicSource(guildId, req.body.source) });
   });
   app.post('/api/bot/toggle', auth, admin, csrf, async (req, res) => {
     const enable = !!req.body.enabled;
     try {
+      if (clusterEnabled()) {
+        const status = await clusterStatus();
+        await setClusterTarget(status.target, enable);
+        return res.json({ ok: true, pending: true });
+      }
       if (enable) await startBot();
       else await stopBot();
-      setSetting('bot_enabled', enable ? '1' : '0');
+      await setSetting('bot_enabled', enable ? '1' : '0');
       res.json({ ok: true, status: botStatus() });
     } catch (error) {
       res.status(500).json({ error: 'สั่งเปลี่ยนสถานะบอทไม่สำเร็จ: ' + error.message });
     }
   });
-  app.post('/api/control/music', auth, admin, csrf, (req, res) => {
+  app.post('/api/control/music', auth, admin, csrf, forwardActiveBot, (req, res) => {
     const guildId = String(req.body.guildId || ''),
       action = String(req.body.action || ''),
       state = getPlayer(guildId);

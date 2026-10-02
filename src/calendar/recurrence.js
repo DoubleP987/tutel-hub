@@ -1,3 +1,5 @@
+import { t } from '../i18n/bot.js';
+import { botLocale } from '../config/bot.js';
 const TZ = 'Asia/Bangkok';
 export const dateParts = (date) => {
   const p = Object.fromEntries(
@@ -17,7 +19,7 @@ export const dateParts = (date) => {
 };
 export function localDateTimeToIso(value) {
   const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
-  if (!match) throw new Error('กรุณาใช้วันเวลาแบบ YYYY-MM-DD HH:mm (เวลาไทย)');
+  if (!match) throw new Error(t('กรุณาใช้วันเวลาแบบ YYYY-MM-DD HH:mm (เวลาไทย)'));
   const [, ys, ms, ds, hs, mins] = match;
   const check = new Date(Date.UTC(+ys, +ms - 1, +ds));
   if (
@@ -27,9 +29,9 @@ export function localDateTimeToIso(value) {
     +hs > 23 ||
     +mins > 59
   )
-    throw new Error('วันเวลาไม่ถูกต้อง');
+    throw new Error(t('วันเวลาไม่ถูกต้อง'));
   const date = new Date(Date.UTC(+ys, +ms - 1, +ds, +hs - 7, +mins));
-  if (Number.isNaN(date.valueOf())) throw new Error('วันเวลาไม่ถูกต้อง');
+  if (Number.isNaN(date.valueOf())) throw new Error(t('วันเวลาไม่ถูกต้อง'));
   return date.toISOString();
 }
 export function addLocal(p, recurrence, anchorDay = p.d) {
@@ -110,7 +112,7 @@ export function eventOccurrences(event, from, to) {
   return result;
 }
 export function formatThai(iso) {
-  return new Intl.DateTimeFormat('th-TH', {
+  return new Intl.DateTimeFormat(botLocale, {
     timeZone: TZ,
     dateStyle: 'medium',
     timeStyle: 'short',

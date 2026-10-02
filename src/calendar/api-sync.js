@@ -30,8 +30,8 @@ export async function syncCalendarApi(directory, { request = fetch, force = fals
       Number(setting('calendar_api_revision') || 0) + 1,
       revision + 1,
     );
-    setSetting('calendar_api_pending_hash', hash);
-    setSetting('calendar_api_pending_revision', String(revision));
+    await setSetting('calendar_api_pending_hash', hash);
+    await setSetting('calendar_api_pending_revision', String(revision));
   }
   const response = await request(url, {
     method: 'POST',
@@ -46,17 +46,17 @@ export async function syncCalendarApi(directory, { request = fetch, force = fals
   });
   const result = await response.json().catch(() => ({}));
   if (response.status === 409 && Number.isSafeInteger(result.revision)) {
-    setSetting('calendar_api_pending_revision', String(result.revision + 1));
+    await setSetting('calendar_api_pending_revision', String(result.revision + 1));
     throw new Error('Newer public calendar detected; retrying with a newer revision.');
   }
   if (!response.ok || !result.ok)
     throw new Error(
       'Calendar sync HTTP ' + response.status + ': ' + (result.error || 'request rejected'),
     );
-  setSetting('calendar_api_hash', hash);
-  setSetting('calendar_api_endpoint', endpoint);
-  setSetting('calendar_api_revision', String(revision));
-  setSetting('calendar_api_last_sync_at', new Date().toISOString());
-  setSetting('calendar_api_last_error', '');
+  await setSetting('calendar_api_hash', hash);
+  await setSetting('calendar_api_endpoint', endpoint);
+  await setSetting('calendar_api_revision', String(revision));
+  await setSetting('calendar_api_last_sync_at', new Date().toISOString());
+  await setSetting('calendar_api_last_error', '');
   return { ready: true, provider: 'calendar-api', revision, count: snapshot.events.length };
 }

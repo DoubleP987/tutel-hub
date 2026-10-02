@@ -1,3 +1,4 @@
+import { t } from '../i18n/bot.js';
 import { spawn } from 'node:child_process';
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import ffmpegStaticPath from 'ffmpeg-static';
@@ -10,7 +11,8 @@ export async function resolveTrack(query, source = 'youtube') {
   const sourceQuery = query.includes('://') ? query : sourcePrefix + ':' + query;
   const results = await searchTracks(sourceQuery);
   const track = results.find((item) => !item.duration || item.duration > 30);
-  if (!track) throw new Error('ผลค้นหาที่พบเป็นคลิปสั้น กรุณาลองชื่อศิลปินหรือชื่อเพลงเพิ่มเติม');
+  if (!track)
+    throw new Error(t('ผลค้นหาที่พบเป็นคลิปสั้น กรุณาลองชื่อศิลปินหรือชื่อเพลงเพิ่มเติม'));
   return track;
 }
 

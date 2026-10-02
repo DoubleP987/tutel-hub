@@ -71,9 +71,9 @@ export async function publishVercel(directory, { request = fetch } = {}) {
     deployment = await check.json();
   }
   if (deployment.readyState !== 'READY') throw new Error('Vercel deployment is still processing.');
-  setSetting('vercel_public_hash', hash);
-  setSetting('vercel_public_project', identity);
-  setSetting('vercel_last_sync_at', new Date().toISOString());
-  setSetting('vercel_last_error', '');
+  await setSetting('vercel_public_hash', hash);
+  await setSetting('vercel_public_project', identity);
+  await setSetting('vercel_last_sync_at', new Date().toISOString());
+  await setSetting('vercel_last_error', '');
   return { ready: true, provider: 'vercel', id: deployment.id, url: 'https://' + deployment.url };
 }

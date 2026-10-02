@@ -16,7 +16,8 @@
     "db:backup": "node scripts/backup-db.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "assets:sync": "node scripts/sync-public-assets.js"
+    "assets:sync": "node scripts/sync-public-assets.js",
+    "profile:update": "node scripts/update-bot-profile.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
@@ -26,6 +27,7 @@
     "express": "^5.1.0",
     "ffmpeg-static": "^5.2.0",
     "helmet": "^8.1.0",
+    "mongodb": "^6.21.0",
     "opusscript": "^0.0.8"
   },
   "allowScripts": {

@@ -1,3 +1,5 @@
+> **Current implementation update:** This handbook records the earlier refactor baseline. MongoDB/two-node failover, Loop controls, configurable bot language, private `/help` and the Blob ETag repair supersede the older single-host descriptions. Read [MongoDB/failover](MONGODB-FAILOVER.md), [music controls](MUSIC-PANEL.md) and [language/help](BOT-LANGUAGE.md) for the current behavior. The existing PDF is the baseline edition.
+
 # TUTEL HUB
 
 # Complete System Handbook

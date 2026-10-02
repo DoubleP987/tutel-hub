@@ -10,13 +10,13 @@ export function registerPreferencesRoutes(app) {
     } catch {}
     res.json(prefs);
   });
-  app.put('/api/preferences', auth, csrf, (req, res) => {
+  app.put('/api/preferences', auth, csrf, async (req, res) => {
     const input = req.body,
       theme = ['system', 'light', 'dark'].includes(input.theme) ? input.theme : 'system';
     const filters = Array.isArray(input.filters)
       ? input.filters.filter((id) => categories.some((c) => c.id === id))
       : categories.map((c) => c.id);
-    setSetting('preferences:' + req.auth.user.id, JSON.stringify({ theme, filters }));
+    await setSetting('preferences:' + req.auth.user.id, JSON.stringify({ theme, filters }));
     res.json({ ok: true });
   });
 }

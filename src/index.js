@@ -4,12 +4,19 @@ import { startReminderScheduler } from './calendar/service.js';
 import { startControlServer } from './web/server.js';
 import { getDiscordClient, startBot, stopBot } from './bot/runtime.js';
 import { startCalendarPublisher } from './calendar/publish.js';
+import { clusterEnabled } from './cluster/state.js';
+import { startCluster, stopCluster } from './cluster/runtime.js';
+import { data } from './database/connection.js';
+import { startCommandRelay, stopCommandRelay } from './cluster/jobs.js';
 
-initializeAccounts();
+await initializeAccounts();
 const stopScheduler = startReminderScheduler(getDiscordClient);
 const stopPublisher = startCalendarPublisher();
 const server = await startControlServer();
-if (setting('bot_enabled') !== '0') {
+if (clusterEnabled()) {
+  await startCommandRelay();
+  await startCluster();
+} else if (setting('bot_enabled') !== '0') {
   try {
     await startBot();
   } catch (error) {
@@ -23,8 +30,11 @@ async function shutdown(signal) {
   console.log('Received ' + signal + '; shutting down.');
   stopScheduler();
   stopPublisher();
+  stopCommandRelay();
+  await stopCluster();
   await stopBot();
   await new Promise((resolve) => server.close(resolve));
+  await data.close();
   process.exit(0);
 }
 process.on('SIGINT', () => void shutdown('SIGINT'));

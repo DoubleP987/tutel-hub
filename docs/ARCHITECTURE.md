@@ -1,7 +1,6 @@
 # Architecture and maintenance
 
-Tutel Hub has two runtimes. Homeserver owns SQLite, authentication, Discord,
-audio, calendar scheduling and outbound synchronization. `vercel-public/`
+Tutel Hub has two runtimes. The active node owns Discord, audio, calendar scheduling and outbound synchronization. SQLite supports standalone installations; MongoDB Atlas shares persistent data between homeserver and Oracle. A database lease elects one active bot. Authentication and the private panel run locally on each node. `vercel-public/`
 owns the public frontend and the authenticated snapshot receiver/read API.
 
 ## Source ownership
@@ -59,3 +58,12 @@ radio requires an online stream and holiday data requires maintenance.
 The books explain the implementation, deployment, security boundaries,
 database schema, API contracts, commands and troubleshooting. Recommendations
 are labeled separately from implemented features.
+
+## Current extensions
+
+- `src/cluster/`: leases, local watchdog and encrypted commands to the active node. See [MongoDB and failover](MONGODB-FAILOVER.md).
+- `src/database/store.js`: asynchronous SQLite/MongoDB persistence adapter.
+- `src/config/` and `src/i18n/`: configurable bot language, profile description and private `/help`. See [Bot language](BOT-LANGUAGE.md).
+- `src/music/panel.js`: persistent latest Discord music controls, including Loop. See [Music panel](MUSIC-PANEL.md).
+
+Public calendar updates use an outbound authenticated API request, rather than rebuilding Vercel for each event. The promo website is a separate static project rooted at `promo-site/`. Calendar Preview builds are disabled because the optional `gh-pages` branch contains only promotional files. Production uses `main`.

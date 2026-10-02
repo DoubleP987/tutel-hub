@@ -22,18 +22,18 @@ export function registerPagesRoutes(app, publicPath) {
   app.get('/login.js', (req, res) => res.sendFile(resolve(publicPath, 'login.js')));
   app.get('/app.js', (req, res) => res.sendFile(resolve(publicPath, 'app.js')));
   app.get('/app.css', (req, res) => res.sendFile(resolve(publicPath, 'app.css')));
-  app.get('/', (req, res) => {
-    const s = getSession(cookies(req).tutel_sid);
+  app.get('/', async (req, res) => {
+    const s = await getSession(cookies(req).tutel_sid);
     res.redirect(s?.user.role === 'viewer' ? '/viewer' : s ? '/admin' : '/login');
   });
-  app.get('/admin', (req, res) => {
-    const s = getSession(cookies(req).tutel_sid);
+  app.get('/admin', async (req, res) => {
+    const s = await getSession(cookies(req).tutel_sid);
     if (!s) return res.redirect('/login');
     if (s.user.role !== 'admin') return res.redirect('/viewer');
     res.sendFile(resolve(publicPath, 'app.html'));
   });
-  app.get('/viewer', (req, res) => {
-    const s = getSession(cookies(req).tutel_sid);
+  app.get('/viewer', async (req, res) => {
+    const s = await getSession(cookies(req).tutel_sid);
     if (!s) return res.redirect('/login');
     if (s.user.role !== 'viewer') return res.redirect('/admin');
     res.sendFile(resolve(publicPath, 'app.html'));

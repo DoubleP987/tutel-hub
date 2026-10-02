@@ -124,6 +124,12 @@
   };
   const commandData = [
     [
+      '/help',
+      'help',
+      'Open private website and guide buttons.',
+      'เปิดปุ่มเว็บและคู่มือที่เห็นเฉพาะคุณ',
+    ],
+    [
       '/play',
       'music',
       'Search by song name or play a supported link.',

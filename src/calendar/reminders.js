@@ -15,10 +15,10 @@ export function reminderSchedules(event, occurrence, options = null) {
 }
 export async function runReminderTick(client, now = Date.now()) {
   if (!client?.isReady()) return;
-  const configs = listGuildConfigs().filter((c) => c.channel_id);
+  const configs = (await listGuildConfigs()).filter((c) => c.channel_id);
   if (!configs.length) return;
   const day = calendarDay(now);
-  const events = listExpandedEvents(day.startsAt, day.endsAt);
+  const events = await listExpandedEvents(day.startsAt, day.endsAt);
   for (const config of configs) {
     const options = reminderOptions(config.guild_id);
     await removeOldCalendarButtons(client, config.channel_id).catch((error) =>

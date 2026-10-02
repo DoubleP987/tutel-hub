@@ -1,5 +1,6 @@
+import { t } from '../i18n/bot.js';
 import { createHash } from 'node:crypto';
-import { db } from './db.js';
+import { data } from './db.js';
 import { thaiImportantDays } from './holidays.js';
 import { eventCategories } from './categories.js';
 import {
@@ -10,7 +11,7 @@ import {
   eventOccurrences,
 } from './recurrence.js';
 
-export function listExpandedEvents(fromValue, toValue, guildId = null) {
+export async function listExpandedEvents(fromValue, toValue, guildId = null) {
   const from = new Date(fromValue),
     to = new Date(toValue);
   if (
@@ -19,12 +20,12 @@ export function listExpandedEvents(fromValue, toValue, guildId = null) {
     to <= from ||
     to - from > 1000 * 60 * 60 * 24 * 400
   )
-    throw new Error('ช่วงวันที่ไม่ถูกต้อง');
-  const rows = guildId
-    ? db
-        .prepare('SELECT * FROM events WHERE guild_id IS NULL OR guild_id=? ORDER BY starts_at')
-        .all(guildId)
-    : db.prepare('SELECT * FROM events ORDER BY starts_at').all();
+    throw new Error(t('ช่วงวันที่ไม่ถูกต้อง'));
+  const rows = await data.findMany(
+    'events',
+    guildId ? { $or: [{ guild_id: null }, { guild_id: guildId }] } : {},
+    { sort: { starts_at: 1 } },
+  );
   const expanded = rows.flatMap((event) =>
     eventOccurrences(event, from, to).map((occ) => ({
       ...event,
@@ -47,10 +48,10 @@ export function listExpandedEvents(fromValue, toValue, guildId = null) {
         title: h.title,
         description:
           h.type === 'public'
-            ? 'วันหยุดราชการ'
+            ? t('วันหยุดราชการ')
             : h.type === 'bank'
-              ? 'วันหยุดธนาคาร/วันสำคัญ'
-              : 'วันสำคัญ (ไม่ใช่วันหยุดราชการ)',
+              ? t('วันหยุดธนาคาร/วันสำคัญ')
+              : t('วันสำคัญ (ไม่ใช่วันหยุดราชการ)'),
         starts_at: at,
         ends_at: end,
         all_day: 1,
@@ -70,17 +71,15 @@ export function listExpandedEvents(fromValue, toValue, guildId = null) {
     .map((e) => ({ ...e, color: e.color || '#4285f4', categories: eventCategories(e) }))
     .sort((a, b) => a.occurrence_at.localeCompare(b.occurrence_at));
 }
-export function saveEvent(input, creatorId) {
+export async function saveEvent(input, creatorId) {
   const title = String(input.title || '')
     .trim()
     .slice(0, 160);
-  if (!title) throw new Error('ใส่ชื่อกิจกรรมก่อน');
-  const existing = input.id
-    ? db.prepare('SELECT color FROM events WHERE id=?').get(input.id)
-    : null;
+  if (!title) throw new Error(t('ใส่ชื่อกิจกรรมก่อน'));
+  const existing = input.id ? await data.findOne('events', { id: Number(input.id) }) : null;
   const color = input.color ?? existing?.color ?? '#4285f4';
   if (typeof color !== 'string' || !/^#[\da-f]{6}$/i.test(color))
-    throw new Error('สีกิจกรรมไม่ถูกต้อง');
+    throw new Error(t('สีกิจกรรมไม่ถูกต้อง'));
   const allDay = !!input.allDay,
     day = String(input.date || input.startsAt || '').slice(0, 10);
   const start = localDateTimeToIso(allDay ? day + ' 00:00' : input.startsAt);
@@ -91,7 +90,7 @@ export function saveEvent(input, creatorId) {
     : input.endsAt
       ? localDateTimeToIso(input.endsAt)
       : new Date(new Date(start).getTime() + 60 * 60 * 1000).toISOString();
-  if (new Date(end) <= new Date(start)) throw new Error('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม');
+  if (new Date(end) <= new Date(start)) throw new Error(t('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม'));
   const recurrence = ['none', 'daily', 'weekly', 'monthly', 'yearly'].includes(input.recurrence)
     ? input.recurrence
     : 'none';
@@ -119,39 +118,50 @@ export function saveEvent(input, creatorId) {
     color,
     creatorId || null,
   ];
+  const fields = [
+    'guild_id',
+    'title',
+    'description',
+    'starts_at',
+    'ends_at',
+    'all_day',
+    'holiday',
+    'recurrence',
+    'reminders',
+    'reminder_mode',
+    'color',
+    'created_by',
+  ];
+  const document = Object.fromEntries(fields.map((field, index) => [field, values[index]]));
   if (input.id) {
-    const result = db
-      .prepare(
-        'UPDATE events SET guild_id=?,title=?,description=?,starts_at=?,ends_at=?,all_day=?,holiday=?,recurrence=?,reminders=?,reminder_mode=?,color=? WHERE id=?',
-      )
-      .run(...values.slice(0, 11), input.id);
-    if (!result.changes) throw new Error('ไม่พบกิจกรรมนี้');
-    db.prepare('DELETE FROM reminder_log WHERE event_id=?').run(input.id);
+    delete document.created_by;
+    const changes = await data.update('events', { id: Number(input.id) }, document);
+    if (!changes) throw new Error(t('ไม่พบกิจกรรมนี้'));
+    await data.remove('reminder_log', { event_id: Number(input.id) });
     return Number(input.id);
   }
-  const result = db
-    .prepare(
-      'INSERT INTO events(guild_id,title,description,starts_at,ends_at,all_day,holiday,recurrence,reminders,reminder_mode,color,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-    )
-    .run(...values);
-  return Number(result.lastInsertRowid);
+  const result = await data.insert('events', document);
+  return result.id;
 }
-export function deleteEvent(id, guildId = null) {
-  const result = guildId
-    ? db.prepare('DELETE FROM events WHERE id=? AND guild_id=?').run(Number(id), String(guildId))
-    : db.prepare('DELETE FROM events WHERE id=?').run(Number(id));
-  if (!result.changes) throw new Error('ไม่พบกิจกรรมนี้');
+export async function deleteEvent(id, guildId = null) {
+  const changes = await data.remove('events', {
+    id: Number(id),
+    ...(guildId ? { guild_id: String(guildId) } : {}),
+  });
+  if (!changes) throw new Error(t('ไม่พบกิจกรรมนี้'));
 }
-export function saveGuildConfig(guildId, guildName, channelId, defaultReminder = 15) {
-  db.prepare(
-    'INSERT INTO guild_config(guild_id,guild_name,channel_id,default_reminder) VALUES(?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET guild_name=excluded.guild_name,channel_id=excluded.channel_id,default_reminder=excluded.default_reminder',
-  ).run(
-    String(guildId),
-    String(guildName || ''),
-    channelId ? String(channelId) : null,
-    Math.min(10080, Math.max(0, Number(defaultReminder) || 0)),
+export async function saveGuildConfig(guildId, guildName, channelId, defaultReminder = 15) {
+  await data.upsert(
+    'guild_config',
+    { guild_id: String(guildId) },
+    {
+      guild_name: String(guildName || ''),
+      channel_id: channelId ? String(channelId) : null,
+      default_reminder: Math.min(10080, Math.max(0, Number(defaultReminder) || 0)),
+      timezone: 'Asia/Bangkok',
+    },
   );
 }
-export function listGuildConfigs() {
-  return db.prepare('SELECT * FROM guild_config').all();
+export async function listGuildConfigs() {
+  return data.findMany('guild_config');
 }

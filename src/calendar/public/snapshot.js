@@ -36,13 +36,13 @@ export function publicEvent(e) {
     color,
   };
 }
-export function buildSnapshot(now = new Date()) {
+export async function buildSnapshot(now = new Date()) {
   const year = Number(
     new Intl.DateTimeFormat('en', { timeZone: 'Asia/Bangkok', year: 'numeric' }).format(now),
   );
   const events = new Map();
   for (let y = year - 1; y <= year + 2; y++) {
-    for (const e of listExpandedEvents(
+    for (const e of await listExpandedEvents(
       localDateTimeToIso(y + '-01-01 00:00'),
       localDateTimeToIso(y + 1 + '-01-01 00:00'),
     )) {
@@ -57,11 +57,11 @@ export function buildSnapshot(now = new Date()) {
     events: [...events.values()].sort((a, b) => a.occurrence_at.localeCompare(b.occurrence_at)),
   };
 }
-export function exportSnapshot(
+export async function exportSnapshot(
   directory = process.env.PUBLIC_SITE_DIR || resolve('netlify-public'),
 ) {
   mkdirSync(directory, { recursive: true });
-  const snapshot = buildSnapshot(),
+  const snapshot = await buildSnapshot(),
     data = JSON.stringify({ ...snapshot, generatedAt: undefined });
   const path = resolve(directory, 'calendar.json');
   if (existsSync(path)) {

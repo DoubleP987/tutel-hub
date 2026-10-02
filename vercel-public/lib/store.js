@@ -1,10 +1,17 @@
-import { get, put } from '@vercel/blob';
+import { get, head, put, BlobNotFoundError, BlobPreconditionFailedError } from '@vercel/blob';
 import { createHash } from 'node:crypto';
 export const PATH = 'calendar/latest.json';
 export async function readSnapshot() {
+  let metadata;
+  try {
+    metadata = await head(PATH);
+  } catch (error) {
+    if (error instanceof BlobNotFoundError) return null;
+    throw error;
+  }
   const result = await get(PATH, { access: 'private', useCache: false });
   if (!result) return null;
-  return { data: await new Response(result.stream).json(), etag: result.blob.etag };
+  return { data: await new Response(result.stream).json(), etag: metadata.etag };
 }
 export function validateSnapshot(input) {
   if (
@@ -90,12 +97,15 @@ export async function saveSnapshot(data) {
         addRandomSuffix: false,
         contentType: 'application/json',
         cacheControlMaxAge: 60,
-        ...(current ? { ifMatch: current.etag } : { allowOverwrite: false }),
+        ...(current ? { ifMatch: current.etag, allowOverwrite: true } : { allowOverwrite: false }),
       });
       return { ok: true, revision: data.revision, count: data.events.length };
     } catch (error) {
       if (
-        !['BlobPreconditionFailedError', 'BlobPathnameAlreadyExistsError'].includes(error.name) ||
+        !(
+          error instanceof BlobPreconditionFailedError ||
+          /already exists/i.test(error.message || '')
+        ) ||
         attempt === 2
       )
         throw error;

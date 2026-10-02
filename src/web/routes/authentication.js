@@ -17,7 +17,7 @@ import {
 const loginLimits = new Map();
 
 export function registerAuthenticationRoutes(app) {
-  app.post('/api/login', (req, res) => {
+  app.post('/api/login', async (req, res) => {
     const ip = req.ip || 'unknown',
       now = Date.now(),
       attempt = loginLimits.get(ip) || { count: 0, until: 0 };
@@ -29,7 +29,7 @@ export function registerAuthenticationRoutes(app) {
     const pre = cookies(req).tutel_pre;
     if (!pre || req.body.csrf !== pre)
       return res.status(403).json({ error: 'โหลดหน้าใหม่แล้วลองอีกครั้ง' });
-    const user = userByName(String(req.body.username || '').trim());
+    const user = await userByName(String(req.body.username || '').trim());
     if (!user || !verifyPassword(req.body.password || '', user.password_hash)) {
       attempt.count++;
       if (attempt.count >= 8) attempt.until = now + 15 * 60 * 1000;
@@ -37,7 +37,7 @@ export function registerAuthenticationRoutes(app) {
       return res.status(401).json({ error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
     }
     loginLimits.delete(ip);
-    const session = createSession(user.id);
+    const session = await createSession(user.id);
     setSessionCookie(res, session.token, req.secure);
     clearCookie(res, 'tutel_pre', false, req.secure);
     res.json({
@@ -49,23 +49,23 @@ export function registerAuthenticationRoutes(app) {
   app.get('/api/session', auth, (req, res) =>
     res.json({ user: req.auth.user, csrf: req.auth.csrf }),
   );
-  app.post('/api/logout', auth, csrf, (req, res) => {
-    deleteSession(req.auth.tokenHash);
+  app.post('/api/logout', auth, csrf, async (req, res) => {
+    await deleteSession(req.auth.tokenHash);
     clearCookie(res, 'tutel_sid', true, req.secure);
     res.json({ ok: true });
   });
-  app.post('/api/password', auth, csrf, (req, res) => {
+  app.post('/api/password', auth, csrf, async (req, res) => {
     try {
       if (
         !verifyPassword(
           req.body.currentPassword || '',
-          userByName(req.auth.user.username).password_hash,
+          (await userByName(req.auth.user.username)).password_hash,
         )
       )
         return res.status(401).json({ error: 'รหัสผ่านปัจจุบันไม่ถูกต้อง' });
-      changePassword(req.auth.user.id, req.body.newPassword || '');
-      deleteSession(req.auth.tokenHash);
-      const session = createSession(req.auth.user.id);
+      await changePassword(req.auth.user.id, req.body.newPassword || '');
+      await deleteSession(req.auth.tokenHash);
+      const session = await createSession(req.auth.user.id);
       setSessionCookie(res, session.token, req.secure);
       res.json({ ok: true, csrf: session.csrf, mustChange: false });
     } catch (error) {

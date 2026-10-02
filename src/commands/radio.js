@@ -1,3 +1,4 @@
+import { t } from '../i18n/bot.js';
 import { playRadio } from '../music/player.js';
 import { guildOnly } from './shared.js';
 import {
@@ -47,10 +48,10 @@ export const radioHandlers = {
         );
         if (!rows.length)
           return interaction.editReply(
-            'API ยังไม่พบสตรีมที่ตรวจว่าออนไลน์ในภาคนี้ ลองเลือกภาคอื่นหรือค้นด้วยชื่อสถานี',
+            t('API ยังไม่พบสตรีมที่ตรวจว่าออนไลน์ในภาคนี้ ลองเลือกภาคอื่นหรือค้นด้วยชื่อสถานี'),
           );
         return interaction.editReply(
-          'สถานีออนไลน์ที่ค้นได้จากไดเรกทอรี\n' +
+          t('สถานีออนไลน์ที่ค้นได้จากไดเรกทอรี\n') +
             rows
               .map(
                 (station) =>
@@ -60,11 +61,11 @@ export const radioHandlers = {
                   (station.state ? ' · ' + station.state : ''),
               )
               .join('\n') +
-            '\nเปิดด้วย /radio play แล้วใส่ชื่อสถานี',
+            t('\nเปิดด้วย /radio play แล้วใส่ชื่อสถานี'),
         );
       } catch (error) {
         console.error('[radio] directory lookup failed:', error);
-        return interaction.editReply('ค้นไดเรกทอรีวิทยุไม่สำเร็จชั่วคราว ลองใหม่อีกครั้ง');
+        return interaction.editReply(t('ค้นไดเรกทอรีวิทยุไม่สำเร็จชั่วคราว ลองใหม่อีกครั้ง'));
       }
     }
 
@@ -105,7 +106,9 @@ export const radioHandlers = {
           });
         if (!found.length)
           return interaction.editReply(
-            'ไดเรกทอรียังไม่มีสตรีมออนไลน์ที่ตรงกับความถี่/ชื่อและภาคนี้ ลอง /radio list เลือกสถานีจากรายการ',
+            t(
+              'ไดเรกทอรียังไม่มีสตรีมออนไลน์ที่ตรงกับความถี่/ชื่อและภาคนี้ ลอง /radio list เลือกสถานีจากรายการ',
+            ),
           );
         if (
           found.length > 1 &&
@@ -113,12 +116,12 @@ export const radioHandlers = {
           (found[1].clickcount || 0) >= (found[0].clickcount || 0) * 0.8
         ) {
           return interaction.editReply(
-            'พบหลายสถานีใกล้เคียง: ' +
+            t('พบหลายสถานีใกล้เคียง: ') +
               found
                 .slice(0, 5)
                 .map((row) => row.name + (row.state ? ' (' + row.state + ')' : ''))
                 .join(' · ') +
-              '\nคัดลอกชื่อสถานีที่ต้องการมาใส่ใน /radio play',
+              t('\nคัดลอกชื่อสถานีที่ต้องการมาใส่ใน /radio play'),
           );
         }
         const row = found[0];
@@ -130,18 +133,18 @@ export const radioHandlers = {
         };
       } catch (error) {
         console.error('[radio] directory lookup failed:', error);
-        return interaction.editReply('ค้นสตรีมวิทยุไม่สำเร็จชั่วคราว ลองใหม่อีกครั้ง');
+        return interaction.editReply(t('ค้นสตรีมวิทยุไม่สำเร็จชั่วคราว ลองใหม่อีกครั้ง'));
       }
     }
     const channel = interaction.member.voice && interaction.member.voice.channel;
     if (!channel) {
-      if (interaction.deferred) return interaction.editReply('เข้าห้อง voice ก่อนนะ');
-      return interaction.reply({ content: 'เข้าห้อง voice ก่อนนะ', ephemeral: true });
+      if (interaction.deferred) return interaction.editReply(t('เข้าห้อง voice ก่อนนะ'));
+      return interaction.reply({ content: t('เข้าห้อง voice ก่อนนะ'), ephemeral: true });
     }
     if (!interaction.deferred) await interaction.deferReply();
     playRadio(interaction.guildId, channel, selected);
     return interaction.editReply(
-      'กำลังเปิดวิทยุสด ' +
+      t('กำลังเปิดวิทยุสด ') +
         selected.name +
         (selected.frequency ? ' (' + selected.frequency + ' MHz)' : ''),
     );

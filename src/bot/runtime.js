@@ -1,34 +1,57 @@
+import { t } from '../i18n/bot.js';
 import { Client, GatewayIntentBits, Events } from 'discord.js';
+import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
 import { destroyPlayer } from '../music/player.js';
 import { handleCalendarButton } from '../calendar/notifications.js';
+import {
+  initializeMusicPanels,
+  stopMusicPanels,
+  handleMusicPanelInteraction,
+} from '../music/panel.js';
 
 let client = null;
 let starting = null;
 export function getDiscordClient() {
-  return client;
+  return canRunBot() ? client : null;
 }
 export function botStatus() {
   return { enabled: !!client, ready: !!client?.isReady(), tag: client?.user?.tag || null };
 }
 export async function startBot() {
+  requireBotLease();
   if (client?.isReady()) return botStatus();
   if (starting) return starting;
   const token = process.env.DISCORD_TOKEN;
   if (!token || token === 'put-your-bot-token-here')
-    throw new Error('ยังไม่ได้ตั้งค่า DISCORD_TOKEN');
+    throw new Error(t('ยังไม่ได้ตั้งค่า DISCORD_TOKEN'));
   starting = (async () => {
     const instance = new Client({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
     });
     client = instance;
-    instance.once(Events.ClientReady, (ready) => console.log('Ready as ' + ready.user.tag));
+    instance.once(Events.ClientReady, (ready) => {
+      console.log('Ready as ' + ready.user.tag);
+      void initializeMusicPanels(ready).catch((error) =>
+        console.error('[music panel] initialize:', error.message),
+      );
+    });
     instance.on(Events.InteractionCreate, async (interaction) => {
-      if (interaction.isButton()) {
+      if (!canRunBot()) return;
+      if (
+        interaction.isButton() ||
+        interaction.isStringSelectMenu() ||
+        interaction.isModalSubmit()
+      ) {
         try {
-          await handleCalendarButton(interaction);
+          if (!(await handleMusicPanelInteraction(interaction)))
+            await handleCalendarButton(interaction);
         } catch (error) {
-          console.error('[calendar] button:', error.message);
+          console.error('[component] interaction:', error.message);
+          const response = { content: t('ทำคำสั่งไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'), flags: 64 };
+          if (interaction.deferred || interaction.replied)
+            await interaction.editReply({ content: response.content }).catch(() => {});
+          else await interaction.reply(response).catch(() => {});
         }
         return;
       }
@@ -39,10 +62,10 @@ export async function startBot() {
         await handler(interaction);
       } catch (error) {
         console.error('/' + interaction.commandName + ' failed:', error);
-        const message = 'เกิดข้อผิดพลาดระหว่างทำงาน ลองใหม่อีกครั้งหรือตรวจสอบ log ของบอท';
+        const message = t('เกิดข้อผิดพลาดระหว่างทำงาน ลองใหม่อีกครั้งหรือตรวจสอบ log ของบอท');
         if (interaction.deferred || interaction.replied)
-          await interaction.followUp({ content: message, ephemeral: true }).catch(() => {});
-        else await interaction.reply({ content: message, ephemeral: true }).catch(() => {});
+          await interaction.followUp({ content: message, flags: 64 }).catch(() => {});
+        else await interaction.reply({ content: message, flags: 64 }).catch(() => {});
       }
     });
     instance.on(Events.Error, (error) => console.error('Discord client error:', error));
@@ -65,6 +88,7 @@ export async function stopBot() {
   const old = client;
   if (!old) return botStatus();
   for (const guildId of old.guilds.cache.keys()) destroyPlayer(guildId);
+  await stopMusicPanels();
   old.destroy();
   if (client === old) client = null;
   return botStatus();

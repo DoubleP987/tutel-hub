@@ -3,36 +3,40 @@ import { listExpandedEvents, saveEvent, deleteEvent } from '../../calendar/servi
 import { auth, admin, csrf } from '../middleware/security.js';
 
 export function registerEventsRoutes(app) {
-  app.get('/api/events', auth, (req, res) => {
+  app.get('/api/events', auth, async (req, res) => {
     try {
-      const events = listExpandedEvents(req.query.from, req.query.to, req.query.guild || null);
+      const events = await listExpandedEvents(
+        req.query.from,
+        req.query.to,
+        req.query.guild || null,
+      );
       res.json(events);
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
-  app.post('/api/events', auth, admin, csrf, (req, res) => {
+  app.post('/api/events', auth, admin, csrf, async (req, res) => {
     try {
       const { secretPin, id: ignoredId, ...event } = req.body;
-      const id = saveEvent(event, req.auth.user.id);
+      const id = await saveEvent(event, req.auth.user.id);
       requestCalendarSync();
       res.json({ id });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
-  app.put('/api/events/:id', auth, admin, csrf, (req, res) => {
+  app.put('/api/events/:id', auth, admin, csrf, async (req, res) => {
     try {
-      const id = saveEvent({ ...req.body, id: req.params.id }, req.auth.user.id);
+      const id = await saveEvent({ ...req.body, id: req.params.id }, req.auth.user.id);
       requestCalendarSync();
       res.json({ id });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
-  app.delete('/api/events/:id', auth, admin, csrf, (req, res) => {
+  app.delete('/api/events/:id', auth, admin, csrf, async (req, res) => {
     try {
-      deleteEvent(req.params.id);
+      await deleteEvent(req.params.id);
       requestCalendarSync();
       res.json({ ok: true });
     } catch (error) {

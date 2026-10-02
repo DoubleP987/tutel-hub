@@ -506,6 +506,30 @@ async function saveSettings(e) {
 }
 async function loadBot() {
   try {
+    const cluster = await api('/api/cluster');
+    $('#cluster-control').classList.toggle('hidden', !cluster.enabled);
+    if (cluster.enabled) {
+      $('#cluster-status').textContent =
+        `กำลังทำงาน: ${cluster.activeNode || 'กำลังสลับ / ปิดอยู่'} · โหมด: ${cluster.target} · หน้าเว็บนี้อยู่บน ${cluster.node}`;
+      $$('[data-cluster-target]').forEach((button) => {
+        button.classList.toggle('primary', button.dataset.clusterTarget === cluster.target);
+        button.onclick = async () => {
+          button.disabled = true;
+          try {
+            await api('/api/cluster', {
+              method: 'POST',
+              body: { target: button.dataset.clusterTarget, enabled: true },
+            });
+            toast('บันทึกแล้ว กำลังสลับเครื่อง');
+            setTimeout(loadBot, 3500);
+          } catch (error) {
+            toast(error.message);
+          } finally {
+            button.disabled = false;
+          }
+        };
+      });
+    }
     const d = await api('/api/bot');
     const s = $('#bot-status');
     s.innerHTML =

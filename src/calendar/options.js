@@ -1,3 +1,4 @@
+import { t } from '../i18n/bot.js';
 import { setting, setSetting } from './db.js';
 import { categories, eventCategories } from './categories.js';
 export const defaults = {
@@ -22,16 +23,17 @@ export function normalizeOptions(input = {}) {
       !Array.isArray(input.categories) ||
       input.categories.some((c) => !categories.some((x) => x.id === c))
     )
-      throw new Error('หมวดแจ้งเตือนไม่ถูกต้อง');
+      throw new Error(t('หมวดแจ้งเตือนไม่ถูกต้อง'));
     result.categories = [...new Set(input.categories)];
   }
   for (const key of ['beforeTime', 'dayTime'])
     if (input[key] !== undefined) {
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input[key])) throw new Error('เวลาแจ้งเตือนไม่ถูกต้อง');
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input[key]))
+        throw new Error(t('เวลาแจ้งเตือนไม่ถูกต้อง'));
       result[key] = input[key];
     }
   if (input.color !== undefined) {
-    if (!/^#[\da-f]{6}$/i.test(input.color)) throw new Error('สีแจ้งเตือนไม่ถูกต้อง');
+    if (!/^#[\da-f]{6}$/i.test(input.color)) throw new Error(t('สีแจ้งเตือนไม่ถูกต้อง'));
     result.color = input.color;
   }
   if (input.template !== undefined) {
@@ -40,7 +42,7 @@ export function normalizeOptions(input = {}) {
       !input.template.trim() ||
       input.template.length > 1200
     )
-      throw new Error('ข้อความต้องมี 1–1200 ตัวอักษร');
+      throw new Error(t('ข้อความต้องมี 1–1200 ตัวอักษร'));
     result.template = input.template;
   }
   return result;
@@ -52,9 +54,9 @@ export function reminderOptions(guild) {
     return { ...defaults };
   }
 }
-export function saveReminderOptions(guild, input) {
+export async function saveReminderOptions(guild, input) {
   const options = normalizeOptions(input);
-  setSetting('reminder_options:' + guild, JSON.stringify(options));
+  await setSetting('reminder_options:' + guild, JSON.stringify(options));
   return options;
 }
 export function shouldNotify(event, options) {

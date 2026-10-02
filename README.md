@@ -7,9 +7,21 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
 
+## Bot language and /help
+
+Thai is the default. Set `language: 'en'` in `src/config/bot.js`, or `BOT_LANGUAGE=en` in `.env` (the environment overrides code). Restart after changing it, then run `npm run register` to update command descriptions.
+
+`/help` privately displays website/guide buttons opening https://tutelbot.vercel.app. No voice channel is needed. The Loop button repeats the current song; Skip advances and Stop resets Loop.
+
+- [Bot language guide](docs/BOT-LANGUAGE.md)
+- [MongoDB and failover](docs/MONGODB-FAILOVER.md)
+- [Chat music player](docs/MUSIC-PANEL.md)
+
+Use `npm run profile:update` to explicitly update the application description/link. Admin/public website language is independent; song/station names and user event text are preserved.
+
 ## Promotional website
 
-[**View website →**](https://doublep987.github.io/tutel-hub/) · [Website guide](promo-site/README.md)
+[**View website →**](https://tutelbot.vercel.app/) · [Website guide](promo-site/README.md)
 
 **Version: 1.0.0**. The bilingual promotional site lives in `promo-site/`. Light is the default; a theme switch remembers light/dark preference. GitHub Pages publishes only this static folder, independently of the bot, admin panel and public calendar.
 
@@ -21,7 +33,7 @@ Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMAR
 - Thai holidays, important days, Buddhist holy days, recurring/custom events, and Discord channel reminders.
 - Full-width month/week/day/agenda calendar, event colors (blue by default), stacked events, timed overlaps, search, filters, dark/light/device theme, and mobile layouts.
 - Private authenticated admin panel; separate read-only public calendar on Vercel. Home-screen web app support.
-- SQLite storage and outbound API snapshot synchronization. No Google Calendar API is required.
+- SQLite for a standalone installation, or shared MongoDB Atlas storage with two-node failover. Outbound API snapshot synchronization; no Google Calendar API is required.
 
 ## Requirements
 

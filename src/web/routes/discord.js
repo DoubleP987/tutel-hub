@@ -9,9 +9,10 @@ import { calendarDay, dailySummaryEvents } from '../../calendar/daily-summary.js
 import { reminderOptions, saveReminderOptions, normalizeOptions } from '../../calendar/options.js';
 import { categories } from '../../calendar/categories.js';
 import { auth, admin, csrf } from '../middleware/security.js';
+import { forwardActiveBot } from '../../cluster/jobs.js';
 
 export function registerDiscordRoutes(app) {
-  app.get('/api/guilds', auth, admin, (req, res) => {
+  app.get('/api/guilds', auth, admin, forwardActiveBot, async (req, res) => {
     const client = getDiscordClient();
     if (!client?.isReady())
       return res.status(503).json({ error: 'บอทยังไม่ออนไลน์ เปิดบอทในหน้าควบคุมบอทก่อน' });
@@ -20,7 +21,10 @@ export function registerDiscordRoutes(app) {
       : [];
     res.json({
       guilds,
-      configs: listGuildConfigs().map((c) => ({ ...c, options: reminderOptions(c.guild_id) })),
+      configs: (await listGuildConfigs()).map((c) => ({
+        ...c,
+        options: reminderOptions(c.guild_id),
+      })),
       categories,
       publicCalendarUrl:
         setting('public_calendar_url') ||
@@ -29,7 +33,7 @@ export function registerDiscordRoutes(app) {
       netlify: publicSyncStatus(),
     });
   });
-  app.get('/api/guilds/:id/channels', auth, admin, async (req, res) => {
+  app.get('/api/guilds/:id/channels', auth, admin, forwardActiveBot, async (req, res) => {
     const client = getDiscordClient(),
       guild = client?.guilds.cache.get(req.params.id);
     if (!guild) return res.status(404).json({ error: 'บอทยังไม่อยู่ใน server นี้' });
@@ -42,8 +46,10 @@ export function registerDiscordRoutes(app) {
       });
     }
   });
-  app.post('/api/settings/discord', auth, admin, csrf, async (req, res) => {
-    const previous = listGuildConfigs().find((c) => c.guild_id === String(req.body.guildId));
+  app.post('/api/settings/discord', auth, admin, csrf, forwardActiveBot, async (req, res) => {
+    const previous = (await listGuildConfigs()).find(
+      (c) => c.guild_id === String(req.body.guildId),
+    );
     if (previous?.channel_id !== String(req.body.channelId)) {
       const pinError = checkCalendarSetupPin(req.body.secretPin, 'web:' + req.auth.user.id);
       if (pinError) return res.status(403).json({ error: pinError });
@@ -64,25 +70,27 @@ export function registerDiscordRoutes(app) {
         const url = new URL(req.body.publicCalendarUrl);
         if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
           throw new Error('URL ปฏิทินต้องเป็น http หรือ https');
-        setSetting('public_calendar_url', url.origin);
+        await setSetting('public_calendar_url', url.origin);
       }
-      saveGuildConfig(guild.id, guild.name, channel.id, req.body.defaultReminder);
-      saveReminderOptions(guild.id, options);
+      await saveGuildConfig(guild.id, guild.name, channel.id, req.body.defaultReminder);
+      await saveReminderOptions(guild.id, options);
       res.json({ ok: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
-  app.post('/api/settings/discord/test', auth, admin, csrf, async (req, res) => {
+  app.post('/api/settings/discord/test', auth, admin, csrf, forwardActiveBot, async (req, res) => {
     try {
-      const config = listGuildConfigs().find((c) => c.guild_id === String(req.body.guildId));
+      const config = (await listGuildConfigs()).find(
+        (c) => c.guild_id === String(req.body.guildId),
+      );
       if (!config?.channel_id) throw new Error('บันทึก channel ก่อนส่งทดสอบ');
       const client = getDiscordClient();
       if (!client?.isReady()) throw new Error('บอทยังไม่ออนไลน์');
       const day = calendarDay();
       const options = reminderOptions(config.guild_id);
       const events = dailySummaryEvents(
-        listExpandedEvents(day.startsAt, day.endsAt, config.guild_id),
+        await listExpandedEvents(day.startsAt, day.endsAt, config.guild_id),
         day,
         config,
         options,

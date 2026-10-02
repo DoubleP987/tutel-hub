@@ -28,7 +28,14 @@ export default async function handler(req, res) {
     const result = await saveSnapshot(data);
     return res.status(result.stale ? 409 : 200).json(result);
   } catch (error) {
-    console.error('[calendar] write failed:', error.name);
+    console.error(
+      '[calendar] write failed:',
+      error.name,
+      String(error.message || '')
+        .replace(/https?:\/\/\S+/g, '[url]')
+        .replace(/[A-Za-z0-9_-]{40,}/g, '[redacted]')
+        .slice(0, 240),
+    );
     return res.status(503).json({ error: 'Unable to store calendar data. Retry later.' });
   }
 }

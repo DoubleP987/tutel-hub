@@ -1,6 +1,6 @@
 # Tutel promotional website / เว็บโปรโมท Tutel
 
-Standalone static site. Published separately through GitHub Pages. No bot, database, admin panel, tokens or build step is included here.
+Standalone static site. Published separately on Vercel at https://tutelbot.vercel.app/. No bot, database, admin panel, tokens or build step is included here.
 
 ## Preview / เปิดดู
 
@@ -49,11 +49,13 @@ Light (white) is always the first-visit default, regardless of device theme. The
 
 ธีมเริ่มต้นเป็นขาว ปุ่มพระจันทร์/ดวงอาทิตย์บนหัวเว็บเปลี่ยนธีมและจำไว้ในเบราว์เซอร์ ใช้ร่วมกันทั้งหน้าหลักและคู่มือ
 
-## GitHub Pages
+## Hosting / โฮสต์เว็บ
 
-Website: https://doublep987.github.io/tutel-hub/
+Website: https://tutelbot.vercel.app/
 
-GitHub Pages serves the `gh-pages` branch. Only `promo-site/` is copied there; no dependencies or bot secrets are published. After committing changes on main, run `powershell -File scripts/publish-promo.ps1` from the project root to update the website. Settings → Pages uses Deploy from a branch, `gh-pages`, `/` (root).
+Vercel serves `promo-site/` from `main` as the primary website. Framework: Other; root: `promo-site`; no install or build command; output: `.`.
+
+GitHub Pages is an optional secondary host serving the `gh-pages` branch. Only `promo-site/` is copied there; no dependencies or bot secrets are published. After committing changes on main, run `powershell -File scripts/publish-promo.ps1` from the project root to update the website. Settings → Pages uses Deploy from a branch, `gh-pages`, `/` (root).
 
 ## Version / เวอร์ชัน
 

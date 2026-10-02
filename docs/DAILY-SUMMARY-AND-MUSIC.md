@@ -9,7 +9,7 @@ This update supersedes the per-event reminder schedules and SoundCloud defaults 
 - Includes all-day, timed, recurring and overlapping multi-day events, subject to the guild's category/nonholiday filters and event visibility.
 - All-day events appear first, followed by timed events. Empty dates produce no new message.
 - Later edits change the recorded Discord message instead of sending another message. Deleted Discord messages are not recreated automatically.
-- Restarting after the configured time catches up today only. Keep one bot process per token; delivery records provide best-effort deduplication, not a transaction spanning SQLite and Discord.
+- Restarting after the configured time catches up today only. Keep one bot process per token; delivery records provide best-effort deduplication, not a transaction spanning the configured database and Discord.
 - Long summaries include a UTF-8 text attachment containing the full agenda. The bot needs View Channel, Send Messages, Embed Links and, for long agendas, Attach Files.
 - Calendar button opens the correct date; private link replies expire after 30 seconds. Only the latest notification keeps the calendar button.
 - Legacy `beforeEnabled`, `beforeTime`, event reminder offsets and `default_reminder` are retained as stored metadata but do not create additional automatic notifications.
@@ -23,7 +23,7 @@ This update supersedes the per-event reminder schedules and SoundCloud defaults 
 - `/music settings` shows the current guild source.
 - `/music settings source:youtube` or `source:soundcloud` saves the choice. Requires Manage Server permission.
 - Admin control panel → bot controls → each guild's music source selector offers the same setting.
-- Stored in SQLite `app_settings` as `music_source:<guild ID>`. No schema migration or new dependency is required.
+- Stored in the configured database `app_settings` as `music_source:<guild ID>`. No schema migration or new dependency is required.
 - Searches in `/play` and future `/randommusic` selections use the source. Explicit links keep their own provider; existing queued tracks are unchanged.
 - Audio continues to stream through yt-dlp stdout and FFmpeg without saving song files. Source availability still depends on the running server's network and provider restrictions.
 
@@ -35,4 +35,8 @@ This update supersedes the per-event reminder schedules and SoundCloud defaults 
 
 ## Rollout / การอัปเดต
 
-Back up source and SQLite, copy updated source files, register slash commands, then restart the single running bot service. No public-calendar frontend deployment is required for this backend/admin change. Do not replace the running server's `.env` or database.
+Back up source and the configured database, copy updated source files, register slash commands, then restart the single running bot service. No public-calendar frontend deployment is required for this backend/admin change. Do not replace the running server's `.env` or database.
+
+## Language, help and Loop
+
+The latest music panel includes Loop for the current track. Skip bypasses the repeat; stop/leave/live radio disable it. Labels and built-in summary headings follow `src/config/bot.js` or the optional `BOT_LANGUAGE` override. `/help` gives the invoking user private website, guide and repository buttons. See [language configuration](BOT-LANGUAGE.md), [music controls](MUSIC-PANEL.md) and [MongoDB/failover](MONGODB-FAILOVER.md).

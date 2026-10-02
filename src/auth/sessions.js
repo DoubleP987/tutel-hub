@@ -1,27 +1,25 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { db } from '../database/connection.js';
+import { data } from '../database/connection.js';
 
-export function createSession(userId) {
+export async function createSession(userId) {
   const token = randomBytes(32).toString('base64url');
   const csrf = randomBytes(24).toString('base64url');
-  db.prepare('INSERT INTO sessions(token_hash,user_id,csrf,expires_at) VALUES(?,?,?,?)').run(
-    createHash('sha256').update(token).digest('hex'),
-    userId,
+  await data.insert('sessions', {
+    token_hash: createHash('sha256').update(token).digest('hex'),
+    user_id: userId,
     csrf,
-    Date.now() + 8 * 60 * 60 * 1000,
-  );
+    expires_at: Date.now() + 8 * 60 * 60 * 1000,
+  });
   return { token, csrf };
 }
-export function getSession(token) {
+export async function getSession(token) {
   if (!token) return null;
   const hash = createHash('sha256').update(token).digest('hex');
-  const row = db
-    .prepare(
-      'SELECT s.csrf,s.expires_at,u.id,u.username,u.role,u.must_change FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?',
-    )
-    .get(hash);
+  const session = await data.findOne('sessions', { token_hash: hash });
+  const user = session ? await data.findOne('users', { id: session.user_id }) : null;
+  const row = session && user ? { ...session, ...user } : null;
   if (!row || row.expires_at < Date.now()) {
-    db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hash);
+    await data.remove('sessions', { token_hash: hash });
     return null;
   }
   return {
@@ -30,6 +28,6 @@ export function getSession(token) {
     user: { id: row.id, username: row.username, role: row.role, mustChange: !!row.must_change },
   };
 }
-export function deleteSession(hash) {
-  db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hash);
+export async function deleteSession(hash) {
+  await data.remove('sessions', { token_hash: hash });
 }

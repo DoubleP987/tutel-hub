@@ -71,6 +71,21 @@
             <button id="bot-toggle" class="primary"></button>
           </div>
           <div id="bot-status" class="status-card"></div>
+          <section id="cluster-control" class="status-card hidden" aria-label="เครื่องที่รันบอท">
+            <div>
+              <h2>เครื่องที่รัน Tutel</h2>
+              <p id="cluster-status" class="muted"></p>
+              <div class="actions">
+                <button type="button" data-cluster-target="auto">อัตโนมัติ</button
+                ><button type="button" data-cluster-target="homeserver">homeserver</button
+                ><button type="button" data-cluster-target="oracle">Oracle</button>
+              </div>
+              <p class="muted">
+                โหมดอัตโนมัติใช้ homeserver เป็นหลัก ถ้าเครื่องหายไป Oracle จะรับต่อภายในประมาณ
+                12–15 วินาที เพลงและคิวที่กำลังเล่นต้องเริ่มใหม่
+              </p>
+            </div>
+          </section>
           <h2 class="section-heading">กำลังเล่นใน voice</h2>
           <div id="music-list" class="music-list"></div>
         </section>

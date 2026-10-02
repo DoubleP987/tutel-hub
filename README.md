@@ -7,6 +7,12 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
 
+## Promotional website
+
+[**View website →**](https://doublep987.github.io/tutel-hub/) · [Website guide](promo-site/README.md)
+
+**Version: 1.0.0**. The bilingual promotional site lives in `promo-site/`. Light is the default; a theme switch remembers light/dark preference. GitHub Pages publishes only this static folder, independently of the bot, admin panel and public calendar.
+
 ## Features
 
 - Stream music using yt-dlp → FFmpeg → Discord voice without saving song files. YouTube is the default; change each guild to SoundCloud with `/music settings` or the admin panel. Availability depends on the source.

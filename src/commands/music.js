@@ -52,9 +52,16 @@ export const musicHandlers = {
     if (!guildOnly(interaction)) return;
     const channel = interaction.member.voice && interaction.member.voice.channel;
     if (!channel) return interaction.reply({ content: 'เข้าห้อง voice ก่อนนะ', ephemeral: true });
-    enableRandomMode(interaction.guildId, channel);
-    return interaction.reply(
-      `เปิดโหมดสุ่มเพลงจาก ${musicSourceLabel(getMusicSource(interaction.guildId))} แล้ว เพลงจะเล่นต่อเนื่องจนกด /stop หรือ /leave`,
+    await interaction.deferReply();
+    const state = await enableRandomMode(interaction.guildId, channel);
+    if (!state.randomMode) return interaction.editReply('โหมดสุ่มถูกหยุดแล้ว');
+    const playing = state.player.state.status === 'playing' && state.current;
+    return interaction.editReply(
+      `เปิดโหมดสุ่มเพลงเดี่ยวจาก ${musicSourceLabel(getMusicSource(interaction.guildId))} แล้ว · คละศิลปินและแนวเพลง\n` +
+        (playing
+          ? `กำลังเล่น **${state.current.title}**`
+          : 'กำลังค้นหาเพลงที่เปิดได้ ระบบจะข้ามรายการที่เปิดไม่ได้และลองต่ออัตโนมัติ') +
+        '\nเล่นต่อเนื่องจนกด /stop หรือ /leave',
     );
   },
   async queue(interaction) {

@@ -1,5 +1,7 @@
 import { t } from '../i18n/bot.js';
-import { Client, GatewayIntentBits, Events } from 'discord.js';
+import { Client, GatewayIntentBits, Events, ActivityType } from 'discord.js';
+import { botConfig } from '../config/bot.js';
+import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
 import { destroyPlayer } from '../music/player.js';
@@ -31,6 +33,11 @@ export async function startBot() {
     });
     client = instance;
     instance.once(Events.ClientReady, (ready) => {
+      ready.user.setPresence({
+        status: 'online',
+        activities: [{ name: botConfig.statusText, type: ActivityType.Playing }],
+      });
+      console.log('[bot] presence: ' + botConfig.statusText);
       console.log('Ready as ' + ready.user.tag);
       void initializeMusicPanels(ready).catch((error) =>
         console.error('[music panel] initialize:', error.message),
@@ -38,6 +45,7 @@ export async function startBot() {
     });
     instance.on(Events.InteractionCreate, async (interaction) => {
       if (!canRunBot()) return;
+      managePrivateReplies(interaction);
       if (
         interaction.isButton() ||
         interaction.isStringSelectMenu() ||
@@ -69,6 +77,10 @@ export async function startBot() {
       }
     });
     instance.on(Events.Error, (error) => console.error('Discord client error:', error));
+    instance.on(Events.VoiceStateUpdate, (oldState, newState) => {
+      if (oldState.id === instance.user?.id && oldState.channelId && !newState.channelId)
+        destroyPlayer(oldState.guild.id);
+    });
     try {
       await instance.login(token);
       return botStatus();
@@ -89,6 +101,7 @@ export async function stopBot() {
   if (!old) return botStatus();
   for (const guildId of old.guilds.cache.keys()) destroyPlayer(guildId);
   await stopMusicPanels();
+  await clearPrivateReplies();
   old.destroy();
   if (client === old) client = null;
   return botStatus();

@@ -1,6 +1,7 @@
 import { t } from '../i18n/bot.js';
 import { playRadio } from '../music/player.js';
 import { guildOnly } from './shared.js';
+import { showMusicPanel } from '../music/panel.js';
 import {
   RADIO_STATIONS,
   RADIO_REGIONS,
@@ -143,6 +144,7 @@ export const radioHandlers = {
     }
     if (!interaction.deferred) await interaction.deferReply();
     playRadio(interaction.guildId, channel, selected);
+    await showMusicPanel(interaction);
     return interaction.editReply(
       t('กำลังเปิดวิทยุสด ') +
         selected.name +

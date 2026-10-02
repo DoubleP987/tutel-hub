@@ -232,5 +232,7 @@
   "กิจกรรมที่เพิ่มเอง": "Custom events",
   "เพลง วิทยุสด และปฏิทินสำหรับเซิร์ฟเวอร์ Discord\nใช้ /play, /radio หรือ /calendar · /help เปิดเว็บและคู่มือ\n{0}\nby Double_P": "Music, live radio and calendar reminders for your Discord server.\nUse /play, /radio or /calendar · /help opens the website and guide.\n{0}\nby Double_P",
   "กรุณาใช้วันเวลาแบบ YYYY-MM-DD HH:mm (เวลาไทย)": "Use YYYY-MM-DD HH:mm in Thailand time.",
-  "วันเวลาไม่ถูกต้อง": "Invalid date or time."
+  "วันเวลาไม่ถูกต้อง": "Invalid date or time.",
+  "ค้นหาหรือเปิดเพลงไม่สำเร็จ ลองใส่ชื่อเพลงพร้อมศิลปินหรือลิงก์เพลงโดยตรง": "Unable to search or open this track. Try the song title with its artist, or a direct track link.",
+  "ไม่พบเพลงจากแหล่งค้นหา": "No tracks were found from this source."
 }

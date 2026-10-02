@@ -11,3 +11,6 @@ export function invalidateMusicRequests(guildId) {
 export function musicChanged(guildId, lastTrack = null) {
   musicEvents.emit('change', guildId, lastTrack);
 }
+export function musicLeft(guildId) {
+  musicEvents.emit('leave', guildId);
+}

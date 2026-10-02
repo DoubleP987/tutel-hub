@@ -3,16 +3,20 @@ import { spawn } from 'node:child_process';
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import ffmpegStaticPath from 'ffmpeg-static';
 import { searchTracks, ytDlpPath, ytDlpRuntimeArgs } from './search.js';
+import { selectRequestedTrack } from './selection.js';
 
 const executable = ytDlpPath;
 const ffmpegPath = process.env.FFMPEG_PATH || ffmpegStaticPath;
 export async function resolveTrack(query, source = 'youtube') {
-  const sourcePrefix = source === 'soundcloud' ? 'scsearch3' : 'ytsearch1';
-  const sourceQuery = query.includes('://') ? query : sourcePrefix + ':' + query;
-  const results = await searchTracks(sourceQuery);
-  const track = results.find((item) => !item.duration || item.duration > 30);
-  if (!track)
-    throw new Error(t('ผลค้นหาที่พบเป็นคลิปสั้น กรุณาลองชื่อศิลปินหรือชื่อเพลงเพิ่มเติม'));
+  query = String(query || '').trim();
+  const direct = /^https?:\/\//i.test(query);
+  const sourcePrefix = source === 'soundcloud' ? 'scsearch5' : 'ytsearch5';
+  const sourceQuery = direct ? query : sourcePrefix + ':' + query;
+  // Flat name search avoids extracting full media metadata for five videos.
+  // The chosen URL is extracted when the audio stream starts.
+  const results = await searchTracks(sourceQuery, { flat: !direct });
+  const track = selectRequestedTrack(results, { direct });
+  if (!track) throw new Error(t('ไม่พบเพลงจากแหล่งค้นหา'));
   return track;
 }
 

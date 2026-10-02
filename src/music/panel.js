@@ -194,6 +194,10 @@ function panelBody(guildId, record) {
 }
 async function refresh(guildId) {
   if (!client?.isReady()) return;
+  if (!getPlayer(guildId)?.connection && !pending.has(guildId)) {
+    await deletePanel(guildId);
+    return;
+  }
   const record = storedPanel(guildId);
   if (!record?.messageId || !client.guilds.cache.has(guildId)) return;
   const last = snapshotTrack(getPlayer(guildId), record.lastTrack);
@@ -246,27 +250,15 @@ export async function ensureMusicPanel(interaction) {
   return serialize(interaction.guildId, async () => {
     const guildId = interaction.guildId;
     const old = storedPanel(guildId);
-    if (old?.channelId === interaction.channelId && old.messageId) {
-      try {
-        await interaction.channel.messages.fetch(old.messageId);
-        await refresh(guildId);
-        return;
-      } catch (error) {
-        if (![10008, 10003].includes(error.code)) throw error;
-        old.messageId = null;
-        await setSetting(key(guildId), JSON.stringify(old));
-        fingerprints.delete(guildId);
-      }
-    }
     const channel = interaction.channel;
     if (!channel?.isSendable?.()) throw new Error(t('ช่องนี้ส่งแผงควบคุมไม่ได้'));
     if (old?.messageId) {
       try {
         const previousChannel = await client.channels.fetch(old.channelId);
         const previous = await previousChannel.messages.fetch(old.messageId);
-        await previous.edit({ components: [] });
+        await previous.delete();
       } catch (error) {
-        console.warn('[music panel] old panel:', error.code || error.name);
+        if (![10008, 10003].includes(error.code)) throw error;
       }
     }
     const record = {
@@ -281,6 +273,31 @@ export async function ensureMusicPanel(interaction) {
     await setSetting(key(guildId), JSON.stringify(record));
     fingerprints.set(guildId, JSON.stringify(body));
   });
+}
+export async function removeMusicPanel(guildId) {
+  return serialize(guildId, () => deletePanel(guildId));
+}
+async function deletePanel(guildId) {
+  clearTimeout(timers.get(guildId));
+  timers.delete(guildId);
+  pending.delete(guildId);
+  const record = storedPanel(guildId);
+  if (record?.messageId && client) {
+    try {
+      const channel = await client.channels.fetch(record.channelId);
+      const message = await channel.messages.fetch(record.messageId);
+      await message.delete();
+    } catch (error) {
+      if (![10008, 10003].includes(error.code)) throw error;
+    }
+  }
+  await setSetting(key(guildId), 'null');
+  fingerprints.delete(guildId);
+}
+function onMusicLeave(guildId) {
+  void removeMusicPanel(guildId).catch((error) =>
+    console.error('[music panel] remove:', error.code || error.name),
+  );
 }
 export async function showMusicPanel(interaction) {
   try {
@@ -304,6 +321,8 @@ export async function initializeMusicPanels(discordClient) {
   musicEvents.on('change', scheduleRefresh);
   musicEvents.off('cancel', musicPanelPending);
   musicEvents.on('cancel', musicPanelPending);
+  musicEvents.off('leave', onMusicLeave);
+  musicEvents.on('leave', onMusicLeave);
   clearInterval(refreshTimer);
   refreshTimer = setInterval(async () => {
     for (const guildId of client?.guilds.cache.keys() || []) {
@@ -314,7 +333,7 @@ export async function initializeMusicPanels(discordClient) {
   refreshTimer.unref();
   for (const row of await data.findMany('app_settings', { key: { $like: 'music_panel:%' } })) {
     const guildId = row.key.slice('music_panel:'.length);
-    await serialize(guildId, () => refresh(guildId)).catch((error) =>
+    await removeMusicPanel(guildId).catch((error) =>
       console.warn('[music panel] restore:', error.message),
     );
   }
@@ -323,10 +342,11 @@ export async function stopMusicPanels() {
   clearInterval(refreshTimer);
   musicEvents.off('change', scheduleRefresh);
   musicEvents.off('cancel', musicPanelPending);
+  musicEvents.off('leave', onMusicLeave);
   for (const timer of timers.values()) clearTimeout(timer);
   timers.clear();
   for (const guildId of client?.guilds.cache.keys() || [])
-    await serialize(guildId, () => refresh(guildId)).catch(() => {});
+    await removeMusicPanel(guildId).catch(() => {});
   client = null;
   pending.clear();
   busy.clear();

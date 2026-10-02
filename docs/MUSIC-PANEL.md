@@ -1,11 +1,11 @@
 # Persistent chat music panel / แผงเพลงในแชท
 
-The panel is created automatically by `/play` and `/randommusic`. No extra slash command is needed.
+The panel is created automatically by `/play`, `/randommusic` and `/radio play`. No extra slash command is needed.
 
 ## Behavior
 
 - One active panel per guild. Playback and queue changes edit the same Discord message.
-- A play request in another text channel creates the panel there and removes the old panel's buttons. Old interactions are rejected even if editing the previous message fails.
+- Every new play request creates the panel after that request, even in the same channel, and deletes the previous panel message. Old interactions are rejected.
 - Stopping, leaving or finishing the queue keeps the latest track visible, with a stopped status.
 - Channel/message IDs and latest track metadata live in the configured SQLite/MongoDB `app_settings`, under `music_panel:<guild ID>`. Restart restores existing panels as stopped; it does not resume audio or create unsolicited replacement messages.
 - If the panel is deleted, the next play/random request recreates it. Periodic updates do not continually repost deleted panels.
@@ -52,3 +52,13 @@ The Loop button repeats the current song until switched off. Skip bypasses the r
 ## Language and help / ภาษาและคู่มือ
 
 `src/config/bot.js` and `BOT_LANGUAGE` select Thai/English control labels and messages. Thai is the default. `/help` privately displays website/guide buttons. See [English](BOT-LANGUAGE.md) / [ภาษาไทย](BOT-LANGUAGE.th.md).
+
+## Message lifecycle update
+
+Leaving or disconnecting voice deletes the panel message. Bot shutdown also removes panels; startup cleans stale stored panels instead of restoring a disconnected player. `/stop` keeps the panel while the bot remains connected.
+
+Private replies (the messages with Discord Dismiss) replace the previous private response for the same user and channel. Another person’s response and public messages are preserved. Delayed older responses cannot replace the newest response. These references live in process memory; responses are cleaned before the 15-minute interaction webhook expiry. Responses sent before this update may still need manual dismissal.
+
+Bot presence uses **Playing** with `/help | tutelbot.vercel.app`, configured as `statusText` in `src/config/bot.js`. This avoids the custom-status bubble. Discord controls which activity details appear in the profile.
+
+Tests: `node --test tests/*.test.js` includes panel movement/removal, private-response isolation and late-response handling, short direct links and both bot languages.

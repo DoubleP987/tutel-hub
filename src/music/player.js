@@ -10,7 +10,7 @@ import {
 import { createTrackResource, createRadioResource } from './stream.js';
 import { resolveRandomTrack, clearRandomSession } from './random.js';
 import { getMusicSource } from './settings.js';
-import { musicChanged, invalidateMusicRequests } from './events.js';
+import { musicChanged, musicLeft, invalidateMusicRequests } from './events.js';
 import { requireBotLease } from '../cluster/state.js';
 const players = new Map();
 function getState(guildId) {
@@ -316,10 +316,12 @@ export function destroyPlayer(guildId) {
   const state = players.get(guildId);
   if (!state) {
     invalidateMusicRequests(guildId);
+    musicLeft(guildId);
     return;
   }
   stop(guildId);
   state.connection?.destroy();
   players.delete(guildId);
+  musicLeft(guildId);
   musicChanged(guildId, state.lastTrack);
 }

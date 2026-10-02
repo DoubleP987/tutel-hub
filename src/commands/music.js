@@ -69,6 +69,11 @@ export const musicHandlers = {
           count +
           t(' เพลง'),
       );
+    } catch (error) {
+      console.error('[play] failed:', error.message);
+      return interaction.editReply(
+        t('ค้นหาหรือเปิดเพลงไม่สำเร็จ ลองใส่ชื่อเพลงพร้อมศิลปินหรือลิงก์เพลงโดยตรง'),
+      );
     } finally {
       musicPanelPending(interaction.guildId);
     }

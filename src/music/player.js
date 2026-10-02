@@ -6,6 +6,7 @@ import {
   NoSubscriberBehavior,
 } from '@discordjs/voice';
 import { createTrackResource, createRadioResource, resolveRandomTrack } from './stream.js';
+import { getMusicSource } from './settings.js';
 const players = new Map();
 function getState(guildId) {
   if (!players.has(guildId)) {
@@ -78,7 +79,8 @@ async function playNext(guildId) {
   const generation = state.generation;
   try {
     let track = state.queue.shift() || null;
-    if (!track && state.randomMode) track = await resolveRandomTrack(state.randomHistory);
+    if (!track && state.randomMode)
+      track = await resolveRandomTrack(state.randomHistory, getMusicSource(guildId));
     if (players.get(guildId) !== state || state.generation !== generation) return;
     if (state.queue.length) {
       if (track && state.randomMode && !state.queue.some((item) => item.url === track.url))

@@ -355,8 +355,7 @@ async function editEvent(id) {
   field(f, 'startsAt').value = bkkInput(e.starts_at);
   field(f, 'endsAt').value = bkkInput(e.ends_at);
   field(f, 'recurrence').value = e.recurrence;
-  field(f, 'reminder').value =
-    e.all_day || e.reminder_mode === 'standard' ? 'standard' : String(e.reminders[0] ?? 15);
+  field(f, 'reminder').value = 'standard';
   field(f, 'guildId').value = e.guild_id || '';
   field(f, 'holiday').checked = !!e.holiday;
   field(f, 'allDay').checked = !!e.all_day;
@@ -531,7 +530,16 @@ async function loadBot() {
               (m.playing ? 'กำลังเล่น: ' + esc(m.playing) : 'ไม่มีเพลงกำลังเล่น') +
               ' · คิว ' +
               m.queue +
-              '</p><div class="actions">' +
+              '</p><label>แหล่งค้นหาเพลง<select data-music-source="' +
+              esc(m.guildId) +
+              '">' +
+              '<option value="youtube" ' +
+              (m.source === 'youtube' ? 'selected' : '') +
+              '>YouTube</option>' +
+              '<option value="soundcloud" ' +
+              (m.source === 'soundcloud' ? 'selected' : '') +
+              '>SoundCloud</option>' +
+              '</select></label><div class="actions">' +
               ['pause', 'resume', 'skip', 'stop', 'leave']
                 .map(
                   (a) =>
@@ -557,6 +565,23 @@ async function loadBot() {
     $$('[data-action]').forEach(
       (b) => (b.onclick = () => musicAction(b.dataset.guild, b.dataset.action)),
     );
+    $$('[data-music-source]').forEach((select) => {
+      select.onchange = async () => {
+        select.disabled = true;
+        try {
+          await api('/api/control/music/source', {
+            method: 'PUT',
+            body: { guildId: select.dataset.musicSource, source: select.value },
+          });
+          toast('บันทึกแหล่งเพลงของเซิร์ฟเวอร์นี้แล้ว');
+        } catch (error) {
+          toast(error.message);
+          await loadBot();
+        } finally {
+          select.disabled = false;
+        }
+      };
+    });
   } catch (e) {
     toast(e.message);
   }
@@ -626,7 +651,7 @@ const reminderDefaults = {
   notifyNonHolidays: true,
   color: '#4285f4',
   template: '📅 {title}\n{schedule} · {date}\n{description}',
-  beforeEnabled: true,
+  beforeEnabled: false,
   beforeTime: '12:00',
   dayEnabled: true,
   dayTime: '07:00',
@@ -650,7 +675,6 @@ function populateReminderOptions(value) {
   for (const [name, key] of [
     ['notifyEnabled', 'enabled'],
     ['notifyNonHolidays', 'notifyNonHolidays'],
-    ['beforeEnabled', 'beforeEnabled'],
     ['dayEnabled', 'dayEnabled'],
     ['showDetails', 'showDetails'],
   ])
@@ -658,7 +682,6 @@ function populateReminderOptions(value) {
   for (const [name, key] of [
     ['notificationColor', 'color'],
     ['notificationTemplate', 'template'],
-    ['beforeTime', 'beforeTime'],
     ['dayTime', 'dayTime'],
   ])
     field(f, name).value = options[key];
@@ -672,8 +695,8 @@ function readReminderOptions() {
     notifyNonHolidays: field(f, 'notifyNonHolidays').checked,
     color: field(f, 'notificationColor').value,
     template: field(f, 'notificationTemplate').value,
-    beforeEnabled: field(f, 'beforeEnabled').checked,
-    beforeTime: field(f, 'beforeTime').value,
+    beforeEnabled: false,
+    beforeTime: '12:00',
     dayEnabled: field(f, 'dayEnabled').checked,
     dayTime: field(f, 'dayTime').value,
     showDetails: field(f, 'showDetails').checked,
@@ -684,17 +707,20 @@ function previewNotification() {
   if (!field(f, 'notificationColor')) return;
   const p = $('#notification-preview'),
     sample = {
-      title: 'วันหยุด / ประชุมทีม',
-      date: 'วันศุกร์ที่ 2 ตุลาคม 2569 · ทั้งวัน',
-      schedule: 'พรุ่งนี้',
-      description: field(f, 'showDetails').checked ? 'รายละเอียดกิจกรรมของคุณ' : '',
+      title: 'ปฏิทินวันนี้ · 2 รายการ',
+      date: 'วันศุกร์ที่ 2 ตุลาคม 2569',
+      schedule: 'วันนี้',
+      description: '',
       category: 'วันหยุดราชการ',
     };
   p.style.borderLeftColor = field(f, 'notificationColor').value;
-  p.textContent = field(f, 'notificationTemplate').value.replace(
-    /\{(title|date|schedule|description|category)\}/g,
-    (_, key) => sample[key],
-  );
+  p.textContent =
+    field(f, 'notificationTemplate').value.replace(
+      /\{(title|date|schedule|description|category)\}/g,
+      (_, key) => sample[key],
+    ) +
+    '\n\n• ทั้งวัน · วันสำคัญ\n\n• 11:30–12:30 · ประชุมทีม' +
+    (field(f, 'showDetails').checked ? '\n  รายละเอียดกิจกรรมของคุณ' : '');
 }
 function updateChannelPin() {
   const f = $('#settings-form'),

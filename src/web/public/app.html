@@ -91,16 +91,7 @@
               >ส่งแจ้งเตือนใน channel<select name="channelId" id="channel-select" required>
                 <option value="">เลือก channel</option>
               </select></label
-            ><label
-              >เตือนล่วงหน้าเริ่มต้น<select name="defaultReminder">
-                <option value="0">เมื่อถึงเวลา</option>
-                <option value="5">5 นาที</option>
-                <option value="15">15 นาที</option>
-                <option value="30">30 นาที</option>
-                <option value="60">1 ชั่วโมง</option>
-                <option value="1440">1 วัน</option>
-              </select></label
-            ><label
+            ><input type="hidden" name="defaultReminder" value="15" /><label
               >URL เว็บดูปฏิทิน<input
                 type="url"
                 name="publicCalendarUrl"
@@ -125,23 +116,18 @@
               </p>
             </div>
             <div class="settings-section">
-              <h3>เวลาแจ้งเตือน · เวลาไทย</h3>
+              <h3>สรุปปฏิทินรายวัน · เวลาไทย</h3>
               <div class="form-row">
                 <label class="check-row"
-                  ><input type="checkbox" name="beforeEnabled" checked /> ก่อนหน้า 1 วัน</label
-                ><label
-                  >เวลาก่อนหน้า<input type="time" name="beforeTime" value="12:00" required
-                /></label>
-              </div>
-              <div class="form-row">
-                <label class="check-row"
-                  ><input type="checkbox" name="dayEnabled" checked /> ในวันที่กำหนด</label
-                ><label
-                  >เวลากิจกรรมทั้งวัน<input type="time" name="dayTime" value="07:00" required
+                  ><input type="checkbox" name="dayEnabled" checked /> ส่งสรุปวันนี้</label
+                >
+                <label
+                  >เวลาส่งสรุป<input type="time" name="dayTime" value="07:00" required
                 /></label>
               </div>
               <p class="subtle">
-                กิจกรรมที่มีเวลาแจ้งเมื่อเริ่มกิจกรรม ส่วนการเตือนเป็นนาทีใช้ค่าของกิจกรรมนั้น
+                รวมรายการทั้งวันและรายการที่มีเวลาในข้อความเดียวต่อวัน ตามหมวดที่เลือก
+                หากแก้กิจกรรมหลังส่งจะอัปเดตข้อความเดิม วันที่ไม่มีรายการจะไม่ส่ง
               </p>
             </div>
             <div class="settings-section">
@@ -164,8 +150,8 @@
                 >
               </label>
               <p class="subtle">
-                ใช้ {title} ชื่อกิจกรรม · {date} วันที่ · {schedule} พรุ่งนี้/วันนี้ · {description}
-                รายละเอียด · {category} หมวด
+                ใช้ {title} หัวข้อสรุป · {date} วันที่ · {schedule} วันนี้ · {category} หมวด
+                รายการกิจกรรมจะต่อท้ายเสมอ
               </p>
               <label class="check-row"
                 ><input type="checkbox" name="showDetails" checked />
@@ -309,14 +295,8 @@
               <option value="yearly">ทุกปี</option>
             </select></label
           ><label
-            >เตือนล่วงหน้า<select name="reminder">
-              <option value="standard" selected>วันก่อน 12:00 + วันจริง (ทั้งวัน 07:00)</option>
-              <option value="0">เมื่อถึงเวลา</option>
-              <option value="5">5 นาที</option>
-              <option value="15">15 นาที</option>
-              <option value="30">30 นาที</option>
-              <option value="60">1 ชั่วโมง</option>
-              <option value="1440">1 วัน</option>
+            >การแจ้งเตือน<select name="reminder">
+              <option value="standard" selected>รวมในสรุปประจำวัน</option>
             </select></label
           >
         </div>

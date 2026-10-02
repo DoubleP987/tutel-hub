@@ -4,7 +4,8 @@ import { setting, setSetting } from '../../calendar/db.js';
 import { listExpandedEvents, saveGuildConfig, listGuildConfigs } from '../../calendar/service.js';
 import { getDiscordClient } from '../../bot/runtime.js';
 import { canSendReminders, sendableChannels } from '../channels.js';
-import { sendCalendarNotification } from '../../calendar/notifications.js';
+import { sendDailyCalendarSummary } from '../../calendar/notifications.js';
+import { calendarDay, dailySummaryEvents } from '../../calendar/daily-summary.js';
 import { reminderOptions, saveReminderOptions, normalizeOptions } from '../../calendar/options.js';
 import { categories } from '../../calendar/categories.js';
 import { auth, admin, csrf } from '../middleware/security.js';
@@ -78,20 +79,18 @@ export function registerDiscordRoutes(app) {
       if (!config?.channel_id) throw new Error('บันทึก channel ก่อนส่งทดสอบ');
       const client = getDiscordClient();
       if (!client?.isReady()) throw new Error('บอทยังไม่ออนไลน์');
-      const event = listExpandedEvents(
-        new Date(),
-        new Date(Date.now() + 30 * 86400000),
-        config.guild_id,
-      )[0];
-      if (!event) throw new Error('ไม่มีรายการปฏิทินสำหรับทดสอบ');
-      await sendCalendarNotification(
-        client,
+      const day = calendarDay();
+      const options = reminderOptions(config.guild_id);
+      const events = dailySummaryEvents(
+        listExpandedEvents(day.startsAt, day.endsAt, config.guild_id),
+        day,
         config,
-        { ...event, title: 'ทดสอบปฏิทิน: ' + event.title },
-        { at: event.occurrence_at, end: event.occurrence_end },
-        { key: 'test:' + Date.now(), label: 'ทดสอบระบบ' },
+        options,
       );
-      res.json({ ok: true });
+      const result = await sendDailyCalendarSummary(client, config, day, events, options, {
+        test: true,
+      });
+      res.json({ ok: true, count: events.length, ...result });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

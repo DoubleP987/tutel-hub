@@ -52,16 +52,13 @@ function resolveQuery(sourceQuery) {
     });
   });
 }
-export async function resolveTrack(query) {
-  const searchPrefix = process.env.MUSIC_SEARCH_PREFIX || 'ytsearch1';
-  const sourcePrefix = searchPrefix === 'scsearch1' ? 'scsearch10' : searchPrefix;
+export async function resolveTrack(query, source = 'youtube') {
+  const sourcePrefix = source === 'soundcloud' ? 'scsearch10' : 'ytsearch1';
   const sourceQuery = query.includes('://') ? query : sourcePrefix + ':' + query;
   const results = await resolveQuery(sourceQuery);
   const track = results.find((item) => !item.duration || item.duration > 30);
   if (!track)
-    throw new Error(
-      'ผลค้นหา SoundCloud ที่พบเป็นพรีวิวสั้น กรุณาลองค้นด้วยชื่อศิลปินหรือชื่อเพลงเพิ่มเติม',
-    );
+    throw new Error('ผลค้นหาที่พบเป็นคลิปสั้น กรุณาลองค้นด้วยชื่อศิลปินหรือชื่อเพลงเพิ่มเติม');
   return track;
 }
 const randomSearches = [
@@ -74,10 +71,12 @@ const randomSearches = [
   'เพลงอินดี้ไทย',
   'เพลงรักไทย',
 ];
-export async function resolveRandomTrack(excludedUrls = []) {
+export async function resolveRandomTrack(excludedUrls = [], source = 'youtube') {
   const excluded = new Set(excludedUrls);
   const query = randomSearches[Math.floor(Math.random() * randomSearches.length)];
-  const results = await resolveQuery('scsearch10:' + query);
+  const results = await resolveQuery(
+    (source === 'soundcloud' ? 'scsearch10:' : 'ytsearch10:') + query,
+  );
   const candidates = results.filter(
     (track) => (!track.duration || track.duration > 30) && !excluded.has(track.url),
   );

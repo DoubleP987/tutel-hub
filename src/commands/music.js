@@ -8,14 +8,35 @@ import {
   destroyPlayer,
 } from '../music/player.js';
 import { duration, guildOnly } from './shared.js';
+import { PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { getMusicSource, setMusicSource, musicSourceLabel } from '../music/settings.js';
 
 export const musicHandlers = {
+  async music(interaction) {
+    if (!guildOnly(interaction)) return;
+    const source = interaction.options.getString('source');
+    if (source && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
+      return interaction.reply({
+        content: 'ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง',
+        flags: MessageFlags.Ephemeral,
+      });
+    const selected = source
+      ? setMusicSource(interaction.guildId, source)
+      : getMusicSource(interaction.guildId);
+    return interaction.reply({
+      content: `แหล่งค้นหาเพลงของเซิร์ฟเวอร์นี้: **${musicSourceLabel(selected)}**\nใช้กับ /play และ /randommusic เพลงที่อยู่ในคิวแล้วจะเล่นต่อจากแหล่งเดิม และลิงก์ตรงจะใช้แหล่งของลิงก์นั้น`,
+      flags: MessageFlags.Ephemeral,
+    });
+  },
   async play(interaction) {
     if (!guildOnly(interaction)) return;
     const channel = interaction.member.voice && interaction.member.voice.channel;
     if (!channel) return interaction.reply({ content: 'เข้าห้อง voice ก่อนนะ', ephemeral: true });
     await interaction.deferReply();
-    const track = await resolveTrack(interaction.options.getString('query', true));
+    const track = await resolveTrack(
+      interaction.options.getString('query', true),
+      getMusicSource(interaction.guildId),
+    );
     const count = enqueue(interaction.guildId, channel, track);
     return interaction.editReply(
       'เพิ่ม **' +
@@ -33,7 +54,7 @@ export const musicHandlers = {
     if (!channel) return interaction.reply({ content: 'เข้าห้อง voice ก่อนนะ', ephemeral: true });
     enableRandomMode(interaction.guildId, channel);
     return interaction.reply(
-      'เปิดโหมดสุ่มเพลงจาก SoundCloud แล้ว เพลงจะเล่นต่อเนื่องจนกด /stop หรือ /leave',
+      `เปิดโหมดสุ่มเพลงจาก ${musicSourceLabel(getMusicSource(interaction.guildId))} แล้ว เพลงจะเล่นต่อเนื่องจนกด /stop หรือ /leave`,
     );
   },
   async queue(interaction) {

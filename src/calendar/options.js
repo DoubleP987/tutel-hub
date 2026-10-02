@@ -6,7 +6,8 @@ export const defaults = {
   notifyNonHolidays: true,
   color: '#4285f4',
   template: '📅 {title}\n{schedule} · {date}\n{description}',
-  beforeEnabled: true,
+  // Legacy keys are retained for stored settings compatibility, not scheduled.
+  beforeEnabled: false,
   beforeTime: '12:00',
   dayEnabled: true,
   dayTime: '07:00',

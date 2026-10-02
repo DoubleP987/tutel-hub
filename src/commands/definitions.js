@@ -1,6 +1,23 @@
 import { SlashCommandBuilder, ChannelType } from 'discord.js';
 export const commands = [
   new SlashCommandBuilder()
+    .setName('music')
+    .setDescription('ดูหรือเปลี่ยนแหล่งค้นหาเพลงของเซิร์ฟเวอร์')
+    .addSubcommand((sub) =>
+      sub
+        .setName('settings')
+        .setDescription('ตั้งแหล่งเพลงแยกแต่ละเซิร์ฟเวอร์ (เริ่มต้น YouTube)')
+        .addStringOption((option) =>
+          option
+            .setName('source')
+            .setDescription('แหล่งค้นหาเพลง ใช้สิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยน')
+            .addChoices(
+              { name: 'YouTube', value: 'youtube' },
+              { name: 'SoundCloud', value: 'soundcloud' },
+            ),
+        ),
+    ),
+  new SlashCommandBuilder()
     .setName('calendar')
     .setDescription('ปฏิทินและการแจ้งเตือน Tutel')
     .addSubcommand((sub) =>
@@ -31,13 +48,6 @@ export const commands = [
             .setName('duration')
             .setDescription('ระยะเวลาเป็นนาที (เริ่มต้น 60)')
             .setMinValue(1)
-            .setMaxValue(10080),
-        )
-        .addIntegerOption((o) =>
-          o
-            .setName('reminder')
-            .setDescription('เตือนก่อนกี่นาที (ค่าเริ่มต้น 15)')
-            .setMinValue(0)
             .setMaxValue(10080),
         )
         .addStringOption((o) =>
@@ -72,14 +82,14 @@ export const commands = [
     .addSubcommand((sub) =>
       sub
         .setName('config')
-        .setDescription('ตั้งค่าเตือนล่วงหน้าของ server')
-        .addIntegerOption((o) =>
+        .setDescription('ตั้งเวลาส่งสรุปกิจกรรมรายวันของเซิร์ฟเวอร์')
+        .addStringOption((o) =>
           o
-            .setName('reminder')
-            .setDescription('นาทีก่อนถึงเวลา')
+            .setName('time')
+            .setDescription('เวลาไทย HH:mm เช่น 07:00')
             .setRequired(true)
-            .setMinValue(0)
-            .setMaxValue(10080),
+            .setMinLength(5)
+            .setMaxLength(5),
         ),
     )
     .addSubcommand((sub) =>
@@ -139,7 +149,7 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName('randommusic')
-    .setDescription('สุ่มเพลงจาก SoundCloud ต่อเนื่องจนกว่าจะสั่งหยุด'),
+    .setDescription('สุ่มเพลงจากแหล่งของเซิร์ฟเวอร์ต่อเนื่องจนกว่าจะสั่งหยุด'),
   new SlashCommandBuilder().setName('queue').setDescription('แสดงคิวเพลง'),
   new SlashCommandBuilder().setName('skip').setDescription('ข้ามเพลงปัจจุบัน'),
   new SlashCommandBuilder().setName('stop').setDescription('หยุดเพลงและล้างคิว'),

@@ -9,6 +9,7 @@ import {
   destroyPlayer,
 } from '../../music/player.js';
 import { auth, admin, csrf } from '../middleware/security.js';
+import { getMusicSource, setMusicSource, musicSources } from '../../music/settings.js';
 
 export function registerBotRoutes(app) {
   app.get('/api/bot', auth, admin, (req, res) => {
@@ -23,6 +24,7 @@ export function registerBotRoutes(app) {
         return {
           guildId: g.id,
           guildName: g.name,
+          source: getMusicSource(g.id),
           playing: s?.radio?.name || s?.current?.title || null,
           paused: s?.player?.state?.status === 'paused',
           queue: s?.queue?.length || 0,
@@ -30,6 +32,14 @@ export function registerBotRoutes(app) {
         };
       }),
     });
+  });
+  app.put('/api/control/music/source', auth, admin, csrf, (req, res) => {
+    const guildId = String(req.body.guildId || '');
+    if (!getDiscordClient()?.guilds.cache.has(guildId))
+      return res.status(404).json({ error: 'บอทไม่อยู่ในเซิร์ฟเวอร์นี้' });
+    if (!musicSources.includes(req.body.source))
+      return res.status(400).json({ error: 'เลือก YouTube หรือ SoundCloud' });
+    res.json({ ok: true, source: setMusicSource(guildId, req.body.source) });
   });
   app.post('/api/bot/toggle', auth, admin, csrf, async (req, res) => {
     const enable = !!req.body.enabled;

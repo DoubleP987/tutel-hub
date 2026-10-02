@@ -5,9 +5,11 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 [ภาษาไทย](README.th.md) · [SQLite guide / คู่มือฐานข้อมูล](docs/SQLITE.md)
 
+Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
+
 ## Features
 
-- Stream music using yt-dlp → FFmpeg → Discord voice without saving song files. SoundCloud search is the default; availability and previews depend on the source.
+- Stream music using yt-dlp → FFmpeg → Discord voice without saving song files. YouTube is the default; change each guild to SoundCloud with `/music settings` or the admin panel. Availability depends on the source.
 - Live radio lookup by station/frequency and area. An online stream must exist; a frequency alone cannot receive FM radio.
 - Queue, playback controls, and continuous random music.
 - Thai holidays, important days, Buddhist holy days, recurring/custom events, and Discord channel reminders.
@@ -88,17 +90,18 @@ npm run register:guild
 
 Registration writes slash commands to Discord; it does not start or invite the bot. Global commands work across installed servers. Avoid registering the same commands globally and in a guild if duplicate entries are confusing.
 
-| Command                                               | Purpose                                          |
-| ----------------------------------------------------- | ------------------------------------------------ |
-| `/play`, `/queue`, `/skip`, `/stop`                   | Search/play, inspect queue, skip, clear playback |
-| `/pause`, `/resume`, `/nowplaying`, `/leave`          | Playback controls and leave voice                |
-| `/randommusic`                                        | Continue playing random SoundCloud tracks        |
-| `/radio list`, `/radio play`                          | List/live radio by station and area              |
-| `/calendar setup`                                     | Choose reminder channel; requires setup PIN      |
-| `/calendar add`, `/calendar list`, `/calendar delete` | Manage events                                    |
-| `/calendar config`, `/calendar test`                  | Reminder offset and real channel test message    |
+| Command                                               | Purpose                                              |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| `/play`, `/queue`, `/skip`, `/stop`                   | Search/play, inspect queue, skip, clear playback     |
+| `/pause`, `/resume`, `/nowplaying`, `/leave`          | Playback controls and leave voice                    |
+| `/music settings`                                     | View/change the guild music source (YouTube default) |
+| `/randommusic`                                        | Continue random tracks from the guild source         |
+| `/radio list`, `/radio play`                          | List/live radio by station and area                  |
+| `/calendar setup`                                     | Choose reminder channel; requires setup PIN          |
+| `/calendar add`, `/calendar list`, `/calendar delete` | Manage events                                        |
+| `/calendar config`, `/calendar test`                  | Reminder offset and real channel test message        |
 
-PIN is for channel setup/change, not event creation. In the admin panel select reminder categories, day-before/day-of times, message template, and Discord embed color.
+PIN is for channel setup/change, not event creation. In the admin panel select reminder categories, the daily summary time, message template, and Discord embed color.
 
 ## SQLite: no database server to install
 

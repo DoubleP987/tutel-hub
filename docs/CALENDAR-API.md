@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-Homeserver SQLite is authoritative. Vercel stores a sanitized public snapshot
+The configured database is authoritative: shared MongoDB Atlas in the two-node deployment, or SQLite in standalone mode. The active node publishes outbound snapshots. Vercel stores a sanitized public snapshot
 in private Blob and serves it through `GET /api/calendar`. Event edits trigger
 a five-second debounce; a minute timer catches other edits and retries. Only
 changed data normally uploads. Updating events never creates a deployment.

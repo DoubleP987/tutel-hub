@@ -4,6 +4,7 @@ export function registerAssetsRoutes(app, publicPath) {
   for (const file of [
     'calendar-view.js',
     'preferences.js',
+    'bot-logs.js',
     'manifest.webmanifest',
     'sw.js',
     'icon.png',

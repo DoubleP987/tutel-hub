@@ -4,6 +4,7 @@ import { botConfig } from '../config/bot.js';
 import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
+import { musicHandlers } from '../commands/music.js';
 import { handleRadioListButton } from '../commands/radio-list.js';
 import { startCalendarCommands, stopCalendarCommands } from './calendar-commands.js';
 import { handleMusicAutocomplete } from '../commands/music-autocomplete.js';
@@ -69,7 +70,12 @@ export async function startBot() {
         }
         return;
       }
-      managePrivateReplies(interaction);
+      managePrivateReplies(interaction, {
+        privateByDefault:
+          interaction.isChatInputCommand() &&
+          (Object.hasOwn(musicHandlers, interaction.commandName) ||
+            interaction.commandName === 'radio'),
+      });
       if (
         interaction.isButton() ||
         interaction.isStringSelectMenu() ||

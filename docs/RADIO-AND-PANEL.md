@@ -45,3 +45,7 @@ Admin → Log บอท / Bot logs. The panel polls every three seconds while vi
 Backend history is limited to 500 lines, each 2,000 characters; an API response contains up to 200 lines. Browser rendering uses text content rather than HTML. Known environment credentials, MongoDB credentials and Discord interaction tokens are redacted before storage. Avoid logging arbitrary sensitive user data: redaction is not a replacement for careful logging.
 
 หน้า log ดูได้เฉพาะ admin มีอัปเดตสด หยุดอัปเดต รีเฟรช และล้างหน้าจอ การล้างหน้าจอไม่ได้ลบ log เซิร์ฟเวอร์ ประวัติหน้านี้เริ่มใหม่เมื่อบริการรีสตาร์ท ส่วนประวัติเดิมดูผ่าน `tutel log`
+
+## Current operation update / อัปเดตการทำงาน
+
+[Current operation, 4 October 2026 / การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) documents the single random-genre selector, private music/radio replies, per-guild playback status, host cards, sidebar logout and working log route.

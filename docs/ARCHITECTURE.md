@@ -67,3 +67,7 @@ are labeled separately from implemented features.
 - `src/music/panel.js`: persistent latest Discord music controls, including Loop. See [Music panel](MUSIC-PANEL.md).
 
 Public calendar updates use an outbound authenticated API request, rather than rebuilding Vercel for each event. The promo website is a separate static project rooted at `promo-site/`. Calendar Preview builds are disabled because the optional `gh-pages` branch contains only promotional files. Production uses `main`.
+
+## Current operation update / อัปเดตการทำงาน
+
+[Current operation, 4 October 2026 / การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) documents the single random-genre selector, private music/radio replies, per-guild playback status, host cards, sidebar logout and working log route.

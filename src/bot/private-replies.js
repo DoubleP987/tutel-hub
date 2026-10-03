@@ -5,12 +5,19 @@ const privateFlag = (options) =>
 
 // Ephemeral replies belong to one person in one channel. Keep only their latest
 // response, without deleting a public command acknowledgment or another user's reply.
-export function managePrivateReplies(interaction) {
+export function managePrivateReplies(interaction, { privateByDefault = false } = {}) {
   if (typeof interaction.reply !== 'function' || typeof interaction.deferReply !== 'function')
     return;
   const key = `${interaction.channelId || interaction.guildId || 'dm'}:${interaction.user.id}`;
   const order = ++sequence;
   let originalPrivate = false;
+  function replyOptions(options) {
+    if (!privateByDefault) return options;
+    const body = typeof options === 'string' ? { content: options } : { ...options };
+    const flags = Number(body.flags?.bitfield ?? body.flags ?? 0);
+    delete body.ephemeral;
+    return { ...body, flags: flags | 64 };
+  }
   async function remember(remove) {
     const previous = latest.get(key);
     if (previous?.order > order) {
@@ -37,6 +44,7 @@ export function managePrivateReplies(interaction) {
   for (const method of ['reply', 'deferReply']) {
     const original = interaction[method].bind(interaction);
     interaction[method] = async (options) => {
+      options = replyOptions(options);
       const result = await original(options); // Acknowledge Discord before cleanup I/O.
       if (privateFlag(options)) {
         originalPrivate = true;
@@ -52,6 +60,7 @@ export function managePrivateReplies(interaction) {
   };
   const follow = interaction.followUp.bind(interaction);
   interaction.followUp = async (options) => {
+    options = replyOptions(options);
     const result = await follow(options);
     if (privateFlag(options)) await remember(() => interaction.webhook.deleteMessage(result.id));
     return result;

@@ -5,6 +5,8 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 [ภาษาไทย](README.th.md) · [SQLite guide / คู่มือฐานข้อมูล](docs/SQLITE.md)
 
+[Current operation and handbook updates / คู่มือการทำงานปัจจุบัน](docs/CURRENT-OPERATIONS.md) · Updated 4 October 2026
+
 [Playlist, queue controls and 25 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
 
 [Radio status checks, guild calendar commands, login theme and live panel logs](docs/RADIO-AND-PANEL.md)

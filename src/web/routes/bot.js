@@ -14,6 +14,7 @@ import { getMusicSource, setMusicSource, musicSources } from '../../music/settin
 import { clusterEnabled } from '../../cluster/state.js';
 import { clusterStatus, setClusterTarget } from '../../cluster/runtime.js';
 import { forwardActiveBot } from '../../cluster/jobs.js';
+import { playbackStatus } from '../../music/status.js';
 
 export function registerBotRoutes(app) {
   app.get('/api/bot/logs', auth, admin, forwardActiveBot, (req, res) => {
@@ -39,6 +40,10 @@ export function registerBotRoutes(app) {
           guildName: g.name,
           source: getMusicSource(g.id),
           playing: s?.radio?.name || s?.current?.title || null,
+          playbackStatus: playbackStatus(s),
+          randomMode: !!s?.randomMode,
+          voiceChannelName:
+            g.channels.cache.get(s?.connection?.joinConfig?.channelId)?.name || null,
           paused: s?.player?.state?.status === 'paused',
           queue: s?.queue?.length || 0,
           voiceChannelId: s?.connection?.joinConfig?.channelId || null,

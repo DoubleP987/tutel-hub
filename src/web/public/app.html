@@ -21,8 +21,7 @@
         ><span><b>TUTEL</b><small>CALENDAR & CONTROL</small></span></a
       >
       <div class="top-right">
-        <span id="role-badge" class="badge"></span
-        ><button id="logout" class="ghost">ออกจากระบบ</button>
+        <span id="role-badge" class="badge"></span>
       </div>
     </header>
     <div class="layout">
@@ -36,6 +35,9 @@
         </button>
         <div class="side-note">เวลาทั้งหมดแสดงตามเวลาไทย<br />Asia/Bangkok · by Double_P</div>
         <div class="connection"><i></i> ปฏิทิน Tutel</div>
+        <button id="logout" class="sidebar-logout" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+          <span aria-hidden="true">↪</span><span class="logout-label">ออกจากระบบ</span>
+        </button>
       </aside>
       <main class="content">
         <section id="calendar-page" class="page">
@@ -73,21 +75,30 @@
           </div>
           <div id="bot-status" class="status-card"></div>
           <section id="cluster-control" class="status-card hidden" aria-label="เครื่องที่รันบอท">
-            <div>
-              <h2>เครื่องที่รัน Tutel</h2>
-              <p id="cluster-status" class="muted"></p>
-              <div class="actions">
-                <button type="button" data-cluster-target="auto">อัตโนมัติ</button
-                ><button type="button" data-cluster-target="homeserver">homeserver</button
-                ><button type="button" data-cluster-target="oracle">Oracle</button>
+            <div class="host-switch-panel">
+              <div class="host-switch-heading">
+                <h2>เครื่องที่รัน Tutel</h2>
+                <span id="cluster-active" class="badge"></span>
               </div>
-              <p class="muted">
-                โหมดอัตโนมัติใช้ homeserver เป็นหลัก ถ้าเครื่องหายไป Oracle จะรับต่อภายในประมาณ
-                12–15 วินาที เพลงและคิวที่กำลังเล่นต้องเริ่มใหม่
+              <p id="cluster-status" class="muted" role="status"></p>
+              <div class="host-options" role="group" aria-label="เลือกเครื่องที่รันบอท">
+                <button type="button" data-cluster-target="auto" aria-pressed="false">
+                  <b>อัตโนมัติ</b><small>บ้านเป็นหลัก · Oracle สำรอง</small>
+                </button>
+                <button type="button" data-cluster-target="homeserver" aria-pressed="false">
+                  <b>homeserver</b><small>ใช้เครื่องที่บ้าน</small>
+                </button>
+                <button type="button" data-cluster-target="oracle" aria-pressed="false">
+                  <b>Oracle</b><small>ใช้เซิร์ฟเวอร์คลาวด์</small>
+                </button>
+              </div>
+              <p class="host-switch-note muted">
+                การสลับเครื่องจะเริ่มเพลงและคิวใหม่ · โหมดอัตโนมัติรับช่วงต่อประมาณ 12–15 วินาที
               </p>
             </div>
           </section>
-          <h2 class="section-heading">กำลังเล่นใน voice</h2>
+          <h2 class="section-heading">สถานะการใช้งานแต่ละเซิร์ฟเวอร์</h2>
+          <p id="music-status-updated" class="muted" role="status"></p>
           <div id="music-list" class="music-list"></div>
         </section>
         <section id="logs-page" class="page hidden">

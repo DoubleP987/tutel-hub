@@ -45,9 +45,9 @@ The bot requires View Channel, Send Messages, Embed Links and Read Message Histo
 
 ## Loop / วนเพลง
 
-The Loop button repeats the current song until switched off. Skip bypasses the repeat for that song, and Stop/Leave resets Loop. Live radio does not support Loop. The setting is separate per guild and resets when playback restarts after a node switch.
+The Loop button cycles Off, Track and Queue. Skip bypasses the repeat for that song, and Stop/Leave resets Loop. Live radio does not support Loop. The setting is separate per guild and resets when playback restarts after a node switch.
 
-ปุ่ม Loop วนเพลงปัจจุบัน กดข้ามเพื่อไปเพลงถัดไป กดหยุดหรือออกจากห้องเพื่อปิด Loop วิทยุสดไม่ใช้ Loop แยกสถานะแต่ละเซิร์ฟเวอร์ และไม่เก็บสถานะข้ามการรีสตาร์ต/สลับเครื่อง
+ปุ่ม Loop สลับปิด วนเพลง และวนคิว กดข้ามเพื่อไปเพลงถัดไป กดหยุดหรือออกจากห้องเพื่อปิด Loop วิทยุสดไม่ใช้ Loop แยกสถานะแต่ละเซิร์ฟเวอร์ และไม่เก็บสถานะข้ามการรีสตาร์ต/สลับเครื่อง
 
 ## Language and help / ภาษาและคู่มือ
 
@@ -62,3 +62,9 @@ Private replies (the messages with Discord Dismiss) replace the previous private
 Bot presence uses **Playing** with `/help | tutelbot.vercel.app`, configured as `statusText` in `src/config/bot.js`. This avoids the custom-status bubble. Discord controls which activity details appear in the profile.
 
 Tests: `node --test tests/*.test.js` includes panel movement/removal, private-response isolation and late-response handling, short direct links and both bot languages.
+
+## Current controls / ปุ่มปัจจุบัน
+
+Enable random opens one private dropdown of 25 choices, including Mixed and Japanese; Anime is removed. Selecting starts random mode; the separate genre button is removed. Music and radio acknowledgments are private by default. See [current operation](CURRENT-OPERATIONS.md) for control-panel status, host switching and logs.
+
+กดเปิดสุ่มเพื่อเลือกแนวจากเมนูเดียว 25 ตัวเลือก รวมคละแนวและเพลงญี่ปุ่น ไม่มีอนิเมะและไม่มีปุ่มแนวสุ่มแยก คำตอบคำสั่งเพลง/วิทยุเห็นคนเดียวและ Dismiss ได้ แผงเพลงยังเป็นข้อความหลักร่วมกัน

@@ -470,6 +470,11 @@ textarea:focus {
   color: var(--muted);
   font-size: 13px;
 }
+.music-card .music-playback-status {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}
 .music-card .actions {
   display: flex;
   gap: 7px;
@@ -2334,4 +2339,165 @@ dialog h3 {
 .login-card .brand small,
 .login-foot {
   color: var(--muted);
+}
+/* Admin panels share a readable width without changing the calendar canvas. */
+#control-page,
+#logs-page,
+#settings-page {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  padding: clamp(10px, 2vw, 28px);
+}
+#control-page > .page-heading,
+#logs-page .page-heading {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+#control-page .status-card {
+  margin: 0 0 20px;
+  padding: 22px;
+}
+#control-page .host-switch-panel {
+  width: 100%;
+  min-width: 0;
+}
+.host-switch-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.host-switch-heading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.host-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+.host-options button {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel2);
+  text-align: left;
+  min-width: 0;
+}
+.host-options small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.host-options button.is-selected {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, var(--panel));
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.host-options button.is-selected b {
+  color: var(--gold2);
+}
+.host-options button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.host-options button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.host-switch-note {
+  margin: 16px 0 0;
+  font-size: 12px;
+}
+#control-page .music-card {
+  padding: 22px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#control-page .music-card > b {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+#control-page .music-card p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+#control-page .music-card label {
+  color: var(--muted);
+  margin-top: auto;
+}
+#control-page .music-card .actions {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+#control-page .music-card button {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+#music-status-updated {
+  font-size: 12px;
+  margin: 0 0 16px;
+}
+#logs-page .bot-log-panel {
+  margin-top: 0;
+}
+@media (max-width: 600px) {
+  .host-options {
+    grid-template-columns: 1fr;
+  }
+  .host-options button {
+    padding: 14px 16px;
+  }
+  #control-page .music-list {
+    grid-template-columns: 1fr;
+  }
+  #control-page .status-card,
+  #control-page .music-card {
+    padding: 18px;
+  }
+  #control-page > .page-heading {
+    align-items: flex-start;
+  }
+  #logs-page .actions {
+    gap: 10px;
+  }
+}
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 9px;
+  font-size: 13px;
+  text-align: left;
+}
+.sidebar-logout:hover {
+  background: var(--panel2);
+  color: var(--text);
+}
+.sidebar-logout:focus-visible {
+  outline: 2px solid var(--gold);
+}
+@media (max-width: 850px) {
+  .sidebar-logout {
+    padding: 11px;
+    font-size: 18px;
+  }
+  .sidebar-logout .logout-label {
+    display: none;
+  }
+}
+#cluster-active {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }

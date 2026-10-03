@@ -65,3 +65,42 @@ test('An older request completing late cannot delete the newer private response'
     await clearPrivateReplies();
   }
 });
+
+test('Music and radio default-private replies preserve content and keep only the latest response', async () => {
+  const sent = [];
+  const deleted = [];
+  function command(id) {
+    const value = {
+      user: { id: 'private-user' },
+      channelId: 'private-channel',
+      reply: async (body) => sent.push(body),
+      deferReply: async (body) => sent.push(body),
+      editReply: async () => {},
+      followUp: async (body) => {
+        sent.push(body);
+        return { id: id + '-follow' };
+      },
+      deleteReply: async () => deleted.push(id),
+      webhook: { deleteMessage: async (messageId) => deleted.push(messageId) },
+    };
+    managePrivateReplies(value, { privateByDefault: true });
+    return value;
+  }
+  try {
+    await command('radio').reply('Multiple stations found');
+    await command('random').deferReply();
+    await command('stop').reply({
+      content: 'Stopped',
+      flags: 4096,
+      allowedMentions: { parse: [] },
+    });
+    assert.equal(sent[0].content, 'Multiple stations found');
+    assert.equal(sent[0].flags, 64);
+    assert.equal(sent[1].flags, 64);
+    assert.equal(sent[2].flags, 4096 | 64);
+    assert.deepEqual(sent[2].allowedMentions, { parse: [] });
+    assert.deepEqual(deleted, ['radio', 'random']);
+  } finally {
+    await clearPrivateReplies();
+  }
+});

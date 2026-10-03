@@ -115,6 +115,15 @@ async function forcePasswordChange() {
   }
 }
 function wire() {
+  setInterval(() => {
+    if (
+      state.user?.role === 'admin' &&
+      state.mode === 'control' &&
+      !document.hidden &&
+      !document.activeElement?.closest('#music-list')
+    )
+      void loadBot({ quiet: true });
+  }, 5000);
   void loadPublicSync();
   setInterval(() => {
     if (state.user?.role === 'admin' && !document.hidden) void loadPublicSync();
@@ -504,28 +513,56 @@ async function saveSettings(e) {
     field(f, 'secretPin').value = '';
   }
 }
-async function loadBot() {
+let botStatusLoading = false;
+let hostSwitchPending = false;
+async function loadBot({ quiet = false } = {}) {
+  if (botStatusLoading) return;
+  botStatusLoading = true;
   try {
     const cluster = await api('/api/cluster');
     $('#cluster-control').classList.toggle('hidden', !cluster.enabled);
     if (cluster.enabled) {
+      const active =
+        cluster.botEnabled && cluster.expiresAt && new Date(cluster.expiresAt) > new Date()
+          ? cluster.activeNode
+          : null;
+      $('#cluster-active').textContent = active
+        ? 'กำลังรัน · ' + active
+        : cluster.botEnabled
+          ? 'รอเชื่อมต่อ'
+          : 'ปิดบอทอยู่';
       $('#cluster-status').textContent =
-        `กำลังทำงาน: ${cluster.activeNode || 'กำลังสลับ / ปิดอยู่'} · โหมด: ${cluster.target} · หน้าเว็บนี้อยู่บน ${cluster.node}`;
+        `โหมดที่เลือก: ${cluster.target === 'auto' ? 'อัตโนมัติ' : cluster.target} · Control panel: ${cluster.node}`;
       $$('[data-cluster-target]').forEach((button) => {
-        button.classList.toggle('primary', button.dataset.clusterTarget === cluster.target);
+        button.classList.toggle('is-selected', button.dataset.clusterTarget === cluster.target);
+        button.setAttribute(
+          'aria-pressed',
+          String(button.dataset.clusterTarget === cluster.target),
+        );
+        button.disabled = hostSwitchPending;
         button.onclick = async () => {
-          button.disabled = true;
+          if (hostSwitchPending || button.dataset.clusterTarget === cluster.target) return;
+          hostSwitchPending = true;
+          $$('[data-cluster-target]').forEach((item) => {
+            item.disabled = true;
+          });
+          $('#cluster-status').textContent = 'กำลังบันทึกโหมดการทำงาน…';
           try {
             await api('/api/cluster', {
               method: 'POST',
-              body: { target: button.dataset.clusterTarget, enabled: true },
+              body: { target: button.dataset.clusterTarget, enabled: cluster.botEnabled },
             });
-            toast('บันทึกแล้ว กำลังสลับเครื่อง');
+            toast(
+              cluster.botEnabled
+                ? 'บันทึกแล้ว กำลังสลับเครื่อง'
+                : 'บันทึกเครื่องแล้ว · บอทยังปิดอยู่',
+            );
             setTimeout(loadBot, 3500);
           } catch (error) {
             toast(error.message);
           } finally {
-            button.disabled = false;
+            hostSwitchPending = false;
+            await loadBot({ quiet: true });
           }
         };
       });
@@ -550,8 +587,21 @@ async function loadBot() {
             (m) =>
               '<article class="music-card"><b>' +
               esc(m.guildName) +
-              '</b><p>' +
+              '</b><p class="music-playback-status">' +
+              esc(
+                {
+                  disconnected: 'ไม่ได้อยู่ในห้องเสียง',
+                  paused: 'พักการเล่น',
+                  loading: 'กำลังโหลดเสียง',
+                  radio: 'กำลังฟังวิทยุสด',
+                  music: 'กำลังเล่นเพลง',
+                  standby: 'รอในห้องเสียง',
+                }[m.playbackStatus] || 'ไม่ได้ใช้งาน',
+              ) +
+              (m.randomMode ? ' · สุ่มต่อเนื่อง' : '') +
+              '</p><p>' +
               (m.playing ? 'กำลังเล่น: ' + esc(m.playing) : 'ไม่มีเพลงกำลังเล่น') +
+              (m.voiceChannelName ? '<br>ห้องเสียง: ' + esc(m.voiceChannelName) : '') +
               ' · คิว ' +
               m.queue +
               '</p><label>แหล่งค้นหาเพลง<select data-music-source="' +
@@ -571,7 +621,14 @@ async function loadBot() {
                     esc(m.guildId) +
                     '" data-action="' +
                     a +
-                    '">' +
+                    '" ' +
+                    (!m.voiceChannelId ||
+                    (a === 'skip' && m.playbackStatus !== 'music') ||
+                    (a === 'pause' && !['music', 'radio'].includes(m.playbackStatus)) ||
+                    (a === 'resume' && m.playbackStatus !== 'paused')
+                      ? 'disabled '
+                      : '') +
+                    '>' +
                     {
                       pause: 'พัก',
                       resume: 'เล่นต่อ',
@@ -585,7 +642,9 @@ async function loadBot() {
               '</div></article>',
           )
           .join('')
-      : '<div class="muted">ยังไม่มีเพลงที่กำลังเล่น</div>';
+      : '<div class="muted">บอทยังไม่เชื่อมต่อเซิร์ฟเวอร์ Discord</div>';
+    $('#music-status-updated').textContent =
+      'อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH') + ' · อัปเดตอัตโนมัติทุก 5 วินาที';
     $$('[data-action]').forEach(
       (b) => (b.onclick = () => musicAction(b.dataset.guild, b.dataset.action)),
     );
@@ -607,7 +666,10 @@ async function loadBot() {
       };
     });
   } catch (e) {
-    toast(e.message);
+    $('#music-status-updated').textContent = 'อัปเดตสถานะไม่สำเร็จ: ' + e.message;
+    if (!quiet) toast(e.message);
+  } finally {
+    botStatusLoading = false;
   }
 }
 async function musicAction(guildId, action) {

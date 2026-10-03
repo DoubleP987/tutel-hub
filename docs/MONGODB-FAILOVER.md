@@ -62,3 +62,7 @@ Events remain in MongoDB. The active node publishes a read-only snapshot through
 ## Limits / ข้อจำกัด
 
 An Atlas outage prevents safe lease renewal, so the bot fails closed and the service retries. Delivery records reduce duplicates, but a crash after Discord accepts a message and before its record is saved can still cause a duplicate; Discord and MongoDB do not share one transaction. Failover is not a guarantee of uninterrupted audio or exactly-once external message delivery.
+
+## Current operation update / อัปเดตการทำงาน
+
+[Current operation, 4 October 2026 / การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) documents the single random-genre selector, private music/radio replies, per-guild playback status, host cards, sidebar logout and working log route.

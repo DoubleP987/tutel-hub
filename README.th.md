@@ -5,6 +5,8 @@
 
 [English](README.md) · [คู่มือ SQLite](docs/SQLITE.md)
 
+[Current operation and handbook updates / คู่มือการทำงานปัจจุบัน](docs/CURRENT-OPERATIONS.md) · Updated 4 October 2026
+
 [คู่มือ Playlist จัดคิว และสุ่มเพลง 25 แนว (เลือกหรือไม่เลือกก็ได้)](docs/PLAYLIST-AND-QUEUE.md)
 
 [คู่มือสถานะวิทยุ คำสั่งปฏิทินแยกเซิร์ฟเวอร์ ธีม login และ log ใน panel](docs/RADIO-AND-PANEL.md)

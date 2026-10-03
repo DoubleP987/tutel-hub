@@ -6,12 +6,16 @@ import { genreMenuRows } from '../src/music/genre-menu.js';
 import { randomGenres } from '../src/music/genres.js';
 import { commands } from '../src/commands/definitions.js';
 
-test('Music genre menus include all 26 categories within Discord limits', () => {
+test('Music genre menus include all 25 categories in one dropdown', () => {
   const rows = genreMenuRows('user', 'panel').map((row) => row.toJSON());
-  const options = rows.flatMap((row) => row.components[0].options);
+  const options = rows[0].components[0].options;
   assert.equal(options.length, randomGenres.length);
-  assert.equal(new Set(options.map((option) => option.value)).size, randomGenres.length);
-  assert(rows.every((row) => row.components[0].options.length <= 25));
+  assert.equal(new Set(options.map((option) => option.value)).size, 25);
+  assert.equal(options.length, 25);
+  assert.equal(rows.length, 1);
+  assert(options.some((option) => option.value === 'all'));
+  assert(options.some((option) => option.value === 'jpop'));
+  assert(!options.some((option) => option.value === 'anime'));
   assert(rows.every((row) => row.components[0].custom_id.includes('user:panel')));
   assert(commands.some((command) => command.name === 'join'));
 });

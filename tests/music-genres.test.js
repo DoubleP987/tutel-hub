@@ -6,15 +6,15 @@ import { randomGenres, randomGenre, genreSuggestions } from '../src/music/genres
 import { handleMusicAutocomplete } from '../src/commands/music-autocomplete.js';
 import { commands } from '../src/commands/definitions.js';
 
-test('Genre is optional autocomplete with 26 unique genres', () => {
+test('Genre is optional autocomplete with 25 unique genres', () => {
   const option = commands.find((command) => command.name === 'randommusic').options[0];
   assert.equal(option.name, 'genre');
   assert.notEqual(option.required, true);
   assert.equal(option.autocomplete, true);
   assert.equal(option.choices, undefined);
-  assert.equal(randomGenres.length, 26);
-  assert.equal(new Set(randomGenres.map((genre) => genre.value)).size, 26);
-  for (const value of ['all', 'anime', 'russian', 'hiphop', 'lofi', 'bass', 'meme'])
+  assert.equal(randomGenres.length, 25);
+  assert.equal(new Set(randomGenres.map((genre) => genre.value)).size, 25);
+  for (const value of ['all', 'jpop', 'russian', 'hiphop', 'lofi', 'bass', 'meme'])
     assert(randomGenres.some((genre) => genre.value === value));
   assert.equal(randomGenre('unknown').value, 'all');
 });
@@ -63,7 +63,7 @@ test('Selected random genre constrains queries and retains short/long/live filte
         { title: 'short', duration: 20, url: 'https://example.test/short' },
         { title: 'live', live: true, duration: 200, url: 'https://example.test/live' },
         {
-          title: 'Anime opening single',
+          title: 'Japanese pop single',
           duration: 220,
           artist: 'Artist A',
           url: 'https://example.test/song',
@@ -78,8 +78,8 @@ test('Selected random genre constrains queries and retains short/long/live filte
   vm.runInContext(source, context);
   const track = await context.resolveRandomTrack([], 'youtube', {
     guildId: 'test',
-    genre: 'anime',
+    genre: 'jpop',
   });
-  assert.equal(track.title, 'Anime opening single');
-  assert(queries.every((query) => /anime|anisong/.test(query)));
+  assert.equal(track.title, 'Japanese pop single');
+  assert(queries.every((query) => /jpop|japanese|jrock|city pop/i.test(query)));
 });

@@ -5,7 +5,7 @@
 
 [English](README.md) · [คู่มือ SQLite](docs/SQLITE.md)
 
-[คู่มือ Playlist จัดคิว และสุ่มเพลง 26 แนว (เลือกหรือไม่เลือกก็ได้)](docs/PLAYLIST-AND-QUEUE.md)
+[คู่มือ Playlist จัดคิว และสุ่มเพลง 25 แนว (เลือกหรือไม่เลือกก็ได้)](docs/PLAYLIST-AND-QUEUE.md)
 
 [คู่มือสถานะวิทยุ คำสั่งปฏิทินแยกเซิร์ฟเวอร์ ธีม login และ log ใน panel](docs/RADIO-AND-PANEL.md)
 รายละเอียดล่าสุด: [สรุปรายวันและแหล่งเพลงแยกเซิร์ฟเวอร์](docs/DAILY-SUMMARY-AND-MUSIC.md) แทนเวลาเตือนแบบเก่าในคู่มือ PDF

@@ -2,15 +2,17 @@
 
 ## Music menus and standby / เมนูเพลงและสแตนบาย
 
-Press **🎵 แนวสุ่ม / Random genre** in the latest music panel. Two selection menus include all 26 genres; choosing one remembers it for that guild and starts continuous random music. The current track finishes first. The menu is private to its opener; only someone in the bot's voice channel can apply the selection.
+Press **🔀 เปิดสุ่ม / Enable random** in the latest music panel. One dropdown includes all 25 choices, including mixed mode and Japanese music. There is no separate genre button. Opening the menu does not start random playback until a genre is selected. Choosing one remembers it for that guild and starts continuous random music. The current track finishes first. The menu is private to its opener; only someone in the bot's voice channel can apply the selection.
 
 `/join` joins the user's voice channel and shows the music panel without starting audio. After five minutes with no track, queue, radio or random mode, the bot leaves and removes its panel. Starting playback cancels the standby countdown; finishing playback starts a new idle countdown. The separate empty-voice timeout can still leave an empty room earlier.
 
-กด **🎵 แนวสุ่ม** ในแผงเพลงล่าสุด แล้วเลือกแนวจากเมนูได้เลย ไม่ต้องพิมพ์ `/randommusic` การเลือกจะเปิดสุ่มต่อเนื่องและจำแนวแยกแต่ละเซิร์ฟเวอร์ ใช้ `/join` ให้บอทมารอ ถ้าไม่มีเพลงเล่น 5 นาทีจะออกเองและลบแผงควบคุม
+กด **🔀 เปิดสุ่ม** ในแผงเพลงล่าสุด แล้วเลือกแนวจากเมนูได้เลย ไม่ต้องพิมพ์ `/randommusic` การเลือกจะเปิดสุ่มต่อเนื่องและจำแนวแยกแต่ละเซิร์ฟเวอร์ ใช้ `/join` ให้บอทมารอ ถ้าไม่มีเพลงเล่น 5 นาทีจะออกเองและลบแผงควบคุม
 
 ## Radio / วิทยุ
 
-`/radio list` now checks ten stations per page, using a one-second audio sample on demand. Two probes at most run concurrently. Successful results are cached for three minutes; failed results for thirty seconds. No radio media is saved to disk. Categories: `music`, `news`, `talk`, `sport`, `local`; use the optional `category`, `area` and `page` options.
+`/radio list` is visible only to its opener, with Previous, Next and Refresh status buttons that update the same message. Each list preserves its category/area and station snapshot for twelve minutes; after expiry or a restart, open the command again. Buttons are restricted to the opener and original guild/channel. The optional `page` argument still works. The list checks ten stations per page, using a one-second audio sample on demand. Two probes at most run concurrently. Successful results are cached for three minutes; failed results for thirty seconds. No radio media is saved to disk. Categories: `music`, `news`, `talk`, `sport`, `local`.
+
+`/radio list` เห็นเฉพาะคนที่เปิด มีปุ่ม **ก่อนหน้า / ถัดไป / ตรวจสถานะใหม่** เปลี่ยนหน้าในข้อความเดิมโดยเก็บหมวดและภาคที่เลือกไว้ รายการหมดอายุใน 12 นาทีหรือเมื่อบอทรีสตาร์ท ให้เปิดคำสั่งใหม่ เมนูสุ่มเพลงมีช่องเดียว รวม 25 ตัวเลือกและ **คละแนว** กดเปิดสุ่มแล้วเลือกแนวเพื่อเริ่ม ไม่มีปุ่มแนวสุ่มแยก
 
 มีสถานีแนะนำ 21 สถานี และค้นสถานีเพิ่มเติมจาก Radio Browser ได้ รายการแสดงครั้งละ 10 สถานี ตรวจโดยถอดเสียงหนึ่งวินาที ไม่บันทึกเพลงลงดิสก์ สถานะมีเสียง, สตรีมเงียบ, ออฟไลน์, ปฏิเสธการเข้าถึง, หาโดเมนไม่เจอ และไม่ตอบกลับ แยกจากกัน สถานะเงียบไม่ได้แปลว่าปิดสถานี การเชื่อมต่อล้มเหลวจากเครื่องบอทไม่ได้พิสูจน์ว่าสถานีหยุดออกอากาศ FM
 

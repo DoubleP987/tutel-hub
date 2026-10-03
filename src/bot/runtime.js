@@ -4,6 +4,7 @@ import { botConfig } from '../config/bot.js';
 import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
+import { handleRadioListButton } from '../commands/radio-list.js';
 import { startCalendarCommands, stopCalendarCommands } from './calendar-commands.js';
 import { handleMusicAutocomplete } from '../commands/music-autocomplete.js';
 import { destroyPlayer, getPlayer, watchEmptyVoice } from '../music/player.js';
@@ -56,6 +57,15 @@ export async function startBot() {
           await handleMusicAutocomplete(interaction);
         } catch (error) {
           console.error('[autocomplete]', error.message);
+        }
+        return;
+      }
+      // Page updates must preserve the original private list, not replace it.
+      if (interaction.isButton() && interaction.customId?.startsWith('radio:list:')) {
+        try {
+          await handleRadioListButton(interaction);
+        } catch (error) {
+          console.warn('[radio list button]', error.message);
         }
         return;
       }

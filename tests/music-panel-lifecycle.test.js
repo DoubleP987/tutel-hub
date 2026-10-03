@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { EventEmitter } from 'node:events';
 import * as discord from 'discord.js';
+import { genreMenuRows } from '../src/music/genre-menu.js';
 
 test('A new play moves the panel; leave and restart remove it', async () => {
   const settings = new Map(),
@@ -85,4 +86,36 @@ test('A new play moves the panel; leave and restart remove it', async () => {
   } finally {
     await context.stopMusicPanels();
   }
+});
+
+test('Enable random opens the private genre menu before starting playback', async () => {
+  const context = {
+    ...discord,
+    setting: () => JSON.stringify({ messageId: 'panel', channelId: 'channel' }),
+    getPlayer: () => ({ randomMode: false }),
+    genreMenuRows,
+    t: (text) => text,
+    enableRandomMode: () => assert.fail('Playback must wait for genre selection'),
+  };
+  vm.createContext(context);
+  const source = readFileSync(new URL('../src/music/panel.js', import.meta.url), 'utf8')
+    .replace(/^import[\s\S]*?from\s+['"][^'"]+['"];\s*/gm, '')
+    .replace(/export /g, '');
+  vm.runInContext(source, context);
+  let reply;
+  await context.handleMusicPanelInteraction({
+    customId: 'music:control:random',
+    guildId: 'guild',
+    user: { id: 'user' },
+    message: { id: 'panel' },
+    inGuild: () => true,
+    isModalSubmit: () => false,
+    reply: async (body) => {
+      reply = body;
+    },
+  });
+  assert.equal(reply.flags, discord.MessageFlags.Ephemeral);
+  assert.equal(reply.components.length, 1);
+  assert.equal(reply.components[0].toJSON().components[0].options.length, 25);
+  assert(!source.includes("button('genre',"));
 });

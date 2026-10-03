@@ -202,7 +202,6 @@ function panelBody(guildId, record) {
       ),
       new ActionRowBuilder().addComponents(
         button('settings', t('⚙ ตั้งค่า')),
-        button('genre', t('🎵 แนวสุ่ม')),
         button('leave', t('🚪 ออกจากห้อง'), ButtonStyle.Secondary, !state?.connection),
       ),
     ],
@@ -463,7 +462,7 @@ export async function handleMusicPanelInteraction(interaction) {
     return true;
   }
   const action = parts[1] === 'genre' ? 'genre-select' : parts[1] === 'add' ? 'submit' : parts[2];
-  if (action === 'genre') {
+  if (action === 'genre' || (action === 'random' && !getPlayer(interaction.guildId)?.randomMode)) {
     await interaction.reply({
       content: t('เลือกแนวเพื่อเปิดสุ่มต่อเนื่อง · เพลงปัจจุบันจะเล่นต่อจนจบ'),
       flags: MessageFlags.Ephemeral,
@@ -537,7 +536,7 @@ export async function handleMusicPanelInteraction(interaction) {
     const state = getPlayer(guildId);
     let result;
     if (action === 'genre-select') {
-      const genre = interaction.values[0];
+      const genre = parts[4] === 'all' ? 'all' : interaction.values?.[0];
       if (!randomGenres.some((item) => item.value === genre)) throw new Error('Invalid genre');
       await setRandomGenre(guildId, genre);
       const updated = await enableRandomMode(guildId, voice);

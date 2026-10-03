@@ -133,18 +133,6 @@ const options = [
     ],
   ],
   [
-    'anime',
-    'อนิเมะ / Anisong',
-    [
-      'anime opening song',
-      'anime ending song',
-      'anisong single',
-      'anime soundtrack song',
-      'classic anime opening song',
-      'new anime opening song',
-    ],
-  ],
-  [
     'russian',
     'เพลงรัสเซีย',
     [

@@ -5,7 +5,7 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 [ภาษาไทย](README.th.md) · [SQLite guide / คู่มือฐานข้อมูล](docs/SQLITE.md)
 
-[Playlist, queue controls and 26 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
+[Playlist, queue controls and 25 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
 
 [Radio status checks, guild calendar commands, login theme and live panel logs](docs/RADIO-AND-PANEL.md)
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.

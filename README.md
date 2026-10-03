@@ -5,13 +5,14 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 [ภาษาไทย](README.th.md) · [SQLite guide / คู่มือฐานข้อมูล](docs/SQLITE.md)
 
+[Playlist, queue controls and 25 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
 
 ## Bot language and /help
 
 Thai is the default. Set `language: 'en'` in `src/config/bot.js`, or `BOT_LANGUAGE=en` in `.env` (the environment overrides code). Restart after changing it, then run `npm run register` to update command descriptions.
 
-`/help` privately displays website/guide buttons opening https://tutelbot.vercel.app. No voice channel is needed. The Loop button repeats the current song; Skip advances and Stop resets Loop.
+`/help` privately displays website/guide buttons opening https://tutelbot.vercel.app. No voice channel is needed. The Loop button cycles Off / Track / Queue; Skip advances and Stop resets Loop.
 
 - [Bot language guide](docs/BOT-LANGUAGE.md)
 - [MongoDB and failover](docs/MONGODB-FAILOVER.md)

@@ -1,8 +1,18 @@
 import { t } from '../i18n/bot.js';
 import { setting, setSetting } from '../calendar/db.js';
 import { musicChanged } from './events.js';
+import { randomGenres } from './genres.js';
 
 export const musicSources = ['youtube', 'soundcloud'];
+export function getRandomGenre(guildId) {
+  const value = setting(`music_random_genre:${guildId}`);
+  return randomGenres.some((genre) => genre.value === value) ? value : 'all';
+}
+export async function setRandomGenre(guildId, value) {
+  if (!randomGenres.some((genre) => genre.value === value)) throw new Error('Unknown music genre');
+  await setSetting(`music_random_genre:${guildId}`, value);
+  musicChanged(guildId);
+}
 
 export function getMusicSource(guildId) {
   if (musicSources.includes(process.env.MUSIC_SOURCE_OVERRIDE))

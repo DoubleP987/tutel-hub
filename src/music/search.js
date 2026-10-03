@@ -9,6 +9,7 @@ export function searchTracks(query, { flat = false, signal } = {}) {
     const child = spawn(
       ytDlpPath,
       [
+        '--ignore-config',
         '--no-cache-dir',
         '--no-progress',
         '--dump-single-json',
@@ -32,13 +33,10 @@ export function searchTracks(query, { flat = false, signal } = {}) {
       child.kill();
     };
     signal?.addEventListener('abort', cancel, { once: true });
-    const timer = setTimeout(
-      () => {
-        failure = new Error('ค้นหาเพลงนานเกินไป จะลองรายการอื่น');
-        child.kill();
-      },
-      flat ? 30000 : 60000,
-    );
+    const timer = setTimeout(() => {
+      failure = new Error('ค้นหาเพลงนานเกินไป จะลองรายการอื่น');
+      child.kill();
+    }, 25000);
     timer.unref();
     const cleanup = () => {
       clearTimeout(timer);
@@ -77,10 +75,21 @@ export function searchTracks(query, { flat = false, signal } = {}) {
             )
               url = `https://www.youtube.com/watch?v=${entry.id}`;
             return {
-              title: entry.title || 'Unknown title',
+              title:
+                entry.title ||
+                (url?.includes('soundcloud.com/')
+                  ? new URL(url).pathname.split('/').at(-1).replace(/-/g, ' ')
+                  : 'Unknown title'),
               url,
               duration: Number(entry.duration) || 0,
-              artist: entry.artist || entry.creator || entry.uploader || entry.channel || '',
+              genre: String(entry.genre || '').slice(0, 200),
+              artist:
+                entry.artist ||
+                entry.creator ||
+                entry.uploader ||
+                entry.channel ||
+                entry.album_artist ||
+                '',
               thumbnail: entry.thumbnail || entry.thumbnails?.at(-1)?.url || null,
               live:
                 entry.is_live ||

@@ -26,7 +26,8 @@ import {
   destroyPlayer,
 } from './player.js';
 import { getMusicSource, setMusicSource, musicSourceLabel } from './settings.js';
-import { resolveTrack } from './stream.js';
+import { playRequest } from './requests.js';
+import { randomGenre } from './genres.js';
 
 let client = null;
 let refreshTimer = null;
@@ -131,12 +132,19 @@ function panelBody(guildId, record) {
     .addFields(
       {
         name: t('สุ่มต่อเนื่อง'),
-        value: state?.randomMode ? t('🔀 เปิด · คละศิลปินและแนวเพลง') : t('ปิด'),
+        value: state?.randomMode
+          ? t('🔀 แนวเพลง: {0}', t(randomGenre(state.randomGenre).label))
+          : t('ปิด'),
         inline: true,
       },
       {
         name: t('วนเพลง'),
-        value: state?.loopMode ? t('🔁 เปิด · วนเพลงปัจจุบัน') : t('ปิด'),
+        value:
+          state?.loopMode === 'queue'
+            ? t('🔁 เปิด · วนทั้งคิว')
+            : state?.loopMode
+              ? t('🔁 เปิด · วนเพลงปัจจุบัน')
+              : t('ปิด'),
         inline: true,
       },
       { name: t('แหล่งค้นหา'), value: musicSourceLabel(getMusicSource(guildId)), inline: true },
@@ -165,7 +173,11 @@ function panelBody(guildId, record) {
         button('skip', t('⏭ ข้าม'), ButtonStyle.Secondary, !track),
         button(
           'loop',
-          state?.loopMode ? t('🔁 Loop: เปิด') : t('🔁 Loop: ปิด'),
+          state?.loopMode === 'queue'
+            ? t('🔁 Loop: คิว')
+            : state?.loopMode
+              ? t('🔁 Loop: เพลง')
+              : t('🔁 Loop: ปิด'),
           state?.loopMode ? ButtonStyle.Success : ButtonStyle.Secondary,
           !track || !!state?.radio,
         ),
@@ -504,28 +516,11 @@ export async function handleMusicPanelInteraction(interaction) {
     const state = getPlayer(guildId);
     let result;
     if (action === 'submit') {
-      const version = musicRequestVersion(guildId);
-      musicPanelPending(guildId, t('กำลังค้นหาเพลงที่เพิ่ม…'));
-      const track = await resolveTrack(
-        interaction.fields.getTextInputValue('query').trim(),
-        getMusicSource(guildId),
-      );
-      if (musicRequestVersion(guildId) !== version) {
-        await privateReply(
-          interaction,
-          t('ยกเลิกการเพิ่มเพลงแล้ว เพราะบอทถูกสั่งหยุดหรือเปลี่ยนโหมด'),
-        );
-        return true;
-      }
-      // Voice membership and the panel are checked again after the network search.
-      const currentVoice = await voiceChannelFor(interaction);
-      if (!currentVoice) return true;
-      if (storedPanel(guildId)?.messageId !== record.messageId) {
-        await privateReply(interaction, t('แผงถูกย้ายระหว่างค้นหา กรุณาเพิ่มเพลงจากแผงล่าสุด'));
-        return true;
-      }
-      enqueue(guildId, currentVoice, track);
-      result = t('เพิ่ม **{0}** ในคิวแล้ว', text(track.title));
+      await playRequest(interaction, {
+        query: interaction.fields.getTextInputValue('query').trim(),
+        voiceChannel: voice,
+      });
+      return true;
     } else if (action === 'toggle') {
       const paused = ['paused', 'autopaused'].includes(state?.player.state.status);
       result = (paused ? resumePlayer(guildId) : pausePlayer(guildId))
@@ -538,9 +533,11 @@ export async function handleMusicPanelInteraction(interaction) {
       result =
         enabled === null
           ? t('ไม่มีเพลงให้วน · วิทยุสดไม่รองรับ Loop')
-          : enabled
-            ? t('เปิดวนเพลงแล้ว · ปุ่มข้ามยังไปเพลงถัดไปได้')
-            : t('ปิดวนเพลงแล้ว');
+          : enabled === 'queue'
+            ? t('เปิดวนทั้งคิวแล้ว')
+            : enabled
+              ? t('เปิดวนเพลงแล้ว · ปุ่มข้ามยังไปเพลงถัดไปได้')
+              : t('ปิดวนเพลงแล้ว');
     } else if (action === 'skip')
       result = skip(guildId) ? t('ข้ามเพลงแล้ว') : t('ไม่มีเพลงให้ข้าม');
     else if (action === 'stop') {

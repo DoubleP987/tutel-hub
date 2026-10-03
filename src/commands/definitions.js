@@ -1,5 +1,6 @@
 import { t } from '../i18n/bot.js';
 import { SlashCommandBuilder, ChannelType } from 'discord.js';
+import { randomGenres } from '../music/genres.js';
 export const commands = [
   new SlashCommandBuilder()
     .setName('help')
@@ -184,8 +185,68 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName('randommusic')
-    .setDescription(t('สุ่มเพลงจากแหล่งของเซิร์ฟเวอร์ต่อเนื่องจนกว่าจะสั่งหยุด')),
+    .setDescription(t('สุ่มเพลงจากแหล่งของเซิร์ฟเวอร์ต่อเนื่องจนกว่าจะสั่งหยุด'))
+    .addStringOption((option) =>
+      option
+        .setName('genre')
+        .setDescription(t('แนวเพลง · จำค่าแยกแต่ละเซิร์ฟเวอร์'))
+        .addChoices(...randomGenres.map((genre) => ({ name: t(genre.label), value: genre.value }))),
+    ),
   new SlashCommandBuilder().setName('queue').setDescription(t('แสดงคิวเพลง')),
+  new SlashCommandBuilder()
+    .setName('playnext')
+    .setDescription(t('เพิ่มเพลงหรือ Playlist ต่อจากเพลงปัจจุบัน'))
+    .addStringOption((o) =>
+      o.setName('query').setDescription(t('ชื่อเพลงหรือ URL')).setRequired(true),
+    ),
+  new SlashCommandBuilder()
+    .setName('remove')
+    .setDescription(t('ลบเพลงที่รอจากคิว'))
+    .addIntegerOption((o) =>
+      o
+        .setName('position')
+        .setDescription(t('ลำดับในคิวจาก /queue'))
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(500),
+    ),
+  new SlashCommandBuilder()
+    .setName('move')
+    .setDescription(t('ย้ายลำดับเพลงที่รอในคิว'))
+    .addIntegerOption((o) =>
+      o
+        .setName('position')
+        .setDescription(t('ลำดับในคิวจาก /queue'))
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(500),
+    )
+    .addIntegerOption((o) =>
+      o
+        .setName('to')
+        .setDescription(t('ลำดับใหม่'))
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(500),
+    ),
+  new SlashCommandBuilder()
+    .setName('clearqueue')
+    .setDescription(t('ล้างเพลงที่รอ โดยไม่หยุดเพลงปัจจุบัน')),
+  new SlashCommandBuilder().setName('shuffle').setDescription(t('สุ่มลำดับเพลงที่รอในคิว')),
+  new SlashCommandBuilder()
+    .setName('loop')
+    .setDescription(t('ตั้งโหมดวนเพลงหรือวนทั้งคิว'))
+    .addStringOption((o) =>
+      o
+        .setName('mode')
+        .setDescription(t('โหมดวนซ้ำ'))
+        .setRequired(true)
+        .addChoices(
+          { name: t('ปิด'), value: 'off' },
+          { name: t('เพลงเดียว'), value: 'track' },
+          { name: t('ทั้งคิว'), value: 'queue' },
+        ),
+    ),
   new SlashCommandBuilder().setName('skip').setDescription(t('ข้ามเพลงปัจจุบัน')),
   new SlashCommandBuilder().setName('stop').setDescription(t('หยุดเพลงและล้างคิว')),
   new SlashCommandBuilder().setName('pause').setDescription(t('พักเพลง')),

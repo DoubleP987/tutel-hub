@@ -1,4 +1,5 @@
 import { searchTracks } from './search.js';
+import { randomGenre, randomGenres } from './genres.js';
 
 // Rotate a shuffled bag so one style cannot dominate consecutive searches.
 const searches = [
@@ -34,27 +35,34 @@ export function clearRandomSession(guildId) {
 export async function resolveRandomTrack(
   excludedUrls = [],
   source = 'youtube',
-  { guildId = 'default', signal } = {},
+  { guildId = 'default', signal, genre = 'all' } = {},
 ) {
   let session = sessions.get(guildId);
-  if (!session || session.source !== source) {
-    session = { source, bag: [], artists: [], styles: [], cache: new Map() };
+  if (!session || session.source !== source || session.genre !== genre) {
+    session = { source, genre, bag: [], artists: [], styles: [], cache: new Map() };
     sessions.set(guildId, session);
   }
-  const excluded = new Set(excludedUrls);
+  const excluded = new Set(genre === 'all' ? excludedUrls : excludedUrls.slice(-30));
+  const genreSearches = randomGenre(genre).searches || [
+    ...searches,
+    ...randomGenres.slice(1).flatMap((item) => item.searches.slice(0, 2)),
+  ];
   for (let attempt = 0; attempt < 4; attempt++) {
     if (signal?.aborted) throw new Error('Music search cancelled');
-    if (!session.bag.length) session.bag = shuffle(searches);
+    if (!session.bag.length) session.bag = shuffle(genreSearches);
     const index = session.bag.findIndex(([style]) => !session.styles.slice(-2).includes(style));
     const [style, query] = session.bag.splice(index < 0 ? 0 : index, 1)[0];
     let cached = session.cache.get(query);
     if (!cached || Date.now() - cached.at > 10 * 60000) {
       try {
         const tracks = await searchTracks(
-          (source === 'soundcloud' ? 'scsearch12:' : 'ytsearch12:') + query,
+          source === 'soundcloud'
+            ? 'scsearch12:' + query.replace(/\bofficial (?:audio|music video|mv)\b/gi, '').trim()
+            : 'ytsearch12:' + query,
           { flat: true, signal },
         );
         cached = { at: Date.now(), tracks };
+        if (session.cache.size >= 20) session.cache.delete(session.cache.keys().next().value);
         session.cache.set(query, cached);
       } catch (error) {
         if (signal?.aborted) throw error;
@@ -64,8 +72,8 @@ export async function resolveRandomTrack(
     }
     const candidates = cached.tracks.filter(
       (track) =>
-        track.duration >= 90 &&
-        track.duration <= 600 &&
+        ((track.duration >= randomGenre(genre).minDuration && track.duration <= 600) ||
+          (source === 'soundcloud' && !track.duration)) &&
         !track.live &&
         !compilations.test(track.title) &&
         !excluded.has(track.url),
@@ -74,8 +82,25 @@ export async function resolveRandomTrack(
       (track) => !track.artist || !session.artists.slice(-5).includes(track.artist.toLowerCase()),
     );
     // Try another style rather than immediately repeating a recent artist/channel.
-    if (!varied.length) continue;
-    const track = shuffle(varied)[0];
+    if (!varied.length && (attempt < 3 || !candidates.length)) continue;
+    let track = shuffle(varied.length ? varied : candidates)[0];
+    if (source === 'soundcloud' && !track.duration) {
+      try {
+        const [details] = await searchTracks(track.url, { signal });
+        if (
+          !details ||
+          details.duration < randomGenre(genre).minDuration ||
+          details.duration > 600 ||
+          details.live ||
+          compilations.test(details.title)
+        )
+          continue;
+        track = details;
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        continue;
+      }
+    }
     if (track.artist) session.artists.push(track.artist.toLowerCase());
     session.styles.push(style);
     session.artists = session.artists.slice(-10);

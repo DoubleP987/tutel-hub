@@ -4,7 +4,8 @@ import { botConfig } from '../config/bot.js';
 import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
-import { destroyPlayer } from '../music/player.js';
+import { destroyPlayer, getPlayer, watchEmptyVoice } from '../music/player.js';
+import { handleMusicRequestButton } from '../music/requests.js';
 import { handleCalendarButton } from '../calendar/notifications.js';
 import {
   initializeMusicPanels,
@@ -52,7 +53,10 @@ export async function startBot() {
         interaction.isModalSubmit()
       ) {
         try {
-          if (!(await handleMusicPanelInteraction(interaction)))
+          if (
+            !(await handleMusicRequestButton(interaction)) &&
+            !(await handleMusicPanelInteraction(interaction))
+          )
             await handleCalendarButton(interaction);
         } catch (error) {
           console.error('[component] interaction:', error.message);
@@ -80,6 +84,15 @@ export async function startBot() {
     instance.on(Events.VoiceStateUpdate, (oldState, newState) => {
       if (oldState.id === instance.user?.id && oldState.channelId && !newState.channelId)
         destroyPlayer(oldState.guild.id);
+      const channelId = getPlayer(newState.guild.id)?.connection?.joinConfig.channelId;
+      if (channelId) {
+        const channel = newState.guild.channels.cache.get(channelId);
+        if (channel?.members)
+          watchEmptyVoice(
+            newState.guild.id,
+            channel.members.filter((member) => !member.user.bot).size,
+          );
+      }
     });
     try {
       await instance.login(token);

@@ -49,3 +49,9 @@ Backend history is limited to 500 lines, each 2,000 characters; an API response 
 ## Current operation update / อัปเดตการทำงาน
 
 [Current operation, 4 October 2026 / การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) documents the single random-genre selector, private music/radio replies, per-guild playback status, host cards, sidebar logout and working log route.
+
+## Short private responses / ข้อความส่วนตัวสั้น ๆ
+
+Music/radio text-only confirmations and errors disappear automatically 15 seconds after the command handler finishes. Pending deferred/progress responses remain while a lookup is running. Replies with interactive components, such as Settings, genre selection or paginated lists, keep their normal lifetime. The newest private reply still replaces the previous one for the same user/channel. The public music panel is unaffected.
+
+คำยืนยันและข้อผิดพลาดแบบข้อความของเพลง/วิทยุหายเอง 15 วินาทีหลังคำสั่งทำงานเสร็จ ระหว่างกำลังโหลดไม่เริ่มนับ เมนูที่มีปุ่มหรือ dropdown ยังอยู่ให้ใช้งาน ข้อความใหม่ยังแทนข้อความเก่าของผู้ใช้และช่องเดียวกัน แผงเพลงสาธารณะไม่หายตาม timer นี้

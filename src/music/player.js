@@ -6,10 +6,14 @@ import {
   VoiceConnectionStatus,
   NoSubscriberBehavior,
   entersState,
+  createAudioResource,
+  StreamType,
 } from '@discordjs/voice';
-import { createTrackResource, createRadioResource } from './stream.js';
+import { createTrackResource, createRadioResource, cacheTrackAudio } from './stream.js';
+import { ContinuousPcm } from './continuous-pcm.js';
 import { resolveRandomTrack, clearRandomSession } from './random.js';
-import { getMusicSource, getRandomGenre } from './settings.js';
+import { getMusicSource, getRandomGenre, getSmoothMode } from './settings.js';
+import { FADE_MS, resourceReady } from './transition.js';
 import { musicChanged, musicLeft, invalidateMusicRequests } from './events.js';
 import { requireBotLease } from '../cluster/state.js';
 import {
@@ -46,10 +50,27 @@ function getState(guildId) {
       failures: 0,
       radioRetries: 0,
       radioTimer: null,
+      smoothMode: getSmoothMode(guildId),
+      prepared: null,
+      prepareAbort: null,
+      prepareTask: null,
+      prepareRetryAt: 0,
+      transitionTimer: null,
+      fadeTimer: null,
+      mixer: null,
     };
     state.player.on('stateChange', (oldState, newState) => {
       updateStandby(guildId, state);
       console.log('[voice] player ' + oldState.status + ' -> ' + newState.status);
+      if (
+        newState.status === AudioPlayerStatus.Playing &&
+        state.smoothMode &&
+        state.current &&
+        !state.radio
+      ) {
+        ensureContinuous(guildId, state);
+        void prepareNext(guildId, state);
+      }
       musicChanged(guildId, state.lastTrack);
     });
     state.player.on('error', (error) => {
@@ -108,11 +129,214 @@ function getState(guildId) {
       state.current = null;
       state.stream = null;
       musicChanged(guildId, state.lastTrack);
-      scheduleNext(guildId, state, 500);
+      if (state.smoothMode && state.prepared && !state.loadingNext) void playNext(guildId);
+      else scheduleNext(guildId, state, state.smoothMode ? 0 : 500);
     });
     players.set(guildId, state);
   }
   return players.get(guildId);
+}
+function clearPrepared(state, force = false) {
+  if (state.mixer?.fade && !force) return;
+  state.prepareAbort?.abort();
+  state.prepareAbort = null;
+  state.prepared?.stream.stop();
+  state.prepared = null;
+  state.mixer?.clearNext();
+}
+function continuousStream(guildId, state, source, track) {
+  let activeSource = source;
+  const mixer = new ContinuousPcm({
+    smooth: state.smoothMode,
+    onSwitch: (oldTrack, nextTrack, skipped, nextSource) => {
+      state.bypassLoop = skipped;
+      repeatFinishedTrack(state, !skipped && !activeSource.failed);
+      const position = state.queue.findIndex((item) => item.url === nextTrack.url);
+      if (position >= 0) state.queue.splice(position, 1);
+      activeSource = nextSource;
+      state.prepared = null;
+      state.current = nextTrack;
+      state.trackStartedAtResourceMs = state.stream.resource.playbackDuration;
+      clearTimeout(state.startupTimer);
+      state.lastTrack = nextTrack;
+      state.bypassLoop = false;
+      if (state.randomMode) {
+        state.randomHistory.push(nextTrack.url);
+        state.randomHistory = state.randomHistory.slice(-80);
+      }
+      musicChanged(guildId, nextTrack);
+      console.log('[music] continuous transition:', oldTrack.title, '->', nextTrack.title);
+      void prepareNext(guildId, state);
+    },
+    onEnd: () => {
+      if (!state.smoothMode) return false;
+      const pending =
+        state.prepareTask ||
+        state.prepared ||
+        state.queue.length ||
+        state.randomMode ||
+        state.loopMode;
+      if (pending) void prepareNext(guildId, state);
+      return !!pending;
+    },
+  });
+  state.mixer = mixer;
+  mixer.setActive(source, track);
+  const resource = createAudioResource(mixer, {
+    inputType: StreamType.Raw,
+    silencePaddingFrames: 0,
+  });
+  return {
+    resource,
+    get failed() {
+      return activeSource.failed;
+    },
+    setSmooth: (enabled) => {
+      mixer.smooth = enabled;
+    },
+    stop: () => {
+      mixer.destroy();
+      resource.playStream.destroy();
+      if (state.mixer === mixer) state.mixer = null;
+    },
+  };
+}
+function ensureContinuous(guildId, state) {
+  if (
+    state.mixer ||
+    !state.current ||
+    state.radio ||
+    !state.stream?.takePcm ||
+    state.player.state.status !== AudioPlayerStatus.Playing
+  )
+    return;
+  // One migration when enabling the mode; subsequent changes reuse this resource.
+  const elapsed =
+    (state.stream.resource.playbackDuration || 0) - (state.trackStartedAtResourceMs || 0);
+  const source = state.stream.takePcm();
+  state.stream = continuousStream(guildId, state, source, state.current);
+  state.trackStartedAtResourceMs = -elapsed;
+  state.player.play(state.stream.resource);
+}
+function cancelFade(state) {
+  clearInterval(state.fadeTimer);
+  state.fadeTimer = null;
+  state.stream?.resource.volume?.setVolume(1);
+}
+function preparedMatches(guildId, state, item) {
+  if (!item || item.stream.failed || !state.smoothMode) return false;
+  const expected =
+    state.current && state.loopMode && state.loopMode !== 'queue' && !state.bypassLoop
+      ? state.current
+      : state.queue[0];
+  if (expected) return expected.url === item.track.url;
+  if (state.current && state.loopMode === 'queue' && !state.queue.length)
+    return state.current.url === item.track.url;
+  return (
+    item.random &&
+    state.randomMode &&
+    item.genre === state.randomGenre &&
+    item.source === getMusicSource(guildId)
+  );
+}
+async function prepareNext(guildId, state) {
+  if (!state.smoothMode || !state.current || state.radio) return;
+  if (state.prepareTask || state.prepared || Date.now() < state.prepareRetryAt) return;
+  const current = state.current;
+  const generation = state.generation;
+  const abort = new AbortController();
+  state.prepareAbort = abort;
+  let stream;
+  const task = (async () => {
+    try {
+      const repeat = state.loopMode && state.loopMode !== 'queue' && !state.bypassLoop;
+      let track = repeat ? current : state.queue[0];
+      const random = !track && state.randomMode;
+      const source = getMusicSource(guildId),
+        genre = state.randomGenre;
+      if (random)
+        track = await resolveRandomTrack([...state.randomHistory, current.url], source, {
+          guildId,
+          signal: abort.signal,
+          genre,
+        });
+      if (!track && state.loopMode === 'queue') track = current;
+      if (!track || abort.signal.aborted) return;
+      let media;
+      try {
+        media = await cacheTrackAudio(track, { signal: abort.signal });
+      } catch (error) {
+        if (abort.signal.aborted || error.message !== 'PRELOAD_TOO_LARGE') throw error;
+        console.warn('[music] track exceeds RAM cache limit; preparing bounded stream');
+      }
+      if (abort.signal.aborted) return;
+      stream = createTrackResource(track, { pcmOnly: true, media });
+      await resourceReady(stream, abort.signal);
+      const item = { track, stream, random, source, genre };
+      // EOF can arrive while extraction is running. Keep this result only if it
+      // still matches the queue/current identity and the original generation.
+      if (
+        players.get(guildId) !== state ||
+        state.generation !== generation ||
+        abort.signal.aborted ||
+        (state.current && state.current !== current) ||
+        !preparedMatches(guildId, state, item)
+      ) {
+        stream.stop();
+        return;
+      }
+      state.prepared = item;
+      state.mixer?.setNext(stream, track);
+      console.log(
+        '[music] next track prepared:',
+        track.title,
+        media ? `fully cached ${media.length} bytes` : 'bounded stream',
+      );
+    } catch (error) {
+      stream?.stop();
+      if (!abort.signal.aborted) {
+        state.prepareRetryAt = Date.now() + 10000;
+        console.warn('[music] preload unavailable:', error.message);
+      }
+    }
+  })();
+  state.prepareTask = task;
+  try {
+    await task;
+  } finally {
+    if (state.prepareTask === task) state.prepareTask = null;
+    if (state.prepareAbort === abort) state.prepareAbort = null;
+  }
+}
+function watchTransition(guildId, state) {
+  clearInterval(state.transitionTimer);
+  if (!state.smoothMode) return;
+  state.transitionTimer = setInterval(() => {
+    if (players.get(guildId) !== state || !state.smoothMode || state.radio || !state.current)
+      return;
+    if (state.prepared && !preparedMatches(guildId, state, state.prepared)) clearPrepared(state);
+    if (state.player.state.status !== AudioPlayerStatus.Playing) return;
+    const elapsed = (state.stream?.resource.playbackDuration || 0) / 1000;
+    // Prepare one successor shortly after playback starts, including for Skip.
+    // Its output remains bounded by the voice stream's backpressure.
+    if (elapsed >= 1) void prepareNext(guildId, state);
+  }, 1000);
+  state.transitionTimer.unref?.();
+}
+export function applySmoothMode(guildId, enabled) {
+  const state = players.get(guildId);
+  if (!state) return;
+  state.smoothMode = !!enabled;
+  state.stream?.setSmooth?.(state.smoothMode);
+  if (!enabled) {
+    clearPrepared(state);
+    cancelFade(state);
+  }
+  if (enabled) {
+    ensureContinuous(guildId, state);
+    void prepareNext(guildId, state);
+  }
+  watchTransition(guildId, state);
 }
 function ensureConnection(guildId, voiceChannel, state) {
   requireBotLease();
@@ -196,7 +420,14 @@ async function playNext(guildId) {
   const abort = new AbortController();
   state.searchAbort = abort;
   try {
-    let track = state.queue.shift() || null;
+    if (state.smoothMode && state.prepareTask) await state.prepareTask;
+    if (players.get(guildId) !== state || state.generation !== generation) return;
+    let prepared = state.prepared;
+    if (!preparedMatches(guildId, state, prepared)) {
+      clearPrepared(state);
+      prepared = null;
+    } else state.prepared = null;
+    let track = state.queue.shift() || prepared?.track || null;
     const fromRandom = !track && state.randomMode;
     if (!track && state.randomMode)
       track = await resolveRandomTrack(state.randomHistory, getMusicSource(guildId), {
@@ -215,13 +446,23 @@ async function playNext(guildId) {
     state.current = track;
     state.bypassLoop = false;
     state.lastTrack = track;
+    state.trackStartedAtResourceMs = 0;
     musicChanged(guildId, track);
     if (state.randomMode) {
       state.randomHistory.push(track.url);
       if (state.randomHistory.length > 80) state.randomHistory.shift();
     }
-    state.stream = createTrackResource(track);
+    const usePrepared = prepared && prepared.track.url === track.url;
+    const source = usePrepared
+      ? prepared.stream
+      : createTrackResource(track, {
+          smooth: false,
+          pcmOnly: state.smoothMode,
+        });
+    state.stream = source.pcm ? continuousStream(guildId, state, source, track) : source;
+    if (prepared && !usePrepared) prepared.stream.stop();
     state.player.play(state.stream.resource);
+    watchTransition(guildId, state);
     clearTimeout(state.startupTimer);
     state.startupTimer = setTimeout(() => {
       if (
@@ -282,12 +523,15 @@ export function enqueueMany(guildId, voiceChannel, tracks, options = {}) {
   if (state.queue.length >= 500) throw new Error(t('คิวเต็มแล้ว (สูงสุด 500 เพลง)'));
   ensureConnection(guildId, voiceChannel, state);
   if (state.radio) {
+    clearPrepared(state);
     state.stream?.stop();
     state.stream = null;
     state.radio = null;
     state.player.stop(true);
   }
   const result = insertTracks(state.queue, tracks, options);
+  if (state.prepareTask || (state.prepared && !preparedMatches(guildId, state, state.prepared)))
+    clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
   if (!state.current) void playNext(guildId);
   return result;
@@ -305,6 +549,8 @@ export function editQueue(guildId, action, from, to) {
     shuffleTracks(state.queue);
     result = state.queue.length;
   }
+  if (state.prepareTask || (state.prepared && !preparedMatches(guildId, state, state.prepared)))
+    clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
   return result;
 }
@@ -317,6 +563,7 @@ export async function enableRandomMode(guildId, voiceChannel) {
     state.searchAbort?.abort();
   }
   state.randomGenre = genre;
+  clearPrepared(state);
   if (state.radio) {
     state.stream?.stop();
     state.stream = null;
@@ -340,6 +587,7 @@ export function disableRandomMode(guildId) {
   const state = players.get(guildId);
   if (!state) return false;
   state.randomMode = false;
+  clearPrepared(state);
   if (state.loadingNext && !state.current) {
     state.generation++;
     state.searchAbort?.abort();
@@ -353,8 +601,11 @@ export async function playRadio(guildId, voiceChannel, station) {
   const state = getState(guildId);
   ensureConnection(guildId, voiceChannel, state);
   state.generation++;
+  clearPrepared(state, true);
+  clearInterval(state.transitionTimer);
   const generation = state.generation;
   state.searchAbort?.abort();
+  cancelFade(state);
   clearTimeout(state.nextTimer);
   clearTimeout(state.startupTimer);
   clearTimeout(state.radioTimer);
@@ -395,14 +646,56 @@ export function skip(guildId) {
   const state = players.get(guildId);
   if (!state?.current) return false;
   state.bypassLoop = true;
-  state.stream?.stop();
-  state.player.stop(true);
+  if (state.mixer && state.smoothMode) {
+    if (!state.queue.length && !state.randomMode) {
+      clearPrepared(state);
+      state.mixer.requestFinish();
+      return true;
+    }
+    if (state.prepared && !preparedMatches(guildId, state, state.prepared)) clearPrepared(state);
+    if (state.smoothMode) void prepareNext(guildId, state);
+    if (state.prepared || state.prepareTask || state.queue.length || state.randomMode) {
+      state.mixer.requestSkip();
+      return true;
+    }
+  }
+  if (state.prepared && !preparedMatches(guildId, state, state.prepared)) clearPrepared(state);
+  if (state.smoothMode) void prepareNext(guildId, state);
+  if (
+    state.smoothMode &&
+    state.stream?.resource.volume &&
+    state.player.state.status === AudioPlayerStatus.Playing
+  ) {
+    if (state.fadeTimer) return true;
+    const stream = state.stream,
+      started = Date.now();
+    state.fadeTimer = setInterval(() => {
+      if (state.stream !== stream) {
+        clearInterval(state.fadeTimer);
+        state.fadeTimer = null;
+        return;
+      }
+      const gain = Math.max(0, 1 - (Date.now() - started) / FADE_MS);
+      stream.resource.volume.setVolume(gain);
+      if (gain === 0) {
+        clearInterval(state.fadeTimer);
+        state.fadeTimer = null;
+        stream.stop();
+        state.player.stop(true);
+      }
+    }, 25);
+    state.fadeTimer.unref?.();
+  } else {
+    state.stream?.stop();
+    state.player.stop(true);
+  }
   return true;
 }
 export function toggleLoop(guildId) {
   const state = players.get(guildId);
   if (!state?.current || state.radio) return null;
   state.loopMode = state.loopMode === 'queue' ? false : state.loopMode ? 'queue' : 'track';
+  clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
   return state.loopMode;
 }
@@ -410,6 +703,7 @@ export function setLoop(guildId, mode) {
   const state = players.get(guildId);
   if (!state || state.radio || !['off', 'track', 'queue'].includes(mode)) return null;
   state.loopMode = mode === 'off' ? false : mode;
+  clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
   return mode;
 }
@@ -418,6 +712,9 @@ export function stop(guildId) {
   const state = players.get(guildId);
   if (!state) return;
   state.generation++;
+  clearPrepared(state, true);
+  cancelFade(state);
+  clearInterval(state.transitionTimer);
   state.searchAbort?.abort();
   clearTimeout(state.nextTimer);
   clearTimeout(state.startupTimer);

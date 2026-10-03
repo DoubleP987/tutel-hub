@@ -12,6 +12,8 @@
 [คู่มือสถานะวิทยุ คำสั่งปฏิทินแยกเซิร์ฟเวอร์ ธีม login และ log ใน panel](docs/RADIO-AND-PANEL.md)
 รายละเอียดล่าสุด: [สรุปรายวันและแหล่งเพลงแยกเซิร์ฟเวอร์](docs/DAILY-SUMMARY-AND-MUSIC.md) แทนเวลาเตือนแบบเก่าในคู่มือ PDF
 
+[เปลี่ยนเพลงต่อเนื่อง เตรียมเสียงใน RAM และข้อจำกัดทรัพยากร](docs/SMOOTH-TRANSITION.md)
+
 ## ภาษาบอทและ /help
 
 ภาษาเริ่มต้นเป็นไทย เปลี่ยน `language` ใน `src/config/bot.js` เป็น `'en'` หรือกำหนด `BOT_LANGUAGE=en` ใน `.env` โดย env มีลำดับความสำคัญสูงกว่าโค้ด รีสตาร์ตบอทหลังเปลี่ยนภาษา และรัน `npm run register` เพื่ออัปเดตคำอธิบายคำสั่ง
@@ -244,3 +246,13 @@ See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `vercel-pu
 อ่าน [โครงสร้าง](docs/ARCHITECTURE.md), [PDF ภาษาไทย](docs/manuals/Tutel-Hub-Handbook-TH.pdf), และ [PDF ภาษาอังกฤษ](docs/manuals/Tutel-Hub-Handbook-EN.pdf) ระบบ public ปัจจุบันใช้ `calendar-api` บน Vercel ส่วน Netlify เป็น adapter เดิม
 
 แก้ไฟล์ browser ร่วมที่ `src/web/public/` แล้วรัน `npm run assets:sync` จัดรูปแบบด้วย `npm run format` ตั้ง Root Directory ของ Vercel เป็น `vercel-public`
+
+## เปลี่ยนเพลงต่อเนื่อง
+
+เปิดหรือปิด Smooth transition ในข้อความตั้งค่าส่วนตัวของแผงเพลง Discord ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์ ค่าเริ่มต้นปิดและจำแยกเซิร์ฟเวอร์ เมื่อเปิดจะเตรียมเพลงถัดไปแบบบีบอัดใน RAM จำกัด 32 MiB และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดิม รวมตอนกดข้าม แหล่งเพลงที่ช้ายังทำให้รอได้ อ่านคู่มือที่ลิงก์ด้านบนสำหรับข้อจำกัดและการดู log
+
+## Product boundaries / ขอบเขตแต่ละส่วน
+
+Tutel’s public promotional website describes the Discord music and live-radio bot. The calendar is a personal application sharing the current repository, database adapter and bot notification runtime; it is not offered as a public bot feature on the promotional site. Its private admin and separate read-only Vercel frontend remain operational. No calendar data or functionality was removed by this presentation change.
+
+เว็บโปรโมทนำเสนอเฉพาะบอทเพลงและวิทยุ ปฏิทินเป็นแอปใช้งานส่วนตัวที่ใช้โครงสร้าง ฐานข้อมูล และระบบส่งข้อความของบอทร่วมกันอยู่ใน repo ตอนนี้ หน้า admin และเว็บปฏิทิน Vercel แยกยังทำงานตามเดิม การแยกการนำเสนอไม่ได้ลบข้อมูลหรือความสามารถปฏิทิน

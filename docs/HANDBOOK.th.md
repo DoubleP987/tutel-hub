@@ -1916,3 +1916,9 @@ offset0..10080 บังคับต้องตั้งห้องก่อ�
 ส่งข้อความพร้อมจริงไปห้อง ต่าง adminembedtest
 
 สี event และ all-day ใช้ฟอร์มเว็บ คำสั่ง add Discord ปัจจุบันไม่มี option สี/all-day แม้ฐานข้อมูลรองรับ อย่าเข้าใจว่า frontend ทุกฟังก์ชันมี slash ตรงกัน
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย

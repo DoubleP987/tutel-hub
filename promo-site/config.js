@@ -7,5 +7,4 @@ window.TUTEL_SITE = Object.freeze({
   docs: 'https://github.com/DoubleP987/tutel-hub/tree/main/docs',
   setup: 'https://github.com/DoubleP987/tutel-hub#readme',
   issues: 'https://github.com/DoubleP987/tutel-hub/issues',
-  calendar: 'https://cskru.vercel.app',
 });

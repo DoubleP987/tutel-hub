@@ -71,3 +71,15 @@ Public calendar updates use an outbound authenticated API request, rather than r
 ## Current operation update / อัปเดตการทำงาน
 
 [Current operation, 4 October 2026 / การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) documents the single random-genre selector, private music/radio replies, per-guild playback status, host cards, sidebar logout and working log route.
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย
+
+## Product boundaries / ขอบเขตแต่ละส่วน
+
+Tutel’s public promotional website describes the Discord music and live-radio bot. The calendar is a personal application sharing the current repository, database adapter and bot notification runtime; it is not offered as a public bot feature on the promotional site. Its private admin and separate read-only Vercel frontend remain operational. No calendar data or functionality was removed by this presentation change.
+
+เว็บโปรโมทนำเสนอเฉพาะบอทเพลงและวิทยุ ปฏิทินเป็นแอปใช้งานส่วนตัวที่ใช้โครงสร้าง ฐานข้อมูล และระบบส่งข้อความของบอทร่วมกันอยู่ใน repo ตอนนี้ หน้า admin และเว็บปฏิทิน Vercel แยกยังทำงานตามเดิม การแยกการนำเสนอไม่ได้ลบข้อมูลหรือความสามารถปฏิทิน

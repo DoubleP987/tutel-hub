@@ -1918,3 +1918,9 @@ Required0..10080 default offset; requires channel setup first.
 Sends a real simple readiness message to configured channel; differs from admin embed test.
 
 Event colors and all-day creation are web form capabilities; current Discord add does not define color/all-day options even though storage supports them. Not every web capability has an equivalent slash option.
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย

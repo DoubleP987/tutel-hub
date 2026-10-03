@@ -1,53 +1,54 @@
 <!doctype html>
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#174f3d" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="#174f3d" name="theme-color" />
     <meta
+      content="Tutel Discord music bot: smooth transitions, YouTube, SoundCloud and live radio. By Double_P."
       name="description"
-      content="Tutel brings music, live radio and calendar reminders to your Discord server. Created by Double_P."
     />
-    <meta property="og:title" content="Tutel — a little turtle, a better server" />
+    <meta content="Tutel — a little turtle, a better server" property="og:title" />
     <meta
+      content="Tutel Discord music bot: smooth transitions, YouTube, SoundCloud and live radio. By Double_P."
       property="og:description"
-      content="Music. Live radio. A calendar that keeps everyone together. By Double_P."
     />
-    <meta property="og:type" content="website" />
-    <title>Tutel · Music, radio & calendar</title>
-    <link rel="icon" href="assets/tutel.png" />
-    <script src="theme-init.js?v=2"></script>
-    <link rel="stylesheet" href="styles.css?v=2" />
-    <script src="config.js?v=3" defer></script>
-    <script src="app.js?v=3" defer></script>
+    <meta content="website" property="og:type" />
+    <title>Tutel · Music that flows</title>
+    <link href="assets/tutel.png" rel="icon" />
+    <script src="theme-init.js?v=4"></script>
+    <link href="styles.css?v=4" rel="stylesheet" />
+    <script defer="" src="config.js?v=4"></script>
+    <script defer="" src="app.js?v=4"></script>
   </head>
   <body>
-    <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+    <a class="skip" data-i18n="skip" href="#main">Skip to content</a>
     <header class="header">
       <div class="wrap navigation">
         <a class="brand" href="#"
-          ><img src="assets/tutel.png" alt="" width="36" height="36" /><span
+          ><img alt="" height="36" src="assets/tutel.png" width="36" /><span
             >Tutel<span class="brand-dot">.</span></span
           ></a
         >
         <nav aria-label="Main navigation">
-          <a href="#features" data-i18n="navFeatures">Features</a>
-          <a href="#commands" data-i18n="navCommands">Commands</a>
-          <a href="#docs" data-i18n="navDocs">Docs</a>
+          <a data-i18n="navFeatures" href="#features">Features</a>
+          <a data-i18n="navCommands" href="#commands">Commands</a>
+          <a data-i18n="navDocs" href="#docs">Docs</a>
         </nav>
         <div class="nav-actions">
           <button
-            id="theme"
-            class="theme-toggle"
-            type="button"
             aria-label="Switch to dark theme"
             aria-pressed="false"
+            class="theme-toggle"
+            id="theme"
+            type="button"
           >
             ☾
           </button>
-          <button id="language" class="language" type="button" aria-label="Switch language">
+          <button aria-label="Switch language" class="language" id="language" type="button">
             ไทย</button
-          ><a class="button small primary" data-link="invite" data-i18n="inviteShort"
+          ><a class="button small primary" data-i18n="inviteShort" data-link="invite"
             >Add Tutel ↗</a
           >
         </div>
@@ -64,11 +65,11 @@
             Good music.<br />Great company.<br /><em>A little Tutel.</em>
           </h1>
           <p class="hero-description" data-i18n="heroDescription">
-            Set the mood, tune into live radio, and keep your community’s plans in one place. A
-            friendly Discord bot, made for the everyday.
+            Find your next song, tune into live radio, and let the music flow. A friendly Discord
+            music bot with controls right in your chat.
           </p>
           <div class="actions">
-            <a class="button primary" data-link="invite" data-i18n="invite">Add to Discord ↗</a
+            <a class="button primary" data-i18n="invite" data-link="invite">Add to Discord ↗</a
             ><a class="button secondary" data-link="github"
               ><span class="code-icon">&lt;/&gt;</span
               ><span data-i18n="github">View on GitHub</span></a
@@ -80,10 +81,10 @@
           <div class="hero-tags">
             <span>♪ <span data-i18n="tagMusic">Music</span></span
             ><span>◉ <span data-i18n="tagRadio">Live radio</span></span
-            ><span>▦ <span data-i18n="tagCalendar">Calendar</span></span>
+            ><span>▦ <span data-i18n="tagSmooth">Smooth transitions</span></span>
           </div>
         </div>
-        <div class="showcase" aria-label="Illustrative Discord music panel">
+        <div aria-label="Illustrative Discord music panel" class="showcase">
           <div class="orbit orbit-one"></div>
           <div class="orbit orbit-two"></div>
           <div class="floating note">♫</div>
@@ -93,7 +94,7 @@
               <span># listening-room</span><span class="demo-badge" data-i18n="demo">DEMO</span>
             </div>
             <div class="bot-line">
-              <img src="assets/tutel.png" width="40" height="40" alt="Tutel" />
+              <img alt="Tutel" height="40" src="assets/tutel.png" width="40" />
               <div>
                 <strong>Tutel<span class="bot-badge">APP</span></strong
                 ><small data-i18n="credit">by Double_P</small>
@@ -106,14 +107,14 @@
               <p class="track-detail" data-i18n="demoArtist">
                 Your favourite song · your favourite people
               </p>
-              <div class="waveform" aria-hidden="true">
+              <div aria-hidden="true" class="waveform">
                 <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
                 ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
                 ><i></i><i></i><i></i><i></i>
               </div>
               <div class="track-times"><span>1:24</span><span>3:42</span></div>
               <div class="demo-controls">
-                <button id="demo-pause" type="button" aria-label="Pause visual demo">Ⅱ</button
+                <button aria-label="Pause visual demo" id="demo-pause" type="button">Ⅱ</button
                 ><span>▸▸</span><span>≡</span><span>＋</span><span>⇄</span>
               </div>
               <div class="embed-footer" data-i18n="demoHint">
@@ -121,11 +122,11 @@
               </div>
             </div>
           </div>
-          <div class="calendar-chip">
+          <div class="smooth-chip">
             <span class="chip-icon">▦</span>
             <div>
-              <strong data-i18n="chipTitle">Today, together.</strong
-              ><small data-i18n="chipText">One daily summary. All your events.</small>
+              <strong data-i18n="chipTitle">Let the music flow.</strong
+              ><small data-i18n="chipText">Fade out. Fade in. Keep listening.</small>
             </div>
           </div>
           <p class="showcase-caption" data-i18n="demoCaption">
@@ -137,15 +138,65 @@
         <span data-i18n="strip">Less switching tabs. More time together.</span>
         <div>
           <span>YouTube</span><span>SoundCloud</span><span data-i18n="stripRadio">Thai radio</span
-          ><span data-i18n="stripCalendar">Tutel Calendar</span>
+          ><span data-i18n="stripSmooth">Smooth transitions</span>
         </div>
       </div>
+      <section class="wrap section smooth-section" id="smooth">
+        <div>
+          <p class="eyebrow" data-i18n="smoothEyebrow">MADE FOR THE HANDOFF</p>
+          <h2 data-i18n="smoothHeading">Two songs.<br />One flowing moment.</h2>
+          <p data-i18n="smoothDescription">
+            A small overlap makes a big difference. Keep listening while Tutel gets the next track
+            ready.
+          </p>
+          <a class="text-link" data-i18n="guideSmooth" href="guide.html#smooth"
+            >Smooth playback guide</a
+          >
+        </div>
+        <div class="smooth-visual">
+          <p class="micro-label" data-i18n="smoothChartLabel">
+            Illustration of two overlapping audio fades
+          </p>
+          <svg aria-label="Crossfade illustration" role="img" viewbox="0 0 440 160">
+            <path class="fade-old" d="M20 35 H150 C215 35 225 130 290 130 H420"></path>
+            <path class="fade-new" d="M20 130 H150 C215 130 225 35 290 35 H420"></path>
+            <line x1="150" x2="150" y1="15" y2="150"></line>
+            <line x1="290" x2="290" y1="15" y2="150"></line>
+            <text text-anchor="middle" x="220" y="153">350 ms</text>
+          </svg>
+          <div class="smooth-legend">
+            <span data-i18n="smoothTrackA">Current track</span
+            ><span data-i18n="smoothTrackB">Next track</span>
+          </div>
+          <div class="smooth-points">
+            <div>
+              <strong data-i18n="smoothPrepare">Ready ahead</strong>
+              <p data-i18n="smoothPrepareText">
+                The next track prepares while the current one plays.
+              </p>
+            </div>
+            <div>
+              <strong data-i18n="smoothOverlap">350 ms overlap</strong>
+              <p data-i18n="smoothOverlapText">One fades down as the other fades up.</p>
+            </div>
+            <div>
+              <strong data-i18n="smoothSkip">Skip, smoothly</strong>
+              <p data-i18n="smoothSkipText">
+                The same gentle handoff when you choose the next song.
+              </p>
+            </div>
+          </div>
+          <p class="quiet" data-i18n="smoothNote">
+            Optional per server · Enable in player Settings · Source availability still applies
+          </p>
+        </div>
+      </section>
       <section class="wrap section" id="features">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="featureEyebrow">SMALL BOT. USEFUL THINGS.</p>
           <h2 data-i18n="featureTitle">Make yourself at home.</h2>
           <p data-i18n="featureDescription">
-            The essentials for a server that listens, hangs out and remembers.
+            Music, live radio, and controls that keep you in the moment.
           </p>
         </div>
         <div class="feature-grid">
@@ -170,14 +221,16 @@
             <div class="mini-command">/radio list <span>area: hatyai</span></div>
           </article>
           <article class="feature-card">
-            <div class="feature-icon">▦</div>
-            <span class="feature-number">03 / CALENDAR</span>
-            <h3 data-i18n="calendarTitle">Keep the day in the loop.</h3>
-            <p data-i18n="calendarText">
-              Thai holidays and your own events, with colours, repeat schedules and a daily Discord
-              summary. Share a read-only calendar with everyone.
+            <div class="feature-icon">≈</div>
+            <span class="feature-number">03 / SMOOTH</span>
+            <h3 data-i18n="smoothTitle">The next song, softly.</h3>
+            <p data-i18n="smoothText">
+              Prepare the next track while you listen. A short crossfade eases one song into the
+              next, even when you press Skip. Enable it in your server’s player settings.
             </p>
-            <div class="mini-command">/calendar list</div>
+            <div class="mini-command" data-i18n="smoothControl">
+              Player Settings → Smooth transition
+            </div>
           </article>
         </div>
         <div class="feature-bottom">
@@ -185,7 +238,7 @@
             <span>⌘</span>
             <h3 data-i18n="controlTitle">Right there in chat.</h3>
             <p data-i18n="controlText">
-              Pause, skip, view the queue and add music from buttons beneath the latest player
+              Pause, skip, loop, choose a random genre and manage the queue from your latest player
               message.
             </p>
           </div>
@@ -193,8 +246,8 @@
             <span>☷</span>
             <h3 data-i18n="panelTitle">Your settings, your way.</h3>
             <p data-i18n="panelText">
-              Manage events, notification categories, message colours and music through a private
-              admin panel.
+              Choose your music source and turn smooth transitions on or off in private player
+              settings. Your server remembers its choice.
             </p>
           </div>
         </div>
@@ -239,29 +292,26 @@
           <label class="command-search"
             ><span>⌕</span
             ><input
-              id="command-search"
-              type="search"
-              placeholder="Find a command"
               data-i18n-placeholder="searchPlaceholder"
+              id="command-search"
+              placeholder="Find a command"
+              type="search"
           /></label>
         </div>
-        <div class="tabs" role="tablist" aria-label="Command categories">
-          <button role="tab" aria-selected="true" data-filter="all" data-i18n="all">All</button
-          ><button role="tab" aria-selected="false" data-filter="music" data-i18n="tagMusic">
+        <div aria-label="Command categories" class="tabs" role="tablist">
+          <button aria-selected="true" data-filter="all" data-i18n="all" role="tab">All</button
+          ><button aria-selected="false" data-filter="music" data-i18n="tagMusic" role="tab">
             Music</button
-          ><button role="tab" aria-selected="false" data-filter="radio" data-i18n="tagRadio">
-            Live radio</button
-          ><button role="tab" aria-selected="false" data-filter="calendar" data-i18n="tagCalendar">
-            Calendar
+          ><button aria-selected="false" data-filter="radio" data-i18n="tagRadio" role="tab">
+            Live radio
           </button>
         </div>
-        <div id="command-list" class="commands"></div>
-        <p id="empty-commands" hidden data-i18n="emptyCommands">
+        <div class="commands" id="command-list"></div>
+        <p data-i18n="emptyCommands" hidden="" id="empty-commands">
           No matching commands. Try another search.
         </p>
         <p class="quiet" data-i18n="commandsNote">
-          Setup and configuration changes require the appropriate Discord permissions. Calendar
-          channel setup also requires the setup PIN.
+          Changing the music source or smooth-transition setting requires Manage Server permission.
         </p>
       </section>
       <section class="wrap section docs-section" id="docs">
@@ -272,23 +322,25 @@
             Quick help for server members. Full documentation for people who want to host, configure
             or understand Tutel.
           </p>
-          <a class="text-link" data-link="docs" data-i18n="docsLink"
+          <a class="text-link" data-i18n="docsLink" data-link="docs"
             >Read the project documentation ↗</a
           >
         </div>
         <div class="docs-links">
-          <a href="guide.html#music"
-            ><span class="doc-symbol">♫</span>
+          <a href="guide.html#smooth"
+            ><span class="doc-symbol">≈</span>
             <div>
-              <strong data-i18n="guideMusic">Music & radio guide</strong
-              ><small data-i18n="guideMusicText">Playback, sources and online stations</small>
+              <strong data-i18n="guideSmooth">Smooth playback guide</strong
+              ><small data-i18n="guideSmoothText"
+                >Crossfades, preparation and server settings</small
+              >
             </div>
             <span>↗</span></a
-          ><a href="guide.html#calendar"
-            ><span class="doc-symbol">▦</span>
+          ><a href="guide.html#music"
+            ><span class="doc-symbol">♫</span>
             <div>
-              <strong data-i18n="guideCalendar">Calendar & notifications</strong
-              ><small data-i18n="guideCalendarText">Events, daily summaries and permissions</small>
+              <strong data-i18n="guideMusic">Music &amp; radio guide</strong
+              ><small data-i18n="guideMusicText">Playback, sources and online stations</small>
             </div>
             <span>↗</span></a
           ><a data-link="setup"
@@ -296,13 +348,6 @@
             <div>
               <strong data-i18n="guideHost">Host your own Tutel</strong
               ><small data-i18n="guideHostText">Setup instructions in English and Thai</small>
-            </div>
-            <span>↗</span></a
-          ><a data-link="calendar"
-            ><span class="doc-symbol">↗</span>
-            <div>
-              <strong data-i18n="guidePublic">Open the public calendar</strong
-              ><small data-i18n="guidePublicText">Browse the calendar without signing in</small>
             </div>
             <span>↗</span></a
           >
@@ -317,8 +362,8 @@
           <details>
             <summary data-i18n="faq1">Does Tutel save song files?</summary>
             <p data-i18n="answer1">
-              No. Audio is streamed through the server to Discord. Network traffic and temporary
-              in-memory buffers are still needed.
+              No song files are saved to disk. Smooth mode temporarily prepares the next compressed
+              song in RAM; audio and network buffers are released as playback changes.
             </p>
           </details>
           <details>
@@ -336,11 +381,11 @@
             </p>
           </details>
           <details>
-            <summary data-i18n="faq4">Who can change calendar settings?</summary>
+            <summary data-i18n="faq4">How do I turn on smooth transitions?</summary>
             <p data-i18n="answer4">
-              Authorised server managers can configure Discord notifications. Channel setup requires
-              the setup PIN. The web admin panel requires a separate login; the public calendar is
-              read-only.
+              Open Settings on the music panel and press Enable smooth transition. Off by default,
+              remembered per server. It prepares the next song and overlaps audio for 350 ms; a slow
+              source can still cause waiting.
             </p>
           </details>
           <details>
@@ -361,28 +406,28 @@
         </div>
       </section>
       <section class="wrap final-cta">
-        <img src="assets/tutel.png" alt="" width="70" height="70" />
+        <img alt="" height="70" src="assets/tutel.png" width="70" />
         <p class="eyebrow" data-i18n="ctaEyebrow">SAVE A SPOT FOR THE TURTLE</p>
         <h2 data-i18n="ctaTitle">A little more life<br />in your server.</h2>
-        <a class="button primary" data-link="invite" data-i18n="invite">Add to Discord ↗</a
+        <a class="button primary" data-i18n="invite" data-link="invite">Add to Discord ↗</a
         ><span class="quiet" data-i18n="ctaNote">Made with care. By Double_P.</span>
       </section>
     </main>
     <footer class="wrap footer">
-      <span class="release-version" data-version>v1.0.0</span>
+      <span class="release-version" data-version="">v1.0.0</span>
       <div>
         <a class="brand" href="#"
-          ><img src="assets/tutel.png" alt="" width="30" height="30" />Tutel<span class="brand-dot"
+          ><img alt="" height="30" src="assets/tutel.png" width="30" />Tutel<span class="brand-dot"
             >.</span
           ></a
         >
-        <p data-i18n="footerText">Music, moments & a little turtle.</p>
+        <p data-i18n="footerText">Music, moments &amp; a little turtle.</p>
         <small>© <span id="year"></span> Double_P</small>
       </div>
       <nav aria-label="Footer">
-        <a data-link="github">GitHub ↗</a><a href="#docs" data-i18n="navDocs">Docs</a
-        ><a href="guide.html#privacy" data-i18n="privacy">Privacy & data</a
-        ><a data-link="issues" data-i18n="reportIssue">Report an issue ↗</a>
+        <a data-link="github">GitHub ↗</a><a data-i18n="navDocs" href="#docs">Docs</a
+        ><a data-i18n="privacy" href="guide.html#privacy">Privacy &amp; data</a
+        ><a data-i18n="reportIssue" data-link="issues">Report an issue ↗</a>
       </nav>
       <p class="footer-credit" data-i18n="footerCredit">
         Built with discord.js, @discordjs/voice, yt-dlp and FFmpeg. An independent project by
@@ -391,8 +436,8 @@
     </footer>
     <noscript
       ><p class="wrap">
-        Tutel · Discord music, live radio and calendar. JavaScript enables language selection and
-        command search.
+        Tutel · Discord music, smooth transitions and live radio. JavaScript enables language
+        selection and command search.
         <a
           href="https://discord.com/oauth2/authorize?client_id=1034099080302960733&amp;scope=bot%20applications.commands&amp;permissions=3263488"
           >Invite Tutel</a

@@ -54,3 +54,9 @@ After installing the updated source, run `npm run register` once to update **glo
 - ลิงก์เพลง YouTube ตรงไม่ค้นข้อมูลเต็มซ้ำก่อนเล่นแล้ว ใช้ข้อมูลชื่อแบบเบา ๆ ก่อนเปิดสตรีมจริง ความยาวอาจยังไม่ทราบ
 - ห้องเสียงไม่มีคนจะออกหลัง 120 วินาที ตั้ง `VOICE_EMPTY_LEAVE_SECONDS=0` เพื่อปิด หรือกำหนดเวลาเองได้ถึง 3600 วินาที
 - การรีสตาร์ตหรือสลับเครื่องยังทำให้คิวใน RAM หาย ไม่ใช่คิวถาวร ไม่ต้องย้าย schema ฐานข้อมูลหรือติดตั้ง dependency เพิ่ม แต่ต้อง register คำสั่งใหม่หนึ่งครั้ง
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย

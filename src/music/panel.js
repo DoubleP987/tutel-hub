@@ -24,8 +24,15 @@ import {
   toggleLoop,
   stop,
   destroyPlayer,
+  applySmoothMode,
 } from './player.js';
-import { getMusicSource, setMusicSource, musicSourceLabel } from './settings.js';
+import {
+  getMusicSource,
+  setMusicSource,
+  musicSourceLabel,
+  getSmoothMode,
+  setSmoothMode,
+} from './settings.js';
 import { playRequest } from './requests.js';
 import { randomGenre } from './genres.js';
 import { randomGenres } from './genres.js';
@@ -33,6 +40,35 @@ import { genreMenuRows } from './genre-menu.js';
 import { setRandomGenre } from './settings.js';
 
 let client = null;
+function musicSettingsBody(interaction, messageId) {
+  const enabled = getSmoothMode(interaction.guildId);
+  return {
+    content: t(
+      'ตั้งค่าเพลงของเซิร์ฟเวอร์นี้ · Smooth transition: {0}\nลดและเพิ่มเสียงช่วงสั้น ๆ พร้อมเตรียมเพลงถัดไป · ใช้กับเพลง ไม่ใช้กับวิทยุสด',
+      enabled ? t('เปิด') : t('ปิด'),
+    ),
+    components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder().setCustomId(`music:source:${interaction.user.id}`).addOptions(
+          ['youtube', 'soundcloud'].map((source) => ({
+            label: musicSourceLabel(source),
+            value: source,
+            default: getMusicSource(interaction.guildId) === source,
+          })),
+        ),
+      ),
+      new ActionRowBuilder().addComponents(
+        ...['enable', 'disable'].map((action) =>
+          new ButtonBuilder()
+            .setCustomId(`music:smooth:${interaction.user.id}:${messageId}:${action}`)
+            .setLabel(t(action === 'enable' ? 'เปิด Smooth transition' : 'ปิด Smooth transition'))
+            .setStyle(action === 'enable' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+            .setDisabled(action === 'enable' ? enabled : !enabled),
+        ),
+      ),
+    ],
+  };
+}
 let refreshTimer = null;
 const locks = new Map();
 const timers = new Map();
@@ -108,7 +144,13 @@ function panelBody(guildId, record) {
         ? t('🔎 กำลังหาเพลงถัดไป…')
         : t('⏹ หยุดแล้ว'));
   const title = text(last?.title || t('ยังไม่มีเพลง'), 200);
-  const elapsed = Math.floor((state?.stream?.resource?.playbackDuration || 0) / 1000);
+  const elapsed = Math.max(
+    0,
+    Math.floor(
+      ((state?.stream?.resource?.playbackDuration || 0) - (state?.trackStartedAtResourceMs || 0)) /
+        1000,
+    ),
+  );
   const progress =
     active && !state?.radio
       ? `${clock(elapsed)} / ${last?.duration ? clock(last.duration) : t('ไม่ทราบความยาว')}`
@@ -421,6 +463,25 @@ export async function handleMusicPanelInteraction(interaction) {
     return true;
   }
   const parts = interaction.customId.split(':');
+  if (parts[1] === 'smooth') {
+    if (
+      parts[2] !== interaction.user.id ||
+      !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)
+    ) {
+      await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง'));
+      return true;
+    }
+    const record = storedPanel(interaction.guildId);
+    if (!record || record.messageId !== parts[3] || !['enable', 'disable'].includes(parts[4])) {
+      await privateReply(interaction, t('แผงนี้ไม่ได้ใช้งานแล้ว ให้ใช้แผงเพลงล่าสุด'));
+      return true;
+    }
+    await interaction.deferUpdate();
+    const enabled = await setSmoothMode(interaction.guildId, parts[4] === 'enable');
+    applySmoothMode(interaction.guildId, enabled);
+    await interaction.editReply(musicSettingsBody(interaction, record.messageId));
+    return true;
+  }
   if (parts[1] === 'queue') {
     if (parts[2] !== interaction.user.id) {
       await privateReply(interaction, t('ปุ่มนี้เป็นของผู้เปิดคิว'));
@@ -440,10 +501,15 @@ export async function handleMusicPanelInteraction(interaction) {
     await interaction.deferUpdate();
     const source = await setMusicSource(interaction.guildId, interaction.values[0]);
     musicChanged(interaction.guildId);
-    await interaction.editReply({
-      content: t('บันทึกแหล่งเพลงของเซิร์ฟเวอร์นี้เป็น {0} แล้ว', musicSourceLabel(source)),
-      components: [],
-    });
+    const record = storedPanel(interaction.guildId);
+    await interaction.editReply(
+      record
+        ? musicSettingsBody(interaction, record.messageId)
+        : {
+            content: t('บันทึกแหล่งเพลงของเซิร์ฟเวอร์นี้เป็น {0} แล้ว', musicSourceLabel(source)),
+            components: [],
+          },
+    );
     return true;
   }
   const record = storedPanel(interaction.guildId);
@@ -480,26 +546,8 @@ export async function handleMusicPanelInteraction(interaction) {
       return true;
     }
     await interaction.reply({
-      content: t('เลือกแหล่งค้นหาเพลงของเซิร์ฟเวอร์นี้ · เพลงในคิวเดิมไม่เปลี่ยนแหล่ง'),
+      ...musicSettingsBody(interaction, record.messageId),
       flags: MessageFlags.Ephemeral,
-      components: [
-        new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId(`music:source:${interaction.user.id}`)
-            .addOptions(
-              {
-                label: 'YouTube',
-                value: 'youtube',
-                default: getMusicSource(interaction.guildId) === 'youtube',
-              },
-              {
-                label: 'SoundCloud',
-                value: 'soundcloud',
-                default: getMusicSource(interaction.guildId) === 'soundcloud',
-              },
-            ),
-        ),
-      ],
     });
     return true;
   }

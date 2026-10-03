@@ -12,6 +12,8 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 [Radio status checks, guild calendar commands, login theme and live panel logs](docs/RADIO-AND-PANEL.md)
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
 
+[Smooth transitions, RAM preparation and resource limits](docs/SMOOTH-TRANSITION.md)
+
 ## Bot language and /help
 
 Thai is the default. Set `language: 'en'` in `src/config/bot.js`, or `BOT_LANGUAGE=en` in `.env` (the environment overrides code). Restart after changing it, then run `npm run register` to update command descriptions.
@@ -197,15 +199,15 @@ backups/             Private database snapshots — ignored
 
 ## Prepare for GitHub
 
-The folder is initialized as a local Git repository; no remote upload or commit has been performed. Review before committing:
+The repository is published at https://github.com/DoubleP987/tutel-hub. Review local changes before committing:
 
 ```powershell
 git status --short
 git add .
 git diff --cached --stat
-git commit -m "Initial Tutel Hub source"
-# Replace OWNER with your GitHub account; create an empty repo first.
-git remote add origin https://github.com/OWNER/tutel-hub.git
+git commit -m "Describe the change"
+# Configure origin only when setting up a new clone without a remote.
+# git remote add origin https://github.com/DoubleP987/tutel-hub.git
 git push -u origin main
 ```
 
@@ -217,7 +219,7 @@ Home-screen app name: **Tutel📅**. Mobile icon uses the original turtle on a d
 
 Mobile UI: custom themed view menu, selected-day list below the calendar, scroll-aware top header, a floating add-event button in admin, and clipped event labels without ellipses. Discord notification formatting is unchanged.
 
-Desktop: selected-day cards below the calendar are hidden. Scroll the mouse wheel over the month grid to move between months; outside the grid, normal page scrolling remains available.
+Desktop: selected-day cards are shown below the calendar. Scroll the mouse wheel over the month grid to move between months; outside the grid, normal page scrolling remains available.
 
 ## Vercel
 
@@ -232,3 +234,13 @@ See [Calendar API setup](docs/CALENDAR-API.md). The new public app is `vercel-pu
 See [architecture](docs/ARCHITECTURE.md), the [English handbook](docs/manuals/Tutel-Hub-Handbook-EN.pdf), and the [Thai handbook](docs/manuals/Tutel-Hub-Handbook-TH.pdf). The current public provider is `calendar-api`; legacy Netlify instructions below are retained for that adapter only.
 
 Shared browser assets are edited under `src/web/public/`; run `npm run assets:sync` after changing them. Use `npm run format` for consistent source style. Vercel Root Directory is `vercel-public`.
+
+## Smooth playback
+
+Enable or disable Smooth transition in the private settings message on the Discord music panel (Manage Server required). Off by default; saved per guild. Enabled playback prepares one compressed successor in RAM (32 MiB cap) and overlaps songs for 350 ms through one persistent audio resource, including Skip. Slow sources can still delay preparation; see the linked guide for memory limits, fallback and diagnostics.
+
+## Product boundaries / ขอบเขตแต่ละส่วน
+
+Tutel’s public promotional website describes the Discord music and live-radio bot. The calendar is a personal application sharing the current repository, database adapter and bot notification runtime; it is not offered as a public bot feature on the promotional site. Its private admin and separate read-only Vercel frontend remain operational. No calendar data or functionality was removed by this presentation change.
+
+เว็บโปรโมทนำเสนอเฉพาะบอทเพลงและวิทยุ ปฏิทินเป็นแอปใช้งานส่วนตัวที่ใช้โครงสร้าง ฐานข้อมูล และระบบส่งข้อความของบอทร่วมกันอยู่ใน repo ตอนนี้ หน้า admin และเว็บปฏิทิน Vercel แยกยังทำงานตามเดิม การแยกการนำเสนอไม่ได้ลบข้อมูลหรือความสามารถปฏิทิน

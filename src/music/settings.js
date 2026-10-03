@@ -4,6 +4,14 @@ import { musicChanged } from './events.js';
 import { randomGenres } from './genres.js';
 
 export const musicSources = ['youtube', 'soundcloud'];
+export function getSmoothMode(guildId) {
+  return setting(`music_smooth:${guildId}`) === '1';
+}
+export async function setSmoothMode(guildId, enabled) {
+  await setSetting(`music_smooth:${guildId}`, enabled ? '1' : '0');
+  musicChanged(guildId);
+  return !!enabled;
+}
 export function getRandomGenre(guildId) {
   const value = setting(`music_random_genre:${guildId}`);
   return randomGenres.some((genre) => genre.value === value) ? value : 'all';

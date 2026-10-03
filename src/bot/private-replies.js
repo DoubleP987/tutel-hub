@@ -1,4 +1,5 @@
 const latest = new Map();
+const replies = new WeakMap();
 let sequence = 0;
 const privateFlag = (options) =>
   Boolean(options?.ephemeral || Number(options?.flags?.bitfield ?? options?.flags ?? 0) & 64);
@@ -11,6 +12,8 @@ export function managePrivateReplies(interaction, { privateByDefault = false } =
   const key = `${interaction.channelId || interaction.guildId || 'dm'}:${interaction.user.id}`;
   const order = ++sequence;
   let originalPrivate = false;
+  const state = { key, order, components: [], pending: false };
+  replies.set(interaction, state);
   function replyOptions(options) {
     if (!privateByDefault) return options;
     const body = typeof options === 'string' ? { content: options } : { ...options };
@@ -48,6 +51,8 @@ export function managePrivateReplies(interaction, { privateByDefault = false } =
       const result = await original(options); // Acknowledge Discord before cleanup I/O.
       if (privateFlag(options)) {
         originalPrivate = true;
+        state.pending = method === 'deferReply';
+        state.components = options?.components || [];
         await remember(() => interaction.deleteReply());
       }
       return result;
@@ -56,15 +61,37 @@ export function managePrivateReplies(interaction, { privateByDefault = false } =
   const edit = interaction.editReply.bind(interaction);
   interaction.editReply = async (...args) => {
     if (originalPrivate && latest.get(key)?.order > order) return;
-    return edit(...args);
+    const result = await edit(...args);
+    state.pending = false;
+    if (args[0]?.components !== undefined) state.components = args[0].components;
+    return result;
   };
   const follow = interaction.followUp.bind(interaction);
   interaction.followUp = async (options) => {
     options = replyOptions(options);
     const result = await follow(options);
-    if (privateFlag(options)) await remember(() => interaction.webhook.deleteMessage(result.id));
+    if (privateFlag(options)) {
+      state.pending = false;
+      state.components = options?.components || [];
+      await remember(() => interaction.webhook.deleteMessage(result.id));
+    }
     return result;
   };
+}
+// Call after the handler finishes: progress replies must survive slow lookups,
+// and interactive menus must remain usable instead of disappearing after 15 s.
+export function dismissPrivateReplyLater(interaction) {
+  const state = replies.get(interaction);
+  if (!state || state.pending || state.components.length) return;
+  const record = latest.get(state.key);
+  if (!record || record.order !== state.order) return;
+  clearTimeout(record.timer);
+  record.timer = setTimeout(async () => {
+    if (latest.get(state.key) !== record) return;
+    latest.delete(state.key);
+    await record.remove().catch(() => {});
+  }, 15000);
+  record.timer.unref?.();
 }
 export async function clearPrivateReplies() {
   const records = [...latest.values()];

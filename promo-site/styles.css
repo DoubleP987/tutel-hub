@@ -407,7 +407,7 @@ h1 em {
   right: 10px;
   top: 95px;
 }
-.calendar-chip {
+.smooth-chip {
   position: absolute;
   right: -5px;
   bottom: 34px;
@@ -428,10 +428,10 @@ h1 em {
   border-radius: 8px;
   padding: 2px 12px;
 }
-.calendar-chip strong {
+.smooth-chip strong {
   font-size: 13px;
 }
-.calendar-chip small {
+.smooth-chip small {
   display: block;
   font-size: 10px;
   color: #7d8b77;
@@ -886,7 +886,7 @@ h1 em {
     min-width: 115px;
     font-size: 11px;
   }
-  .calendar-chip {
+  .smooth-chip {
     right: 0;
   }
 }
@@ -963,7 +963,7 @@ h1 em {
     top: 55px;
     right: 0;
   }
-  .calendar-chip {
+  .smooth-chip {
     right: 0;
     bottom: 22px;
     padding: 13px 15px;
@@ -1171,11 +1171,11 @@ h1 em {
 :root[data-theme='dark'] .text-link {
   border-color: var(--line);
 }
-:root[data-theme='dark'] .calendar-chip {
+:root[data-theme='dark'] .smooth-chip {
   background: #243229;
   border-color: var(--line);
 }
-:root[data-theme='dark'] .calendar-chip p,
+:root[data-theme='dark'] .smooth-chip p,
 :root[data-theme='dark'] .feature-number,
 :root[data-theme='dark'] .tabs button,
 :root[data-theme='dark'] .quiet,
@@ -1220,10 +1220,88 @@ h1 em {
   border-color: var(--line);
 }
 :root[data-theme='dark'] .steps article > span,
-:root[data-theme='dark'] .calendar-chip small,
+:root[data-theme='dark'] .smooth-chip small,
 :root[data-theme='dark'] .docs-links > a > span:last-child {
   color: var(--muted);
 }
 .release-version {
   grid-column: 1 / -1;
+}
+
+.smooth-section {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 48px;
+  align-items: center;
+}
+.smooth-section h2 {
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1.12;
+  letter-spacing: -1.5px;
+  margin: 16px 0;
+}
+.smooth-visual {
+  padding: 28px;
+  border: 1px solid var(--border, #dae8df);
+  border-radius: 24px;
+  background: var(--surface, #f2f7f3);
+}
+.smooth-visual svg {
+  width: 100%;
+  overflow: visible;
+}
+.smooth-visual svg path {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.fade-old {
+  stroke: #719d87;
+}
+.fade-new {
+  stroke: #2fbd81;
+}
+.smooth-visual svg line {
+  stroke: #8caa98;
+  stroke-dasharray: 4 5;
+  opacity: 0.4;
+}
+.smooth-visual svg text {
+  fill: currentColor;
+  font-size: 13px;
+}
+.smooth-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin: 10px 0 24px;
+}
+.smooth-points {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.smooth-points strong {
+  font-size: 14px;
+}
+.smooth-points p {
+  font-size: 12px;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+html[data-theme='dark'] .smooth-visual {
+  background: #1d2923;
+  border-color: #35493d;
+}
+@media (max-width: 760px) {
+  .smooth-section {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .smooth-visual {
+    padding: 20px;
+  }
+  .smooth-points {
+    gap: 12px;
+  }
 }

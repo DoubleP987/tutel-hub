@@ -1,7 +1,11 @@
 import { t } from '../i18n/bot.js';
 import { Client, GatewayIntentBits, Events, ActivityType } from 'discord.js';
 import { botConfig } from '../config/bot.js';
-import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
+import {
+  managePrivateReplies,
+  clearPrivateReplies,
+  dismissPrivateReplyLater,
+} from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
 import { musicHandlers } from '../commands/music.js';
@@ -93,6 +97,8 @@ export async function startBot() {
           if (interaction.deferred || interaction.replied)
             await interaction.editReply({ content: response.content }).catch(() => {});
           else await interaction.reply(response).catch(() => {});
+        } finally {
+          if (interaction.customId?.startsWith('music:')) dismissPrivateReplyLater(interaction);
         }
         return;
       }
@@ -107,6 +113,12 @@ export async function startBot() {
         if (interaction.deferred || interaction.replied)
           await interaction.followUp({ content: message, flags: 64 }).catch(() => {});
         else await interaction.reply({ content: message, flags: 64 }).catch(() => {});
+      } finally {
+        if (
+          Object.hasOwn(musicHandlers, interaction.commandName) ||
+          interaction.commandName === 'radio'
+        )
+          dismissPrivateReplyLater(interaction);
       }
     });
     instance.on(Events.Error, (error) => console.error('Discord client error:', error));

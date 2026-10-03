@@ -338,5 +338,8 @@
   "หน้ารายการสถานี": "Station list page",
   "ไม่พบสถานีในหน้าหรือหมวดนี้": "No stations in this page or category",
   "📻 สถานีวิทยุ · หน้า {0}/{1}\n": "📻 Radio stations · Page {0}/{1}\n",
-  "\nใช้ /radio play ใส่ชื่อสถานี · /radio list page เพื่อดูหน้าถัดไป\nสถานะตรวจจากเครื่องบอท ณ เวลาที่ตรวจ อาจเปลี่ยนได้": "\nUse /radio play with the station name · /radio list page for more\nStatus is checked from the bot host and may change."
+  "\nใช้ /radio play ใส่ชื่อสถานี · /radio list page เพื่อดูหน้าถัดไป\nสถานะตรวจจากเครื่องบอท ณ เวลาที่ตรวจ อาจเปลี่ยนได้": "\nUse /radio play with the station name · /radio list page for more\nStatus is checked from the bot host and may change.",
+  "ตั้งค่าเพลงของเซิร์ฟเวอร์นี้ · Smooth transition: {0}\nลดและเพิ่มเสียงช่วงสั้น ๆ พร้อมเตรียมเพลงถัดไป · ใช้กับเพลง ไม่ใช้กับวิทยุสด": "Guild music settings · Smooth transition: {0}\nShort fades and one prepared next track · Music only, not live radio",
+  "เปิด Smooth transition": "Enable smooth transition",
+  "ปิด Smooth transition": "Disable smooth transition"
 }

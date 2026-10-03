@@ -89,3 +89,21 @@ Log ต้องใช้ session admin เบราว์เซอร์โห�
 เก็บ log ในโปรเซสสูงสุดห้าร้อยบรรทัด บรรทัดละสองพันตัวอักษร ส่งสูงสุดสองร้อยรายการต่อคำขอ ปิดบังค่าสำคัญที่ระบบรู้จัก รีสตาร์ทแล้วประวัติใน RAM เริ่มใหม่ ใช้ tutel log ดู journald ได้ API ส่งตามเครื่องที่รันจริง
 
 ทั้งสองเครื่องใช้ user service tutelbot.service มี tutel start stop restart status log อัปเดตเฉพาะไฟล์ของงานที่อนุญาต สำรองก่อนและไม่แทนที่ env จริง การอัป GitHub แยกจาก deploy เซิร์ฟเวอร์และทำเมื่อผู้ใช้สั่ง งานนี้ทดสอบอัตโนมัติผ่าน 43 รายการและตรวจหน้าเว็บ homeserver ว่ามีสถานะจริงและ log ไม่ว่าง
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย
+
+## Product boundaries / ขอบเขตแต่ละส่วน
+
+Tutel’s public promotional website describes the Discord music and live-radio bot. The calendar is a personal application sharing the current repository, database adapter and bot notification runtime; it is not offered as a public bot feature on the promotional site. Its private admin and separate read-only Vercel frontend remain operational. No calendar data or functionality was removed by this presentation change.
+
+เว็บโปรโมทนำเสนอเฉพาะบอทเพลงและวิทยุ ปฏิทินเป็นแอปใช้งานส่วนตัวที่ใช้โครงสร้าง ฐานข้อมูล และระบบส่งข้อความของบอทร่วมกันอยู่ใน repo ตอนนี้ หน้า admin และเว็บปฏิทิน Vercel แยกยังทำงานตามเดิม การแยกการนำเสนอไม่ได้ลบข้อมูลหรือความสามารถปฏิทิน
+
+## Short private responses / ข้อความส่วนตัวสั้น ๆ
+
+Music/radio text-only confirmations and errors disappear automatically 15 seconds after the command handler finishes. Pending deferred/progress responses remain while a lookup is running. Replies with interactive components, such as Settings, genre selection or paginated lists, keep their normal lifetime. The newest private reply still replaces the previous one for the same user/channel. The public music panel is unaffected.
+
+คำยืนยันและข้อผิดพลาดแบบข้อความของเพลง/วิทยุหายเอง 15 วินาทีหลังคำสั่งทำงานเสร็จ ระหว่างกำลังโหลดไม่เริ่มนับ เมนูที่มีปุ่มหรือ dropdown ยังอยู่ให้ใช้งาน ข้อความใหม่ยังแทนข้อความเก่าของผู้ใช้และช่องเดียวกัน แผงเพลงสาธารณะไม่หายตาม timer นี้

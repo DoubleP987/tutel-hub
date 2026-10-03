@@ -40,3 +40,9 @@ Back up source and the configured database, copy updated source files, register 
 ## Language, help and Loop
 
 The latest music panel includes Loop for the current track. Skip bypasses the repeat; stop/leave/live radio disable it. Labels and built-in summary headings follow `src/config/bot.js` or the optional `BOT_LANGUAGE` override. `/help` gives the invoking user private website, guide and repository buttons. See [language configuration](BOT-LANGUAGE.md), [music controls](MUSIC-PANEL.md) and [MongoDB/failover](MONGODB-FAILOVER.md).
+
+## Continuous audio update / อัปเดตเสียงต่อเนื่อง
+
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย

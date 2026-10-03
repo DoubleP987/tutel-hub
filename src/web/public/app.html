@@ -30,6 +30,7 @@
         <div class="side-title">เมนู</div>
         <button class="nav-item active" data-page="calendar">▦ <span>ปฏิทิน</span></button
         ><button class="nav-item admin-only" data-page="control">◉ <span>ควบคุมบอท</span></button
+        ><button class="nav-item admin-only" data-page="logs">☷ <span>Log บอท</span></button
         ><button class="nav-item admin-only" data-page="settings">
           ⚙ <span>ตั้งค่าแจ้งเตือน</span>
         </button>
@@ -88,6 +89,29 @@
           </section>
           <h2 class="section-heading">กำลังเล่นใน voice</h2>
           <div id="music-list" class="music-list"></div>
+        </section>
+        <section id="logs-page" class="page hidden">
+          <section class="bot-log-panel admin-only" aria-labelledby="bot-log-heading">
+            <div class="page-heading">
+              <h2 id="bot-log-heading">Log ของบอท</h2>
+              <div class="actions">
+                <label class="check-row"
+                  ><input id="bot-log-live" type="checkbox" checked /> อัปเดตสด</label
+                >
+                <button id="bot-log-refresh" class="ghost" type="button">รีเฟรช</button>
+                <button id="bot-log-clear" class="ghost" type="button">ล้างหน้าจอ</button>
+              </div>
+            </div>
+            <p id="bot-log-status" class="muted">
+              Log ล่าสุดตั้งแต่บริการเริ่มทำงาน · เฉพาะผู้ดูแล
+            </p>
+            <pre
+              id="bot-log-output"
+              class="bot-log-output"
+              tabindex="0"
+              aria-label="Log ล่าสุดของบอท"
+            ></pre>
+          </section>
         </section>
         <section id="settings-page" class="page hidden">
           <div class="page-heading">
@@ -201,7 +225,8 @@
             <button type="button" id="sync-public-calendar" class="ghost">ซิงก์ปฏิทินตอนนี้</button>
             <p id="settings-message" class="muted"></p>
             <div class="hint">
-              ใน Discord ใช้ <b>/calendar setup</b> เพื่อตั้ง channel ได้เช่นกัน
+              เมื่อบันทึก channel และเปิดแจ้งเตือนแล้ว คำสั่ง
+              <b>/calendar</b> จะปรากฏในเซิร์ฟเวอร์นั้น
             </div>
           </form>
         </section>
@@ -343,5 +368,6 @@
     </dialog>
     <div id="toast" class="toast"></div>
     <script src="/app.js" defer></script>
+    <script src="/bot-logs.js" defer></script>
   </body>
 </html>

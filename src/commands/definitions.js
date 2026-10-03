@@ -1,7 +1,9 @@
 import { t } from '../i18n/bot.js';
 import { SlashCommandBuilder, ChannelType } from 'discord.js';
-import { randomGenres } from '../music/genres.js';
 export const commands = [
+  new SlashCommandBuilder()
+    .setName('join')
+    .setDescription(t('เข้าห้องเสียงมารอ · ออกเมื่อไม่มีเพลง 5 นาที')),
   new SlashCommandBuilder()
     .setName('help')
     .setDescription(t('เปิดเว็บและคู่มือ Tutel แบบเห็นเฉพาะคุณ')),
@@ -155,6 +157,21 @@ export const commands = [
               { name: t('ภาคใต้'), value: 'south' },
               { name: t('หาดใหญ่/สงขลา'), value: 'hatyai' },
             ),
+        )
+        .addStringOption((o) =>
+          o
+            .setName('category')
+            .setDescription(t('หมวดสถานี'))
+            .addChoices(
+              { name: t('เพลง'), value: 'music' },
+              { name: t('ข่าวและจราจร'), value: 'news' },
+              { name: t('สาระและการศึกษา'), value: 'talk' },
+              { name: t('กีฬา'), value: 'sport' },
+              { name: t('ท้องถิ่น'), value: 'local' },
+            ),
+        )
+        .addIntegerOption((o) =>
+          o.setName('page').setDescription(t('หน้ารายการสถานี')).setMinValue(1).setMaxValue(100),
         ),
     )
     .addSubcommand((sub) =>
@@ -190,7 +207,7 @@ export const commands = [
       option
         .setName('genre')
         .setDescription(t('แนวเพลง · จำค่าแยกแต่ละเซิร์ฟเวอร์'))
-        .addChoices(...randomGenres.map((genre) => ({ name: t(genre.label), value: genre.value }))),
+        .setAutocomplete(true),
     ),
   new SlashCommandBuilder().setName('queue').setDescription(t('แสดงคิวเพลง')),
   new SlashCommandBuilder()

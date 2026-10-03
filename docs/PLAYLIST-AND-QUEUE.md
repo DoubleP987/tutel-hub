@@ -25,7 +25,7 @@ Queue edits require being in the bot's voice channel. The Loop button cycles **O
 
 ### Random genres
 
-Genre is optional, with 25 fixed choices: Mixed, Thai, Pop, Rock, Hip-hop/Rap, R&B/Soul, Jazz, Lo-fi/Chill, Electronic/EDM, Luk thung/Mor lam, Acoustic, Anime/Anisong, Russian, K-pop, Japanese (including J-pop/J-rock/City Pop), Metal, Classical, Instrumental, Ambient/Relaxing, Reggae/Ska, Latin, Chinese/C-pop, Indie/Alternative, Pop Ballad/Love songs, Meme/Internet.
+Genre is optional, with 26 searchable suggestions: Mixed, Thai, Pop, Rock, Hip-hop/Rap, R&B/Soul, Jazz, Lo-fi/Chill, Electronic/EDM, Heavy bass/Bass Boosted, Luk thung/Mor lam, Acoustic, Anime/Anisong, Russian, K-pop, Japanese (including J-pop/J-rock/City Pop), Metal, Classical, Instrumental, Ambient/Relaxing, Reggae/Ska, Latin, Chinese/C-pop, Indie/Alternative, Pop Ballad/Love songs, Meme/Internet. Discord displays up to 25 suggestions at once; type a genre name to find any category. Heavy bass mixes Dubstep, Trap, Phonk, Drum & Bass and Hardstyle searches; it does not increase playback gain. Genre matching relies on provider search results.
 
 The last chosen genre is stored per guild in the shared datastore. Omit `genre` to reuse it; a fresh guild defaults to Mixed. Switching genre takes effect for subsequent random tracks, preserving the current song and manually queued songs. The panel's random toggle uses the remembered genre. The server's configured music provider still applies; an Oracle SoundCloud override remains respected.
 
@@ -48,7 +48,7 @@ After installing the updated source, run `npm run register` once to update **glo
 - คิวรอสูงสุด 500 เพลงต่อเซิร์ฟเวอร์ รายการส่วนตัว/ถูกลบที่ตรวจพบจะถูกข้าม เพลงที่เปิดเสียงไม่ได้จะข้ามตอนเล่น และไม่ใส่กลับเข้า Loop
 - `/playnext` แทรกต่อจากเพลงปัจจุบัน, `/remove` ลบตามเลขจาก `/queue`, `/move` ย้ายตำแหน่ง, `/clearqueue` ล้างเฉพาะเพลงที่รอ, `/shuffle` สุ่มลำดับเพลงที่รอ ต้องอยู่ห้องเสียงเดียวกับบอท
 - `/loop mode:` เลือกปิด / เพลงเดียว / ทั้งคิว ปุ่มบนแผงหมุนสามโหมดเหมือนกัน กดข้ามยังข้ามได้ และ `/stop` ปิด Loop
-- `/randommusic genre:` เป็น choice **ไม่บังคับ** มี 25 แนวตามรายการภาษาอังกฤษด้านบน รวมเพลงญี่ปุ่น รัสเซีย อนิเมะ ฮิปฮอป และเพลงมีม ไม่เลือกจะใช้แนวล่าสุดของเซิร์ฟเวอร์นั้น เซิร์ฟเวอร์ใหม่เริ่มคละแนว
+- `/randommusic genre:` เป็นตัวเลือก **ไม่บังคับ** มี 26 แนว ค้นหาจากรายการแนะนำได้ รวมเพลงญี่ปุ่น รัสเซีย อนิเมะ ฮิปฮอป เพลงมีม และเบสหนัก พิมพ์ `เบส` หรือ `bass` แล้วเลือก **เบสหนัก / Bass Boosted** เพื่อคละ Dubstep, Trap, Phonk, Drum & Bass และ Hardstyle ระบบค้นหาเพลงตามแนว ไม่ได้เพิ่ม gain ของเสียง Discord แสดงได้ครั้งละ 25 ตัวเลือก จึงพิมพ์ชื่อเพื่อหาแนวที่ต้องการได้ ไม่เลือกจะใช้แนวล่าสุดของเซิร์ฟเวอร์นั้น เซิร์ฟเวอร์ใหม่เริ่มคละแนว
 - การเปลี่ยนแนวมีผลกับเพลงสุ่มถัดไป ไม่ตัดเพลงที่เล่นอยู่ และไม่ลบเพลงที่ผู้ใช้เพิ่มเอง ตัวเลือกเพิ่มไม่เปิดโปรเซสเพิ่มล่วงหน้า
 - สุ่มเพลงปกติ 90–600 วินาที แนวมีม 30–600 วินาที ไม่เอา longplay/เพลงรวม/ถ่ายทอดสด การค้นหาตามแนวเป็น heuristic จึงอาจไม่ได้แนวตรงทุกเพลง และขึ้นกับเพลงที่แหล่งต้นทางเปิดให้เล่น
 - ลิงก์เพลง YouTube ตรงไม่ค้นข้อมูลเต็มซ้ำก่อนเล่นแล้ว ใช้ข้อมูลชื่อแบบเบา ๆ ก่อนเปิดสตรีมจริง ความยาวอาจยังไม่ทราบ

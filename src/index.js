@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './bot/logs.js';
 import { initializeAccounts, setting } from './calendar/db.js';
 import { startReminderScheduler } from './calendar/service.js';
 import { startControlServer } from './web/server.js';

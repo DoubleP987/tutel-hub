@@ -4,7 +4,7 @@ import { canRunBot, clusterEnabled } from './state.js';
 import { clusterStatus, nodeId } from './runtime.js';
 
 const routes = [
-  /^\/api\/bot$/,
+  /^\/api\/bot(?:\/logs)?$/,
   /^\/api\/control\/music(?:\/source)?$/,
   /^\/api\/guilds(?:\/\d+\/channels)?$/,
   /^\/api\/settings\/discord(?:\/test)?$/,
@@ -44,6 +44,7 @@ export async function forwardActiveBot(req, res, next) {
   // This middleware is installed after the original auth/admin/CSRF checks.
   const status = await clusterStatus();
   if (!status.botEnabled || !status.activeNode) {
+    if (path === '/api/bot/logs') return next();
     if (path === '/api/bot')
       return res.json({
         status: { enabled: false, ready: false, tag: null },

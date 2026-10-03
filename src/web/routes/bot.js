@@ -1,4 +1,5 @@
 import { setting, setSetting } from '../../calendar/db.js';
+import { botLogs, logInstance } from '../../bot/logs.js';
 import { getDiscordClient, startBot, stopBot, botStatus } from '../../bot/runtime.js';
 import {
   getPlayer,
@@ -15,6 +16,13 @@ import { clusterStatus, setClusterTarget } from '../../cluster/runtime.js';
 import { forwardActiveBot } from '../../cluster/jobs.js';
 
 export function registerBotRoutes(app) {
+  app.get('/api/bot/logs', auth, admin, forwardActiveBot, (req, res) => {
+    const after =
+      req.query.instance && req.query.instance !== logInstance
+        ? 0
+        : Math.max(0, Number(req.query.after) || 0);
+    res.json(botLogs(after));
+  });
   app.get('/api/bot', auth, admin, forwardActiveBot, async (req, res) => {
     const client = getDiscordClient(),
       guilds = client ? Array.from(client.guilds.cache.values()) : [];

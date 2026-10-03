@@ -17,11 +17,19 @@ if (
 }
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 if (guildOnly) {
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+  const { listGuildConfigs } = await import('./calendar/events.js');
+  const { reminderOptions } = await import('./calendar/options.js');
+  const { calendarEnabled } = await import('./commands/calendar-visibility.js');
+  const config = (await listGuildConfigs()).find((item) => item.guild_id === GUILD_ID);
+  const body = commands.filter(
+    (command) => command.name !== 'calendar' || calendarEnabled(config, reminderOptions(GUILD_ID)),
+  );
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body });
   console.log(`Registered ${commands.length} commands in guild ${GUILD_ID}.`);
 } else {
-  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+  const globalCommands = commands.filter((command) => command.name !== 'calendar');
+  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: globalCommands });
   console.log(
-    `Registered ${commands.length} global commands. They are available in every guild where the bot is installed.`,
+    `Registered ${globalCommands.length} global commands. Calendar commands are managed per enabled guild by the running bot.`,
   );
 }

@@ -5,7 +5,9 @@ Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 
 [ภาษาไทย](README.th.md) · [SQLite guide / คู่มือฐานข้อมูล](docs/SQLITE.md)
 
-[Playlist, queue controls and 25 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
+[Playlist, queue controls and 26 optional random genres](docs/PLAYLIST-AND-QUEUE.md)
+
+[Radio status checks, guild calendar commands, login theme and live panel logs](docs/RADIO-AND-PANEL.md)
 Latest behavior: [daily summaries and per-guild music sources](docs/DAILY-SUMMARY-AND-MUSIC.md). This update supersedes reminder schedules in the older PDF handbooks.
 
 ## Bot language and /help
@@ -40,7 +42,7 @@ Use `npm run profile:update` to explicitly update the application description/li
 
 - Node.js **24 or newer** with npm. This project uses built-in `node:sqlite`.
 - Python 3 and yt-dlp, or an official yt-dlp executable accessible by the server.
-- FFmpeg: `npm ci` installs `ffmpeg-static`; alternatively set `FFMPEG_PATH` to a system executable.
+- FFmpeg: on Linux install Ubuntu's build with `sudo apt-get install ffmpeg`. The app prefers `/usr/bin/ffmpeg`, then `~/.local/bin/tutel-ffmpeg`, then the npm bundle. `FFMPEG_PATH` overrides this selection. Some bundled Linux builds crash on HTTPS radio input; a working pipe decoder does not prove remote radio input works.
 - Discord application/bot credentials for Discord features. Netlify credentials are optional.
 
 ## Windows setup

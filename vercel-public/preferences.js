@@ -51,6 +51,10 @@
     get: () => ({ ...prefs, filters: [...prefs.filters] }),
     set: (value) => {
       prefs = { ...prefs, ...value };
+      // Keep the restored account theme available before the next login.
+      try {
+        localStorage.setItem(key, JSON.stringify(prefs));
+      } catch {}
       theme();
       refresh();
     },

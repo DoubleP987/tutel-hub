@@ -40,16 +40,25 @@ function getState(guildId) {
       nextTimer: null,
       startupTimer: null,
       emptyTimer: null,
+      standbyTimer: null,
+      standby: false,
       searchAbort: null,
       failures: 0,
+      radioRetries: 0,
+      radioTimer: null,
     };
     state.player.on('stateChange', (oldState, newState) => {
+      updateStandby(guildId, state);
       console.log('[voice] player ' + oldState.status + ' -> ' + newState.status);
       musicChanged(guildId, state.lastTrack);
     });
     state.player.on('error', (error) => {
       console.error('[voice] player error:', error.message);
-      if (state.radio) return;
+      if (state.radio) {
+        state.stream?.stop();
+        state.player.stop(true);
+        return;
+      }
       clearTimeout(state.startupTimer);
       state.stream?.stop();
       state.stream = null;
@@ -59,7 +68,20 @@ function getState(guildId) {
     state.player.on(AudioPlayerStatus.Idle, () => {
       if (state.radio) {
         const station = state.radio;
-        setTimeout(() => {
+        const stream = state.stream;
+        const played = (stream?.resource?.playbackDuration || 0) > 10000;
+        state.radioRetries = played ? 0 : state.radioRetries + 1;
+        stream?.stop();
+        state.stream = null;
+        if (state.radioRetries >= 3) {
+          console.warn('[radio] stopped after repeated empty streams:', station.name);
+          state.radio = null;
+          updateStandby(guildId, state);
+          musicChanged(guildId, state.lastTrack);
+          return;
+        }
+        clearTimeout(state.radioTimer);
+        state.radioTimer = setTimeout(() => {
           if (
             players.get(guildId) !== state ||
             state.radio !== station ||
@@ -73,6 +95,7 @@ function getState(guildId) {
             console.error('[radio] reconnect failed:', error);
           }
         }, 5000);
+        state.radioTimer.unref();
         return;
       }
       if (!state.current) return;
@@ -113,6 +136,46 @@ function ensureConnection(guildId, voiceChannel, state) {
     state.connection.on(VoiceConnectionStatus.Disconnected, () => destroyPlayer(guildId));
   } else if (state.connection.joinConfig.channelId !== voiceChannel.id)
     throw new Error(t('บอตอยู่ใน voice channel อื่นแล้ว'));
+}
+export function updateStandby(guildId, state) {
+  clearTimeout(state.standbyTimer);
+  if (
+    !state.standby ||
+    state.current ||
+    state.radio ||
+    state.randomMode ||
+    state.loadingNext ||
+    state.queue.length
+  )
+    return;
+  state.standbyTimer = setTimeout(
+    () => {
+      if (
+        players.get(guildId) === state &&
+        !state.current &&
+        !state.radio &&
+        !state.randomMode &&
+        !state.queue.length
+      )
+        destroyPlayer(guildId);
+    },
+    5 * 60 * 1000,
+  );
+  state.standbyTimer.unref();
+}
+export async function joinStandby(guildId, voiceChannel) {
+  const state = getState(guildId);
+  ensureConnection(guildId, voiceChannel, state);
+  state.standby = true;
+  try {
+    await entersState(state.connection, VoiceConnectionStatus.Ready, 20000);
+  } catch (error) {
+    destroyPlayer(guildId);
+    throw error;
+  }
+  updateStandby(guildId, state);
+  musicChanged(guildId);
+  return state;
 }
 function scheduleNext(guildId, state, delay = 0) {
   clearTimeout(state.nextTimer);
@@ -199,6 +262,7 @@ async function playNext(guildId) {
     }
   } finally {
     state.loadingNext = false;
+    updateStandby(guildId, state);
     musicChanged(guildId, state.lastTrack);
     if (state.searchAbort === abort) state.searchAbort = null;
     if (
@@ -284,14 +348,16 @@ export function disableRandomMode(guildId) {
   musicChanged(guildId, state.lastTrack);
   return true;
 }
-export function playRadio(guildId, voiceChannel, station) {
+export async function playRadio(guildId, voiceChannel, station) {
   invalidateMusicRequests(guildId);
   const state = getState(guildId);
   ensureConnection(guildId, voiceChannel, state);
   state.generation++;
+  const generation = state.generation;
   state.searchAbort?.abort();
   clearTimeout(state.nextTimer);
   clearTimeout(state.startupTimer);
+  clearTimeout(state.radioTimer);
   state.queue.length = 0;
   state.randomMode = false;
   state.current = null;
@@ -299,10 +365,19 @@ export function playRadio(guildId, voiceChannel, station) {
   state.loopMode = false;
   state.bypassLoop = false;
   state.radio = station;
+  state.radioRetries = 0;
   state.lastTrack = { title: t('วิทยุสด · {0}', station.name), duration: 0 };
   state.stream = createRadioResource(station);
   state.player.play(state.stream.resource);
   musicChanged(guildId, state.lastTrack);
+  try {
+    await entersState(state.player, AudioPlayerStatus.Playing, 30000);
+    if (state.generation !== generation || state.radio !== station)
+      throw new Error('RADIO_CANCELLED');
+  } catch (error) {
+    if (state.generation === generation && state.radio === station) stop(guildId);
+    throw error;
+  }
   return state;
 }
 export function getPlayer(guildId) {
@@ -346,6 +421,7 @@ export function stop(guildId) {
   state.searchAbort?.abort();
   clearTimeout(state.nextTimer);
   clearTimeout(state.startupTimer);
+  clearTimeout(state.radioTimer);
   state.randomMode = false;
   state.loopMode = false;
   state.bypassLoop = false;
@@ -357,6 +433,7 @@ export function stop(guildId) {
   state.player.stop(true);
   clearRandomSession(guildId);
   musicChanged(guildId, state.lastTrack);
+  updateStandby(guildId, state);
 }
 export function destroyPlayer(guildId) {
   const state = players.get(guildId);
@@ -367,6 +444,7 @@ export function destroyPlayer(guildId) {
   }
   stop(guildId);
   clearTimeout(state.emptyTimer);
+  clearTimeout(state.standbyTimer);
   state.connection?.destroy();
   players.delete(guildId);
   musicLeft(guildId);

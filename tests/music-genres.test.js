@@ -2,18 +2,43 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import { randomGenres, randomGenre } from '../src/music/genres.js';
+import { randomGenres, randomGenre, genreSuggestions } from '../src/music/genres.js';
+import { handleMusicAutocomplete } from '../src/commands/music-autocomplete.js';
 import { commands } from '../src/commands/definitions.js';
 
-test('Genre is an optional Discord choice with 25 unique options', () => {
+test('Genre is optional autocomplete with 26 unique genres', () => {
   const option = commands.find((command) => command.name === 'randommusic').options[0];
   assert.equal(option.name, 'genre');
   assert.notEqual(option.required, true);
-  assert.equal(option.choices.length, 25);
-  assert.equal(new Set(option.choices.map((choice) => choice.value)).size, 25);
-  for (const value of ['all', 'anime', 'russian', 'hiphop', 'lofi'])
-    assert(option.choices.some((choice) => choice.value === value));
+  assert.equal(option.autocomplete, true);
+  assert.equal(option.choices, undefined);
+  assert.equal(randomGenres.length, 26);
+  assert.equal(new Set(randomGenres.map((genre) => genre.value)).size, 26);
+  for (const value of ['all', 'anime', 'russian', 'hiphop', 'lofi', 'bass', 'meme'])
+    assert(randomGenres.some((genre) => genre.value === value));
   assert.equal(randomGenre('unknown').value, 'all');
+});
+
+test('Bass aliases resolve to suggestions and all genres remain searchable', () => {
+  assert.equal(genreSuggestions().length, 25);
+  for (const query of ['เบส', 'bass', 'dubstep', 'phonk', 'dnb', 'hardstyle'])
+    assert(genreSuggestions(query).some((choice) => choice.value === 'bass'));
+  for (const genre of randomGenres)
+    assert(genreSuggestions(genre.value).some((choice) => choice.value === genre.value));
+  assert.deepEqual(genreSuggestions('unknown style'), []);
+});
+
+test('Autocomplete responds directly with genre suggestions', async () => {
+  let response;
+  await handleMusicAutocomplete({
+    commandName: 'randommusic',
+    options: { getFocused: () => ({ name: 'genre', value: 'เบส' }) },
+    respond: async (choices) => {
+      response = choices;
+    },
+  });
+  assert.equal(response[0].value, 'bass');
+  assert(response.length <= 25);
 });
 test('Every selected genre has varied single-track queries', () => {
   for (const genre of randomGenres.slice(1)) {

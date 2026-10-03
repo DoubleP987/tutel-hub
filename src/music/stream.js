@@ -1,13 +1,12 @@
 import { t } from '../i18n/bot.js';
 import { spawn } from 'node:child_process';
 import { createAudioResource, StreamType } from '@discordjs/voice';
-import ffmpegStaticPath from 'ffmpeg-static';
+import { ffmpegPath } from './ffmpeg.js';
 import { searchTracks, ytDlpPath, ytDlpRuntimeArgs } from './search.js';
 import { selectRequestedTrack } from './selection.js';
 import { musicLink, youtubeTrack } from './links.js';
 
 const executable = ytDlpPath;
-const ffmpegPath = process.env.FFMPEG_PATH || ffmpegStaticPath;
 export async function resolveTrack(query, source = 'youtube', { signal } = {}) {
   query = String(query || '').trim();
   const direct = /^https?:\/\//i.test(query);
@@ -109,6 +108,8 @@ export function createTrackResource(track) {
 }
 
 export function createRadioResource(station) {
+  let failed = false;
+  let pcmBytes = 0;
   const transcoder = spawn(
     ffmpegPath,
     [
@@ -116,6 +117,8 @@ export function createRadioResource(station) {
       '-hide_banner',
       '-loglevel',
       'warning',
+      '-rw_timeout',
+      '15000000',
       '-reconnect',
       '1',
       '-reconnect_streamed',
@@ -136,9 +139,23 @@ export function createRadioResource(station) {
     { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
   );
   transcoder.stderr.on('data', (chunk) => process.stderr.write('[radio] ' + chunk));
-  transcoder.once('error', (error) => console.error('[radio] ffmpeg failed:', error));
-  transcoder.once('close', (code) => console.log('[radio] ffmpeg ended (' + code + ')'));
+  transcoder.stdout.on('data', (chunk) => {
+    pcmBytes += chunk.length;
+  });
+  transcoder.once('error', (error) => {
+    failed = true;
+    console.error('[radio] ffmpeg failed:', error.message);
+  });
+  transcoder.once('close', (code, signal) => {
+    if (code !== 0) failed = true;
+    console.log(
+      `[radio] ffmpeg ended (${code}; signal=${signal || 'none'}); PCM=${Math.round(pcmBytes / 192000)}s`,
+    );
+  });
   return {
+    get failed() {
+      return failed;
+    },
     resource: createAudioResource(transcoder.stdout, { inputType: StreamType.Raw }),
     stop: () => {
       if (!transcoder.killed) transcoder.kill();

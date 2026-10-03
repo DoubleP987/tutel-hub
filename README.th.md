@@ -5,7 +5,9 @@
 
 [English](README.md) · [คู่มือ SQLite](docs/SQLITE.md)
 
-[คู่มือ Playlist จัดคิว และสุ่มเพลง 25 แนว (เลือกหรือไม่เลือกก็ได้)](docs/PLAYLIST-AND-QUEUE.md)
+[คู่มือ Playlist จัดคิว และสุ่มเพลง 26 แนว (เลือกหรือไม่เลือกก็ได้)](docs/PLAYLIST-AND-QUEUE.md)
+
+[คู่มือสถานะวิทยุ คำสั่งปฏิทินแยกเซิร์ฟเวอร์ ธีม login และ log ใน panel](docs/RADIO-AND-PANEL.md)
 รายละเอียดล่าสุด: [สรุปรายวันและแหล่งเพลงแยกเซิร์ฟเวอร์](docs/DAILY-SUMMARY-AND-MUSIC.md) แทนเวลาเตือนแบบเก่าในคู่มือ PDF
 
 ## ภาษาบอทและ /help
@@ -87,7 +89,7 @@ PUBLIC_SITE_DIR=./netlify-public
 - `CLIENT_ID` คือ Application ID จาก Discord Developer Portal
 - `GUILD_ID` คือ ID ของ Discord server สำหรับลงทะเบียนคำสั่งเฉพาะเซิร์ฟเวอร์ทดสอบ ปล่อยว่างได้เมื่อใช้ global commands
 - `YT_DLP_PATH` เป็นชื่อคำสั่งหรือ path เต็ม แนะนำใช้ `/` ใน path Windows หรือครอบด้วย `"` หากมีช่องว่าง
-- `FFMPEG_PATH` ว่างได้เพื่อใช้ ffmpeg-static
+- `FFMPEG_PATH` ว่างได้ บน Linux ระบบเลือก `/usr/bin/ffmpeg` ก่อน ตามด้วย `~/.local/bin/tutel-ffmpeg` แล้วจึงใช้ ffmpeg-static ติดตั้งด้วย `sudo apt-get install ffmpeg` แนะนำสำหรับวิทยุ HTTPS เพราะตัว bundled บางรุ่นบน Linux ล้มเมื่อเปิด URL โดยตรง แม้เล่นเพลงผ่าน pipe ได้
 - `NETLIFY_AUTH_TOKEN` และ `NETLIFY_SITE_ID` ว่างไว้จนกว่าจะต้องการเผยแพร่จริง
 - `ADMIN_INITIAL_PASSWORD` ใช้เฉพาะตอนสร้างฐานข้อมูลใหม่ ถ้าว่างระบบสุ่มรหัสให้ ถ้าใส่เองต้องยาวอย่างน้อย 10 ตัวอักษร ไม่ได้เปลี่ยนรหัสบัญชีที่มีอยู่แล้ว
 

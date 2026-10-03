@@ -4,6 +4,8 @@ import { botConfig } from '../config/bot.js';
 import { managePrivateReplies, clearPrivateReplies } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
+import { startCalendarCommands, stopCalendarCommands } from './calendar-commands.js';
+import { handleMusicAutocomplete } from '../commands/music-autocomplete.js';
 import { destroyPlayer, getPlayer, watchEmptyVoice } from '../music/player.js';
 import { handleMusicRequestButton } from '../music/requests.js';
 import { handleCalendarButton } from '../calendar/notifications.js';
@@ -40,12 +42,23 @@ export async function startBot() {
       });
       console.log('[bot] presence: ' + botConfig.statusText);
       console.log('Ready as ' + ready.user.tag);
+      void startCalendarCommands(ready).catch((error) =>
+        console.error('[calendar commands]', error.message),
+      );
       void initializeMusicPanels(ready).catch((error) =>
         console.error('[music panel] initialize:', error.message),
       );
     });
     instance.on(Events.InteractionCreate, async (interaction) => {
       if (!canRunBot()) return;
+      if (interaction.isAutocomplete()) {
+        try {
+          await handleMusicAutocomplete(interaction);
+        } catch (error) {
+          console.error('[autocomplete]', error.message);
+        }
+        return;
+      }
       managePrivateReplies(interaction);
       if (
         interaction.isButton() ||
@@ -110,6 +123,7 @@ export async function startBot() {
   }
 }
 export async function stopBot() {
+  stopCalendarCommands();
   const old = client;
   if (!old) return botStatus();
   for (const guildId of old.guilds.cache.keys()) destroyPlayer(guildId);

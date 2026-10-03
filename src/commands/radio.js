@@ -1,3 +1,5 @@
+import { showRadioList } from './radio-list.js';
+import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 import { t } from '../i18n/bot.js';
 import { playRadio } from '../music/player.js';
 import { guildOnly } from './shared.js';
@@ -16,59 +18,7 @@ export const radioHandlers = {
     if (!guildOnly(interaction)) return;
     const sub = interaction.options.getSubcommand();
     const region = interaction.options.getString('area');
-    if (sub === 'list') {
-      await interaction.deferReply();
-      try {
-        const dynamicRows = await getRadioDirectory();
-        const staticRows = RADIO_STATIONS.filter(
-          (station) =>
-            !region ||
-            station.region === region ||
-            (region === 'south' && station.region === 'hatyai'),
-        );
-        const liveRows = dynamicRows
-          .filter(
-            (station) =>
-              station.lastcheckok === 1 &&
-              (station.url_resolved || station.url) &&
-              stationMatchesRegion(station, region),
-          )
-          .sort((a, b) => (b.clickcount || 0) - (a.clickcount || 0))
-          .map((station) => ({
-            name: station.name,
-            frequency: stationFrequency(station),
-            aliases: [],
-            region: region || station.state || 'Thailand',
-            url: station.url_resolved || station.url,
-            state: station.state || '',
-          }));
-        const seen = new Set(staticRows.map((station) => station.url));
-        const rows = [...staticRows, ...liveRows.filter((station) => !seen.has(station.url))].slice(
-          0,
-          12,
-        );
-        if (!rows.length)
-          return interaction.editReply(
-            t('API ยังไม่พบสตรีมที่ตรวจว่าออนไลน์ในภาคนี้ ลองเลือกภาคอื่นหรือค้นด้วยชื่อสถานี'),
-          );
-        return interaction.editReply(
-          t('สถานีออนไลน์ที่ค้นได้จากไดเรกทอรี\n') +
-            rows
-              .map(
-                (station) =>
-                  '• ' +
-                  station.name +
-                  (station.frequency ? ' (' + station.frequency + ' MHz)' : '') +
-                  (station.state ? ' · ' + station.state : ''),
-              )
-              .join('\n') +
-            t('\nเปิดด้วย /radio play แล้วใส่ชื่อสถานี'),
-        );
-      } catch (error) {
-        console.error('[radio] directory lookup failed:', error);
-        return interaction.editReply(t('ค้นไดเรกทอรีวิทยุไม่สำเร็จชั่วคราว ลองใหม่อีกครั้ง'));
-      }
-    }
+    if (sub === 'list') return showRadioList(interaction);
 
     const query = norm(interaction.options.getString('station', true));
     const station = RADIO_STATIONS.find(
@@ -86,12 +36,7 @@ export const radioHandlers = {
         const numeric = /^\d{2,3}(?:\.\d{1,2})?$/.test(query);
         const found = rows
           .filter((row) => {
-            if (
-              row.lastcheckok !== 1 ||
-              !(row.url_resolved || row.url) ||
-              !stationMatchesRegion(row, region)
-            )
-              return false;
+            if (!(row.url_resolved || row.url) || !stationMatchesRegion(row, region)) return false;
             const name = norm(row.name || '');
             const tags = norm(row.tags || '');
             if (numeric)
@@ -143,7 +88,17 @@ export const radioHandlers = {
       return interaction.reply({ content: t('เข้าห้อง voice ก่อนนะ'), ephemeral: true });
     }
     if (!interaction.deferred) await interaction.deferReply();
-    playRadio(interaction.guildId, channel, selected);
+    const health = await probeRadio(selected);
+    if (!['online', 'silent', 'unknown'].includes(health.status))
+      return interaction.editReply(`${selected.name}: ${t(radioHealthLabels[health.status])}`);
+    try {
+      await playRadio(interaction.guildId, channel, selected);
+    } catch (error) {
+      console.error('[radio] playback failed:', selected.name, error.message);
+      return interaction.editReply(
+        t('เปิดเสียงวิทยุไม่สำเร็จ สถานีอาจออฟไลน์หรือสตรีมมีปัญหา ลองเลือกสถานีอื่น'),
+      );
+    }
     await showMusicPanel(interaction);
     return interaction.editReply(
       t('กำลังเปิดวิทยุสด ') +

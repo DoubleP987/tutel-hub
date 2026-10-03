@@ -28,6 +28,9 @@ import {
 import { getMusicSource, setMusicSource, musicSourceLabel } from './settings.js';
 import { playRequest } from './requests.js';
 import { randomGenre } from './genres.js';
+import { randomGenres } from './genres.js';
+import { genreMenuRows } from './genre-menu.js';
+import { setRandomGenre } from './settings.js';
 
 let client = null;
 let refreshTimer = null;
@@ -199,6 +202,7 @@ function panelBody(guildId, record) {
       ),
       new ActionRowBuilder().addComponents(
         button('settings', t('⚙ ตั้งค่า')),
+        button('genre', t('🎵 แนวสุ่ม')),
         button('leave', t('🚪 ออกจากห้อง'), ButtonStyle.Secondary, !state?.connection),
       ),
     ],
@@ -444,12 +448,29 @@ export async function handleMusicPanelInteraction(interaction) {
     return true;
   }
   const record = storedPanel(interaction.guildId);
-  const origin = interaction.isModalSubmit() ? parts[2] : interaction.message?.id;
+  if (parts[1] === 'genre' && parts[2] !== interaction.user.id) {
+    await privateReply(interaction, t('เมนูนี้เป็นของผู้เปิด'));
+    return true;
+  }
+  const origin =
+    parts[1] === 'genre'
+      ? parts[3]
+      : interaction.isModalSubmit()
+        ? parts[2]
+        : interaction.message?.id;
   if (!record?.messageId || origin !== record.messageId) {
     await privateReply(interaction, t('แผงนี้ไม่ได้ใช้งานแล้ว ให้ใช้แผงเพลงล่าสุด'));
     return true;
   }
-  const action = parts[1] === 'add' ? 'submit' : parts[2];
+  const action = parts[1] === 'genre' ? 'genre-select' : parts[1] === 'add' ? 'submit' : parts[2];
+  if (action === 'genre') {
+    await interaction.reply({
+      content: t('เลือกแนวเพื่อเปิดสุ่มต่อเนื่อง · เพลงปัจจุบันจะเล่นต่อจนจบ'),
+      flags: MessageFlags.Ephemeral,
+      components: genreMenuRows(interaction.user.id, record.messageId),
+    });
+    return true;
+  }
   if (action === 'queue') {
     await interaction.reply({ ...queueBody(interaction, 0), flags: MessageFlags.Ephemeral });
     return true;
@@ -515,7 +536,15 @@ export async function handleMusicPanelInteraction(interaction) {
   try {
     const state = getPlayer(guildId);
     let result;
-    if (action === 'submit') {
+    if (action === 'genre-select') {
+      const genre = interaction.values[0];
+      if (!randomGenres.some((item) => item.value === genre)) throw new Error('Invalid genre');
+      await setRandomGenre(guildId, genre);
+      const updated = await enableRandomMode(guildId, voice);
+      result = updated.randomMode
+        ? t('เปิดสุ่มแนว {0} แล้ว', t(randomGenre(genre).label))
+        : t('โหมดสุ่มถูกหยุดแล้ว');
+    } else if (action === 'submit') {
       await playRequest(interaction, {
         query: interaction.fields.getTextInputValue('query').trim(),
         voiceChannel: voice,

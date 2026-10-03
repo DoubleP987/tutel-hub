@@ -8,6 +8,7 @@ import {
   skip,
   stop,
   destroyPlayer,
+  joinStandby,
 } from '../music/player.js';
 import { duration, guildOnly } from './shared.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
@@ -18,11 +19,24 @@ import {
   getRandomGenre,
   setRandomGenre,
 } from '../music/settings.js';
-import { randomGenre } from '../music/genres.js';
+import { randomGenre, randomGenres } from '../music/genres.js';
 import { showMusicPanel, musicPanelPending } from '../music/panel.js';
 import { musicRequestVersion } from '../music/events.js';
 
 export const musicHandlers = {
+  async join(interaction) {
+    if (!guildOnly(interaction)) return;
+    const channel = interaction.member.voice?.channel;
+    if (!channel)
+      return interaction.reply({
+        content: t('เข้าห้อง voice ก่อนนะ'),
+        flags: MessageFlags.Ephemeral,
+      });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await joinStandby(interaction.guildId, channel);
+    await showMusicPanel(interaction);
+    return interaction.editReply(t('เข้าห้องเสียงมารอแล้ว · ถ้าไม่มีเพลงเล่นครบ 5 นาทีจะออกเอง'));
+  },
   async music(interaction) {
     if (!guildOnly(interaction)) return;
     const source = interaction.options.getString('source');
@@ -89,6 +103,8 @@ export const musicHandlers = {
     await interaction.deferReply();
     const version = musicRequestVersion(interaction.guildId);
     const genre = interaction.options.getString('genre');
+    if (genre && !randomGenres.some((item) => item.value === genre))
+      return interaction.editReply(t('เลือกแนวเพลงจากรายการแนะนำ หรือเว้นว่างเพื่อใช้แนวล่าสุด'));
     if (genre) await setRandomGenre(interaction.guildId, genre);
     await showMusicPanel(interaction);
     if (version !== musicRequestVersion(interaction.guildId))

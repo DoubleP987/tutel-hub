@@ -1,10 +1,18 @@
 export const RADIO_STATIONS = [
   {
+    name: 'Active Radio FM99 · กีฬาและสุขภาพ',
+    frequency: '99',
+    aliases: ['active', 'active radio', 'fm99', '99', 'กีฬา'],
+    region: 'bangkok',
+    category: 'sport',
+    url: 'https://play-fm99.mcot.net/fm99/fm99.m3u8',
+  },
+  {
     name: 'EFM 94',
     frequency: '94',
     aliases: ['efm', '94', 'efm 94'],
     region: 'bangkok',
-    url: 'https://atimehd.smartclick.co.th/efm/hls/efm.m3u8',
+    url: 'https://atimeonline2.smartclick.co.th/efm_app',
   },
   {
     name: 'สวท.สงขลา FM 89.5',
@@ -49,9 +57,129 @@ export const RADIO_STATIONS = [
     frequency: '91.5',
     aliases: ['hotwave', '91.5'],
     region: 'bangkok',
-    url: 'https://atimehd.smartclick.co.th/hotwave/hls/hotwave.m3u8',
+    url: 'https://atimeonline2.smartclick.co.th/hotwave_app',
+  },
+  {
+    name: 'Green Wave 106.5',
+    frequency: '106.5',
+    aliases: ['green', 'greenwave', 'green wave', 'กรีนเวฟ'],
+    region: 'bangkok',
+    category: 'music',
+    url: 'https://atimeonline3.smartclick.co.th/green_app',
+  },
+  {
+    name: 'COOL Fahrenheit 93',
+    frequency: '93',
+    aliases: ['cool', 'cool fahrenheit', 'คูล'],
+    region: 'bangkok',
+    category: 'music',
+    url: 'https://coolism-web.cdn.byteark.com/;stream/1',
+  },
+  {
+    name: 'Smooth FM 105.5',
+    frequency: '105.5',
+    aliases: ['smooth', 'smooth fm'],
+    region: 'bangkok',
+    category: 'music',
+    url: 'http://rstream.mcot.net:8000/fm1055',
+  },
+  {
+    name: 'VYBE 103.5',
+    frequency: '103.5',
+    aliases: ['vybe', 'ไวบ์'],
+    region: 'bangkok',
+    category: 'music',
+    url: 'https://radio14.plathong.net/7154/;stream.mp3',
+  },
+  {
+    name: 'JS100 · ข่าวและจราจร',
+    frequency: '100',
+    aliases: ['js100', 'js 100', 'จส100', 'จส 100'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'http://103.246.19.203:8004/stream?type=http&nocache=145',
+  },
+  {
+    name: 'สวพ. FM91 · จราจรและช่วยเหลือสังคม',
+    frequency: '91',
+    aliases: ['fm91', 'สวพ91', 'สวพ.91'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://www.fm91bkk.com:8900/;stream.mp3',
+  },
+  {
+    name: 'MCOT News 100.5 · ข่าว',
+    frequency: '100.5',
+    aliases: ['mcot news', 'news1005', 'ข่าว100.5'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://play-fm1005.mcot.net/fm1005/fm1005.m3u8',
+  },
+  {
+    name: 'Thinking Radio 96.5 · สาระและเศรษฐกิจ',
+    frequency: '96.5',
+    aliases: ['thinking', 'thinking radio', 'mcot965', 'คลื่นความคิด'],
+    region: 'bangkok',
+    category: 'talk',
+    url: 'https://live-org-01-cdn.mcot.net/radiocdn_edge/fm965.stream_aac/chunklist.m3u8',
+  },
+  {
+    name: 'Chula Radio Plus 101.5 · ความรู้และการศึกษา',
+    frequency: '101.5',
+    aliases: ['chula', 'chula radio', 'จุฬา', 'วิทยุจุฬา'],
+    region: 'bangkok',
+    category: 'talk',
+    url: 'https://media.curadio.chula.ac.th/live/liveradio128/playlist.m3u8',
+  },
+  {
+    name: 'NBT Radio AM 891 · ข่าวและสาระ',
+    frequency: '',
+    aliases: ['nbt', 'nbt891', 'am891', '891', 'วิทยุประเทศไทย'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://cdn-edge.iiptvcdn.com/radio_edge/51dd-90a9-c6ae-c7f7-49d4/playlist.m3u8',
+  },
+  {
+    name: 'Fabulous 103 Pattaya · ข่าวท้องถิ่นภาษาอังกฤษและเพลง',
+    frequency: '103',
+    aliases: ['fabulous', 'fabulous103', 'พัทยา'],
+    region: 'east',
+    category: 'local',
+    url: 'https://fabulous.thailandstreaming.net/fabulous.mp3',
+  },
+  {
+    name: 'MCOT ชุมพร–หลังสวน 104.75',
+    frequency: '104.75',
+    aliases: ['mcot chumphon', 'หลังสวน', 'ชุมพร'],
+    region: 'south',
+    category: 'local',
+    url: 'https://lb-media.mcot.net/RegionRadio/ChumphonLangsuan.stream_aac/playlist.m3u8',
+  },
+  {
+    name: 'MCOT เลย 100',
+    frequency: '100',
+    aliases: ['mcot loei', 'เลย'],
+    region: 'northeast',
+    category: 'local',
+    url: 'https://lb-media.mcot.net/RegionRadio/Loei.stream_aac/playlist.m3u8',
+  },
+  {
+    name: 'MCOT อุดรธานี',
+    frequency: '',
+    aliases: ['mcot udon', 'อุดรธานี'],
+    region: 'northeast',
+    category: 'local',
+    url: 'http://rstream.mcot.net:9044/;.mp3',
   },
 ];
+export function radioCategory(station) {
+  if (station.category) return station.category;
+  const text = norm(`${station.name} ${station.tags || ''}`);
+  if (/news|traffic|ข่าว|จราจร|สวท\./.test(text)) return 'news';
+  if (/talk|education|สาระ|การศึกษา/.test(text)) return 'talk';
+  if (/sport|กีฬา/.test(text)) return 'sport';
+  return 'music';
+}
 export const norm = (value) =>
   String(value || '')
     .toLowerCase()
@@ -216,7 +344,7 @@ let radioDirectory = { expires: 0, data: [] };
 export async function getRadioDirectory() {
   if (radioDirectory.expires > Date.now() && radioDirectory.data.length) return radioDirectory.data;
   const response = await fetch(
-    'https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/TH?hidebroken=true',
+    'https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/TH?hidebroken=false',
     {
       headers: { 'User-Agent': 'TutelBotRadio/1.0' },
       signal: AbortSignal.timeout(8000),
@@ -236,7 +364,7 @@ export function stationMatchesRegion(station, region) {
   return terms.some((term) => haystack.includes(norm(term)));
 }
 export function stationFrequency(station) {
-  const values = String(station.name || '').match(/\\d{2,3}(?:\\.\\d{1,2})?/g) || [];
+  const values = String(station.name || '').match(/\d{2,3}(?:\.\d{1,2})?/g) || [];
   const match = values.find((value) => Number(value) >= 87 && Number(value) <= 108);
   return match || '';
 }

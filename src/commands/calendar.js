@@ -15,12 +15,18 @@ import { calendarDay, dailySummaryEvents } from '../calendar/daily-summary.js';
 import { sendDailyCalendarSummary } from '../calendar/notifications.js';
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { reminderOptions, saveReminderOptions } from '../calendar/options.js';
+import { guildCalendarEnabled } from '../bot/calendar-commands.js';
 
 export const calendarHandlers = {
   async calendar(interaction) {
     if (!guildOnly(interaction)) return;
     const sub = interaction.options.getSubcommand(),
       guildId = interaction.guildId;
+    if (!guildCalendarEnabled(guildId))
+      return interaction.reply({
+        content: t('เซิร์ฟเวอร์นี้ยังไม่เปิดใช้ปฏิทิน ให้ผู้ดูแลเปิดใน control panel ก่อน'),
+        ephemeral: true,
+      });
     if (sub === 'setup') {
       const pinError = checkCalendarSetupPin(
         interaction.options.getString('pin'),

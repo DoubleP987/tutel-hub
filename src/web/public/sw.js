@@ -1,4 +1,4 @@
-const CACHE = 'tutel-v20',
+const CACHE = 'tutel-v21',
   ASSETS = [
     '/app.css',
     '/preferences.js',

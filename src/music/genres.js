@@ -97,6 +97,18 @@ const options = [
     ],
   ],
   [
+    'bass',
+    'เบสหนัก / Bass Boosted',
+    [
+      'bass boosted song',
+      'dubstep song',
+      'trap bass song',
+      'phonk song',
+      'drum and bass song',
+      'hardstyle song',
+    ],
+  ],
+  [
     'country',
     'ลูกทุ่ง / หมอลำ',
     [
@@ -297,4 +309,21 @@ export const randomGenres = options.map(([value, label, queries]) => ({
 }));
 export function randomGenre(value) {
   return randomGenres.find((item) => item.value === value) || randomGenres[0];
+}
+
+// Autocomplete keeps the catalog extensible beyond Discord's 25 suggestions per response.
+export function genreSuggestions(query = '', translate = (label) => label) {
+  const text = String(query).trim().toLowerCase();
+  return randomGenres
+    .filter((genre) => {
+      const aliases =
+        genre.value === 'bass'
+          ? 'เบส เบสหนัก bass boosted dubstep trap phonk dnb drum hardstyle'
+          : '';
+      return `${genre.value} ${genre.label} ${translate(genre.label)} ${aliases}`
+        .toLowerCase()
+        .includes(text);
+    })
+    .slice(0, 25)
+    .map((genre) => ({ name: translate(genre.label), value: genre.value }));
 }

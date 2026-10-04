@@ -1,5 +1,7 @@
 # ตั้งภาษาบอทและคำสั่ง /help
 
+**Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
+
 ## ตั้งค่าในโค้ด
 
 เริ่มต้นใช้ภาษาไทย แก้ `src/config/bot.js`:

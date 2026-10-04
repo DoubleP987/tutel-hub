@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { EventEmitter } from 'node:events';
 import * as discord from 'discord.js';
-import { musicLink, youtubeTrack } from '../src/music/links.js';
+import { musicLink } from '../src/music/links.js';
 import { playlistTrack } from '../src/music/playlist.js';
 import {
   insertTracks,
@@ -26,21 +26,33 @@ test('YouTube links distinguish a track, playlist and mixed URL; provider hosts 
   assert.equal(musicLink('https://soundcloud.com/artist/sets/test').playlist, true);
   assert.equal(musicLink('https://youtube.com.evil.test/watch?v=Rc2k_8skxtI').singleUrl, undefined);
 });
-test('Direct YouTube metadata uses oEmbed; short links need no media search', async () => {
-  const oldFetch = globalThis.fetch;
+test('Direct YouTube metadata hydrates duration and caches its fast oEmbed title', async () => {
   let calls = 0;
-  globalThis.fetch = async () => {
+  const context = {
+    Map,
+    Date,
+    String,
+    URL,
+    AbortSignal,
+    hydrateTrack: async (track) => ({ ...track, duration: 250 }),
+  };
+  context.fetch = async () => {
     calls++;
     return { ok: true, json: async () => ({ title: 'Short requested track' }) };
   };
-  try {
-    const link = musicLink('https://youtu.be/Rc2k_8skxtI');
-    assert.equal((await youtubeTrack(link)).title, 'Short requested track');
-    await youtubeTrack(link);
-    assert.equal(calls, 1);
-  } finally {
-    globalThis.fetch = oldFetch;
-  }
+  vm.createContext(context);
+  vm.runInContext(
+    readFileSync(new URL('../src/music/links.js', import.meta.url), 'utf8')
+      .replace(/^import[\s\S]*?from\s+['"][^'"]+['"];\s*/gm, '')
+      .replace(/export /g, ''),
+    context,
+  );
+  const link = context.musicLink('https://youtu.be/Rc2k_8skxtI');
+  const track = await context.youtubeTrack(link);
+  assert.equal(track.title, 'Short requested track');
+  assert.equal(track.duration, 250);
+  await context.youtubeTrack(link);
+  assert.equal(calls, 1);
 });
 test('Playlist entries preserve order and exclude inaccessible/deleted entries', () => {
   assert.equal(
@@ -82,7 +94,7 @@ test('Queue edits preserve playlist order, current-track independence and limits
   assert.equal(insertTracks(full, [{}, {}]).omitted, 1);
   assert.throws(() => insertTracks(full, [{}]), /QUEUE_FULL/);
 });
-test('Repeat mode does not recycle failed tracks or explicit skips', () => {
+test('Queue loop recycles skipped tracks; failed playback and song-loop skips do not repeat', () => {
   const state = {
     current: { title: 'a' },
     queue: [{ title: 'b' }],
@@ -95,11 +107,14 @@ test('Repeat mode does not recycle failed tracks or explicit skips', () => {
   assert.equal(state.queue[1], state.current);
   state.bypassLoop = true;
   repeatFinishedTrack(state, true);
-  assert.equal(state.queue.length, 2);
+  assert.equal(state.queue.length, 3);
   state.bypassLoop = false;
   state.loopMode = 'track';
   repeatFinishedTrack(state, true);
   assert.equal(state.queue[0], state.current);
+  state.bypassLoop = true;
+  repeatFinishedTrack(state, true);
+  assert.equal(state.queue.length, 4);
 });
 
 function playlistHarness(produce) {

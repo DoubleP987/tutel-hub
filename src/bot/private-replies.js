@@ -1,16 +1,31 @@
 const latest = new Map();
 const replies = new WeakMap();
 let sequence = 0;
+export const PRIVATE_MENU_TTL_MS = 3 * 60 * 1000;
 const privateFlag = (options) =>
   Boolean(options?.ephemeral || Number(options?.flags?.bitfield ?? options?.flags ?? 0) & 64);
 
+export function privateMenuExpired(interaction) {
+  const message = interaction.message;
+  return Boolean(
+    interaction.customId &&
+      message?.components?.length &&
+      privateFlag(message) &&
+      Number.isFinite(message.createdTimestamp) &&
+      Date.now() - message.createdTimestamp >= PRIVATE_MENU_TTL_MS,
+  );
+}
+
 // Ephemeral replies belong to one person in one channel. Keep only their latest
 // response, without deleting a public command acknowledgment or another user's reply.
-export function managePrivateReplies(interaction, { privateByDefault = false } = {}) {
+export function managePrivateReplies(
+  interaction,
+  { privateByDefault = false, isolated = false } = {},
+) {
   if (typeof interaction.reply !== 'function' || typeof interaction.deferReply !== 'function')
     return;
-  const key = `${interaction.channelId || interaction.guildId || 'dm'}:${interaction.user.id}`;
   const order = ++sequence;
+  const key = `${interaction.channelId || interaction.guildId || 'dm'}:${interaction.user.id}${isolated ? ':notice:' + order : ''}`;
   let originalPrivate = false;
   const state = { key, order, components: [], pending: false };
   replies.set(interaction, state);
@@ -33,15 +48,12 @@ export function managePrivateReplies(interaction, { privateByDefault = false } =
       clearTimeout(previous.timer);
       await previous.remove().catch(() => {});
     }
-    // Clean up while the interaction webhook is still valid (15 minutes).
-    record.timer = setTimeout(
-      async () => {
-        if (latest.get(key) !== record) return;
-        latest.delete(key);
-        await remove().catch(() => {});
-      },
-      14 * 60 * 1000,
-    );
+    // Hard limit from creation: paging or changing filters must not extend it.
+    record.timer = setTimeout(async () => {
+      if (latest.get(key) !== record) return;
+      latest.delete(key);
+      await remove().catch(() => {});
+    }, PRIVATE_MENU_TTL_MS);
     record.timer.unref?.();
   }
   for (const method of ['reply', 'deferReply']) {

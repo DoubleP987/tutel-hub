@@ -1,3 +1,4 @@
+import { hydrateTrack } from './metadata.js';
 // Parse supported providers without making a network request.
 export function musicLink(value) {
   let url;
@@ -69,8 +70,12 @@ export async function resolveMusicLink(value, { signal } = {}) {
 const titles = new Map();
 export async function youtubeTrack(link, { signal } = {}) {
   const cached = titles.get(link.id);
-  if (cached && cached.until > Date.now()) return { ...cached.track };
-  const track = { title: `YouTube · ${link.id}`, url: link.singleUrl, duration: 0 };
+  if (cached && cached.until > Date.now()) return hydrateTrack({ ...cached.track }, { signal });
+  const track = {
+    title: `YouTube · ${link.id}`,
+    url: link.singleUrl,
+    duration: 0,
+  };
   try {
     const timeout = AbortSignal.timeout(4000);
     const response = await fetch(
@@ -91,5 +96,5 @@ export async function youtubeTrack(link, { signal } = {}) {
   signal?.throwIfAborted();
   if (titles.size >= 128) titles.delete(titles.keys().next().value);
   titles.set(link.id, { until: Date.now() + 300000, track });
-  return { ...track };
+  return hydrateTrack({ ...track }, { signal });
 }

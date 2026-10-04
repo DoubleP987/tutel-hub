@@ -1,5 +1,7 @@
 # Bot language and private help
 
+**Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
+
 ## Configuration
 
 The bot uses Thai by default. Edit `src/config/bot.js`:

@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+  StringSelectMenuBuilder,
+} from 'discord.js';
 
 function fixture() {
   const clock = { now: Date.now() };
@@ -17,6 +23,10 @@ function fixture() {
     ButtonBuilder,
     ButtonStyle,
     MessageFlags,
+    StringSelectMenuBuilder,
+    setting: () => null,
+    radioAreas: { all: 'All', bangkok: 'Bangkok' },
+    radioCategories: { all: 'All', music: 'Music' },
     t: (text, ...args) => text.replace(/\{(\d+)\}/g, (_, i) => args[i] ?? ''),
     RADIO_STATIONS: Array.from({ length: 21 }, (_, i) => ({
       name: `Station ${i + 1}`,
@@ -64,7 +74,7 @@ function fixture() {
     reply: async (body) => bodies.push(body),
     followUp: async (body) => bodies.push(body),
   });
-  const buttons = () => bodies.at(-1).components[0].toJSON().components;
+  const buttons = () => bodies.at(-1).components[3].toJSON().components;
   return { clock, checks, context, interaction, bodies, click, buttons };
 }
 

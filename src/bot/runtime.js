@@ -5,6 +5,7 @@ import {
   managePrivateReplies,
   clearPrivateReplies,
   dismissPrivateReplyLater,
+  privateMenuExpired,
 } from './private-replies.js';
 import { canRunBot, requireBotLease } from '../cluster/state.js';
 import { commandHandlers } from '../commands/handlers.js';
@@ -65,16 +66,31 @@ export async function startBot() {
         }
         return;
       }
+      if (privateMenuExpired(interaction)) {
+        managePrivateReplies(interaction, { isolated: true });
+        await interaction
+          .reply({
+            content: t('เมนูหมดเวลาแล้ว กรุณาเปิดใหม่จากแผงเพลงหรือคำสั่งเดิม'),
+            flags: 64,
+          })
+          .catch(() => {});
+        dismissPrivateReplyLater(interaction);
+        return;
+      }
       // Page updates must preserve the original private list, not replace it.
-      if (interaction.isButton() && interaction.customId?.startsWith('radio:list:')) {
+      if (interaction.customId?.startsWith('radio:list:')) {
+        managePrivateReplies(interaction, { isolated: /:(play|last)$/.test(interaction.customId) });
         try {
           await handleRadioListButton(interaction);
         } catch (error) {
           console.warn('[radio list button]', error.message);
+        } finally {
+          dismissPrivateReplyLater(interaction);
         }
         return;
       }
       managePrivateReplies(interaction, {
+        isolated: /^music:radio:.*:(station|last)$/.test(interaction.customId || ''),
         privateByDefault:
           interaction.isChatInputCommand() &&
           (Object.hasOwn(musicHandlers, interaction.commandName) ||

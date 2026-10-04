@@ -1,82 +1,31 @@
 # Persistent chat music panel / แผงเพลงในแชท
 
-The panel is created automatically by `/play`, `/randommusic` and `/radio play`. No extra slash command is needed.
+/join joins voice and displays the existing shared player without starting audio. Five idle minutes with no queue, song, random playback or radio triggers leave. A new play request edits the same message even if requested from another text channel; leaving removes it. Restart does not restore audio or the in-memory queue.
 
-## Behavior
+The Random button always opens a private genre selector. Its 25 choices include mixed music and Japanese music. Selecting a genre while random playback is active keeps the current song playing, discards unsuitable preloaded random audio, and uses the new genre for subsequent random songs. User-queued songs still have priority. Disable random is inside this private menu.
 
-- One active panel per guild. Playback and queue changes edit the same Discord message.
-- Every new play request creates the panel after that request, even in the same channel, and deletes the previous panel message. Old interactions are rejected.
-- Stopping or finishing the queue keeps the latest track visible while connected; leaving or disconnecting removes the panel.
-- Channel/message IDs and latest track metadata live in the configured SQLite/MongoDB `app_settings`, under `music_panel:<guild ID>`. Startup removes stale stored panels; it does not resume audio or create unsolicited replacement messages.
-- If the panel is deleted, the next play/random request recreates it. Periodic updates do not continually repost deleted panels.
-- Progress uses the audio resource's playback duration; the panel refreshes at fifteen-second intervals while a track is playing. Event updates are debounced and unchanged messages are not edited.
+The single Radio button opens a private station selector while in music mode. Select a station to validate it and prepare audio before replacing the music. The old queue and random preference are retained. Press the same Radio button while radio is active to return to music. An interrupted song restarts from its beginning; the queue is not a seekable recording. There is no separate Return to music button.
 
-## Controls
+Private interactive messages have a hard three-minute lifetime from creation; navigation does not extend it. Expired visible buttons are rejected and ask the user to reopen the menu. Text-only music/radio confirmations expire fifteen seconds after work finishes. The public music panel has no three-minute timer. Discord modals cannot be remotely closed by the bot. Graceful shutdown cleans private replies; a crash cannot guarantee timely message deletion.
 
-| Control      | Action                                                                               |
-| ------------ | ------------------------------------------------------------------------------------ |
-| Pause/resume | Toggle playback without clearing the queue                                           |
-| Skip         | Advance to the next queued/random track                                              |
-| Stop         | Stop audio, clear queue, disable random selection                                    |
-| Random       | Toggle continuous random selection; disabling keeps the current track and queue      |
-| Queue        | Private paginated queue, visible only to the requesting user                         |
-| Add track    | Modal for a song name or link; searches with the guild's chosen source               |
-| Settings     | Private source selector and smooth transition on/off buttons; requires Manage Server |
-| Leave        | Stop and leave the voice channel                                                     |
+Loop defaults to Queue and is stored per guild in music_loop:<guildId>. Settings offers Off, Song and Queue; the main Loop button also cycles them. Stop clears playback and random mode but retains the Loop preference. Queue-loop Skip moves the skipped song to the tail; song-loop Skip bypasses the repeat. Random mode does not recycle the queue indefinitely. Live radio has no Loop.
 
-Playback controls require the user to be in the bot's voice channel. If the bot is not connected, starting music requires the user to be in a voice channel. Queue viewing is available to everyone. Repeated actions are throttled; stop/leave remain available while searches are pending. Voice membership, panel identity and cancellation version are checked again after track searches.
+/join เข้าห้องเสียงและแสดงแผงเดิมโดยไม่เริ่มเล่นอะไร ว่างครบ 5 นาทีโดยไม่มีคิว เพลง สุ่มหรือวิทยุจะออกเอง การสั่งเล่นใหม่แก้ข้อความเดิมแม้เรียกจากคนละช่องแชท ไม่ส่งแผงใหม่ซ้ำ ออกจากห้องแล้วลบแผง รีสตาร์ตไม่กู้คืนเสียงและคิวใน RAM
 
-The bot requires View Channel, Send Messages, Embed Links and Read Message History in the panel channel. Requests that cannot create the panel give a private warning while music commands can continue.
+ปุ่มสุ่มเปิดเมนูแนวเพลงเฉพาะคนกดเสมอ มี 25 ตัวเลือกรวมคละแนวและเพลงญี่ปุ่น เปลี่ยนแนวตอนเปิดสุ่มได้ เพลงปัจจุบันเล่นต่อ ยกเลิกเพลงสุ่มที่เตรียมไว้แล้วไม่ตรงแนวใหม่ และสุ่มเพลงถัด ๆ ไปตามแนวใหม่ เพลงที่ผู้ใช้เพิ่มไว้ในคิวยังมีสิทธิ์เล่นก่อน ปุ่มปิดสุ่มอยู่ในเมนูส่วนตัวนี้
 
-## Modules
+เหลือปุ่มวิทยุปุ่มเดียว กดตอนฟังเพลงเพื่อเลือกสถานี ตรวจสถานีและเตรียมเสียงก่อนแทนเพลง เก็บคิวเพลงและความชอบโหมดสุ่มไว้ กดปุ่มวิทยุอีกครั้งขณะวิทยุทำงานจะกลับไปเล่นเพลง เพลงที่ถูกพักเริ่มใหม่จากต้นเพลง ไม่ได้จำตำแหน่งเสียง ไม่มีปุ่มกลับไปเพลงแยกอีกแล้ว
 
-- `src/music/events.js`: playback changes and request invalidation, independent of message rendering.
-- `src/music/player.js`: playback and random-mode controls.
-- `src/music/panel.js`: persistent panel, serialized message updates, buttons, queue pagination, modal and settings selector.
-- `src/bot/runtime.js`: registers component handling and restores/shuts down panels.
+เมนูส่วนตัวที่มีปุ่มหมดอายุสูงสุด 3 นาทีจากเปิด ไม่ต่อเวลาเมื่อเลื่อนหน้า ถ้าข้อความยังมองเห็นหลังหมดอายุ จะปฏิเสธปุ่มและให้เปิดเมนูใหม่ คำยืนยันเพลงและวิทยุสั้น ๆ หายหลังงานเสร็จ 15 วินาที แผงเพลงหลักไม่จับเวลา 3 นาที บอทปิดฟอร์ม modal ของ Discord แทนผู้ใช้ไม่ได้ การปิดปกติล้างข้อความส่วนตัว แต่เมื่อโปรเซส crash ไม่รับประกันว่าจะลบทันเวลา
 
-## ภาษาไทย
+Loop เริ่มต้นเป็นวนคิวและบันทึกแยกเซิร์ฟเวอร์ใน music_loop:<guildId> ตั้งค่ามีปิด วนเพลงและวนคิว ปุ่ม Loop หลักกดวนสามค่าได้ หยุดเพลงล้างคิวและปิดสุ่มแต่จำค่า Loop กดข้ามในโหมดวนคิวนำเพลงไปท้ายคิว ส่วนวนเพลงจะข้ามการเล่นซ้ำ โหมดสุ่มไม่หมุนคิวเดิมซ้ำตลอด วิทยุสดไม่ใช้ Loop
 
-ใช้ `/play` หรือ `/randommusic` แล้วแผงจะขึ้นอัตโนมัติ เปลี่ยนเพลงแล้วแก้ข้อความเดิม หยุดเพลงขณะอยู่ในห้องจะคงข้อความไว้พร้อมเพลงล่าสุด ออกจากห้องแล้วลบแผง กดเพิ่มเพลงเพื่อกรอกชื่อหรือลิงก์ ดูคิวและตั้งค่าเป็นข้อความเฉพาะคนกด
+## Code map
 
-ปุ่มควบคุมต้องอยู่ห้องเสียงเดียวกับบอท เปลี่ยนแหล่งเพลงต้องมีสิทธิ์จัดการเซิร์ฟเวอร์ หากเรียกเล่นจากช่องแชทใหม่ แผงจะย้ายไปช่องนั้นและปิดปุ่มของข้อความเก่า แผงเป็นข้อความปกติ จึงเลื่อนขึ้นตามบทสนทนา ไม่ใช่ส่วนที่ลอยติดหน้าจอ
+- `src/music/panel.js`: shared message, private menus and buttons.
+- `src/music/genre-menu.js`: genre dropdown and private disable button.
+- `src/music/radio-panel.js`: station picker.
+- `src/music/player.js`: playback, standby, suspension and return.
+- `src/bot/private-replies.js`: reply replacement and expiration.
 
-เมื่อรีสตาร์ตบอทจะล้างแผงเก่าที่ไม่ได้เล่นอยู่ ต้องเริ่มเล่นใหม่เอง โค้ดเก็บตำแหน่งแผงในฐานข้อมูลเดิม ไม่ต้องตั้งฐานข้อมูลเพิ่มเติม
-
-## Loop / วนเพลง
-
-The Loop button cycles Off, Track and Queue. Skip bypasses the repeat for that song, and Stop/Leave resets Loop. Live radio does not support Loop. The setting is separate per guild and resets when playback restarts after a node switch.
-
-ปุ่ม Loop สลับปิด วนเพลง และวนคิว กดข้ามเพื่อไปเพลงถัดไป กดหยุดหรือออกจากห้องเพื่อปิด Loop วิทยุสดไม่ใช้ Loop แยกสถานะแต่ละเซิร์ฟเวอร์ และไม่เก็บสถานะข้ามการรีสตาร์ต/สลับเครื่อง
-
-## Language and help / ภาษาและคู่มือ
-
-`src/config/bot.js` and `BOT_LANGUAGE` select Thai/English control labels and messages. Thai is the default. `/help` privately displays website/guide buttons. See [English](BOT-LANGUAGE.md) / [ภาษาไทย](BOT-LANGUAGE.th.md).
-
-## Message lifecycle update
-
-Leaving or disconnecting voice deletes the panel message. Bot shutdown also removes panels; startup cleans stale stored panels instead of restoring a disconnected player. `/stop` keeps the panel while the bot remains connected.
-
-Private replies (the messages with Discord Dismiss) replace the previous private response for the same user and channel. Another person’s response and public messages are preserved. Delayed older responses cannot replace the newest response. These references live in process memory; responses are cleaned before the 15-minute interaction webhook expiry. Responses sent before this update may still need manual dismissal.
-
-Bot presence uses **Playing** with `/help | tutelbot.vercel.app`, configured as `statusText` in `src/config/bot.js`. This avoids the custom-status bubble. Discord controls which activity details appear in the profile.
-
-Tests: `node --test tests/*.test.js` includes panel movement/removal, private-response isolation and late-response handling, short direct links and both bot languages.
-
-## Current controls / ปุ่มปัจจุบัน
-
-Enable random opens one private dropdown of 25 choices, including Mixed and Japanese; Anime is removed. Selecting starts random mode; the separate genre button is removed. Music and radio acknowledgments are private by default. See [current operation](CURRENT-OPERATIONS.md) for control-panel status, host switching and logs.
-
-กดเปิดสุ่มเพื่อเลือกแนวจากเมนูเดียว 25 ตัวเลือก รวมคละแนวและเพลงญี่ปุ่น ไม่มีอนิเมะและไม่มีปุ่มแนวสุ่มแยก คำตอบคำสั่งเพลง/วิทยุเห็นคนเดียวและ Dismiss ได้ แผงเพลงยังเป็นข้อความหลักร่วมกัน
-
-## Smooth transition / เปลี่ยนเพลงต่อเนื่อง
-
-Settings includes separate Enable/Disable buttons in the private settings reply. Default off; stored per guild. With it enabled, the next song is prepared in RAM and mixed for 350 ms through the same Opus encoder, including Skip. Progress is offset per track although the resource continues. See [implementation, limits and troubleshooting](SMOOTH-TRANSITION.md).
-
-ตั้งค่ามีปุ่มเปิด/ปิดแยกกัน ค่าเริ่มต้นปิดและจำแยกเซิร์ฟเวอร์ เตรียมเพลงถัดไปใน RAM แล้วซ้อนเสียงผ่านตัวเข้ารหัสเดิม 350 มิลลิวินาที รวมตอนกดข้าม ความคืบหน้าหักจุดเริ่มแต่ละเพลง แม้ใช้ตัวเล่นเดิมต่อเนื่อง
-
-## Short private responses / ข้อความส่วนตัวสั้น ๆ
-
-Music/radio text-only confirmations and errors disappear automatically 15 seconds after the command handler finishes. Pending deferred/progress responses remain while a lookup is running. Replies with interactive components, such as Settings, genre selection or paginated lists, keep their normal lifetime. The newest private reply still replaces the previous one for the same user/channel. The public music panel is unaffected.
-
-คำยืนยันและข้อผิดพลาดแบบข้อความของเพลง/วิทยุหายเอง 15 วินาทีหลังคำสั่งทำงานเสร็จ ระหว่างกำลังโหลดไม่เริ่มนับ เมนูที่มีปุ่มหรือ dropdown ยังอยู่ให้ใช้งาน ข้อความใหม่ยังแทนข้อความเก่าของผู้ใช้และช่องเดียวกัน แผงเพลงสาธารณะไม่หายตาม timer นี้
+[Metadata and constraints](MUSIC-CONTROLS.md) · [Language](BOT-LANGUAGE.md)

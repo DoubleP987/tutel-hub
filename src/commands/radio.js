@@ -1,3 +1,5 @@
+import { musicRequestVersion } from '../music/events.js';
+import { setSetting } from '../calendar/db.js';
 import { showRadioList } from './radio-list.js';
 import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 import { t } from '../i18n/bot.js';
@@ -88,11 +90,19 @@ export const radioHandlers = {
       return interaction.reply({ content: t('เข้าห้อง voice ก่อนนะ'), ephemeral: true });
     }
     if (!interaction.deferred) await interaction.deferReply();
+    const requestedVersion = musicRequestVersion(interaction.guildId);
     const health = await probeRadio(selected);
-    if (!['online', 'silent', 'unknown'].includes(health.status))
+    if (health.status !== 'online')
       return interaction.editReply(`${selected.name}: ${t(radioHealthLabels[health.status])}`);
     try {
-      await playRadio(interaction.guildId, channel, selected);
+      await playRadio(interaction.guildId, channel, selected, {
+        requestedVersion,
+        valid: () =>
+          interaction.guild.voiceStates.cache.get(interaction.user.id)?.channelId === channel.id,
+      });
+      await setSetting(`music_radio_last:${interaction.guildId}`, JSON.stringify(selected)).catch(
+        (error) => console.warn('[radio preference]', error.message),
+      );
     } catch (error) {
       console.error('[radio] playback failed:', selected.name, error.message);
       return interaction.editReply(

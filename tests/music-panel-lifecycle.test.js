@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events';
 import * as discord from 'discord.js';
 import { genreMenuRows } from '../src/music/genre-menu.js';
 
-test('A new play moves the panel; leave and restart remove it', async () => {
+test('A new play edits the same panel; leave and restart remove it', async () => {
   const settings = new Map(),
     messages = new Map(),
     deleted = [];
@@ -73,9 +73,9 @@ test('A new play moves the panel; leave and restart remove it', async () => {
     await context.ensureMusicPanel(request);
     assert.equal(messages.size, 1);
     await context.ensureMusicPanel(request);
-    assert.deepEqual(deleted, ['1']);
+    assert.deepEqual(deleted, []);
     assert.equal(messages.size, 1);
-    assert.equal(JSON.parse(settings.get('music_panel:guild')).messageId, '2');
+    assert.equal(JSON.parse(settings.get('music_panel:guild')).messageId, '1');
     events.emit('leave', 'guild');
     await new Promise((resolve) => setTimeout(resolve, 10));
     assert.equal(messages.size, 0);
@@ -93,6 +93,7 @@ test('Enable random opens the private genre menu before starting playback', asyn
     ...discord,
     setting: () => JSON.stringify({ messageId: 'panel', channelId: 'channel' }),
     getPlayer: () => ({ randomMode: false }),
+    handleRadioPanel: async () => false,
     genreMenuRows,
     t: (text) => text,
     enableRandomMode: () => assert.fail('Playback must wait for genre selection'),
@@ -109,6 +110,10 @@ test('Enable random opens the private genre menu before starting playback', asyn
     user: { id: 'user' },
     message: { id: 'panel' },
     inGuild: () => true,
+    guild: {
+      voiceStates: { cache: new Map([['user', { channelId: 'voice' }]]) },
+      channels: { cache: new Map([['voice', { id: 'voice' }]]) },
+    },
     isModalSubmit: () => false,
     reply: async (body) => {
       reply = body;

@@ -6,7 +6,7 @@ Updated 4 October 2026. This applies to music playback; live radio keeps its exi
 
 Open Settings on the Discord music panel, then press Enable smooth transition. The settings message is private and can be dismissed. Press Disable to return to ordinary playback. Changing the setting requires Manage Server and the existing voice-channel checks.
 
-The default is **off**. Each guild stores its own choice in `app_settings` as `music_smooth:<guildId>`, with `1` for enabled and `0` for disabled. SQLite and MongoDB use the same setting. Persisting this preference does not persist the playback queue or audio after a restart/failover.
+The repository fallback is **off**; homeserver and Oracle use an **on** fallback unless a guild has explicitly saved disabled. Each guild stores its own choice in `app_settings` as `music_smooth:<guildId>`, with `1` for enabled and `0` for disabled. SQLite and MongoDB use the same setting. Persisting this preference does not persist the playback queue or audio after a restart/failover.
 
 ## Audio flow
 
@@ -24,6 +24,10 @@ Next song -> RAM -> FFmpeg ---/
 6. After switching, the next successor is prepared immediately. Skip uses the same overlap when a successor is available.
 
 The overlap shortens total playback by roughly 350 ms per transition. This is a crossfade: both songs play briefly together. It is not a sequential fade to silence and back up.
+
+## Eligibility
+
+Full preloading and smooth playback require a known finite duration above zero and at most 600 seconds. Longer and still-unknown clips use normal streaming. Missing selected-track duration is hydrated by `src/music/metadata.js`; see [the metadata guide](MUSIC-CONTROLS.md).
 
 ## Resource limits and cancellation
 
@@ -56,7 +60,7 @@ The implementation was checked with synthetic PCM and Opus audio for natural end
 
 ## ภาษาไทย
 
-เปิด **ตั้งค่า** ที่แผงเพลงใน Discord แล้วกดเปิด Smooth transition ข้อความตั้งค่าเห็นเฉพาะคนกดและ Dismiss ได้ กดปิดเพื่อใช้การเล่นปกติ ค่าเริ่มต้นปิด แยกแต่ละเซิร์ฟเวอร์และเก็บในฐานข้อมูล ผู้เปลี่ยนต้องมีสิทธิ์จัดการเซิร์ฟเวอร์และผ่านการตรวจห้องเสียงตามเดิม ไม่ใช้กับวิทยุสด
+เปิด **ตั้งค่า** ที่แผงเพลงใน Discord แล้วกดเปิด Smooth transition ข้อความตั้งค่าเห็นเฉพาะคนกดและ Dismiss ได้ กดปิดเพื่อใช้การเล่นปกติ repo เริ่มต้นปิด ส่วน homeserver/Oracle เริ่มต้นเปิดถ้ายังไม่บันทึกค่า แยกแต่ละเซิร์ฟเวอร์และเก็บในฐานข้อมูล ผู้เปลี่ยนต้องมีสิทธิ์จัดการเซิร์ฟเวอร์และผ่านการตรวจห้องเสียงตามเดิม ไม่ใช้กับวิทยุสด
 
 เมื่อเพลงเริ่ม ระบบเลือกเพลงถัดไปหนึ่งเพลงจากคิว การวนเพลง หรือโหมดสุ่ม แล้วดึงเสียงแบบบีบอัดทั้งหมดมาเก็บใน RAM จากนั้น FFmpeg เตรียมเสียง PCM ช่วงต้นไว้รอ ไม่บันทึกไฟล์เพลงลงดิสก์ แต่ยังใช้เน็ตในการโหลดเสียงจริง
 

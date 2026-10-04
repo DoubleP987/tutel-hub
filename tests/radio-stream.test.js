@@ -15,12 +15,18 @@ function fixture() {
   };
   let args;
   const context = {
-    console: { log() {}, error() {} },
+    console: { log() {}, error() {}, warn() {} },
+    setTimeout,
+    clearTimeout,
     process: { stderr: { write() {} } },
     ffmpegPath: '/usr/bin/ffmpeg',
     ytDlpPath: 'yt-dlp',
     StreamType: { Raw: 'raw' },
-    createAudioResource: (stream, options) => ({ stream, ...options }),
+    createAudioResource: (stream, options) => ({
+      stream,
+      playStream: new PassThrough(),
+      ...options,
+    }),
     spawn: (path, options) => {
       assert.equal(path, '/usr/bin/ffmpeg');
       args = options;

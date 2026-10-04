@@ -1,7 +1,49 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { managePrivateReplies, clearPrivateReplies } from '../src/bot/private-replies.js';
+import {
+  managePrivateReplies,
+  clearPrivateReplies,
+  dismissPrivateReplyLater,
+  privateMenuExpired,
+  PRIVATE_MENU_TTL_MS,
+} from '../src/bot/private-replies.js';
 const removed = [];
+test('Private menu has a hard three-minute limit; editing does not extend it', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  removed.length = 0;
+  try {
+    const menu = interaction('timed-menu');
+    await menu.reply({ flags: 64, components: [{}] });
+    context.mock.timers.tick(PRIVATE_MENU_TTL_MS - 1);
+    await menu.editReply({ components: [{}] });
+    dismissPrivateReplyLater(menu);
+    assert.equal(removed.length, 0);
+    context.mock.timers.tick(1);
+    await Promise.resolve();
+    assert.deepEqual(removed, ['timed-menu']);
+    assert.equal(
+      privateMenuExpired({
+        customId: 'menu',
+        message: {
+          flags: 64,
+          components: [{}],
+          createdTimestamp: Date.now() - PRIVATE_MENU_TTL_MS,
+        },
+      }),
+      true,
+    );
+    assert.equal(
+      privateMenuExpired({
+        customId: 'panel',
+        message: { flags: 0, components: [{}], createdTimestamp: Date.now() - PRIVATE_MENU_TTL_MS },
+      }),
+      false,
+    );
+  } finally {
+    await clearPrivateReplies();
+    context.mock.timers.reset();
+  }
+});
 function interaction(id, user = 'user', channel = 'channel') {
   const value = {
     user: { id: user },

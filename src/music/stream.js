@@ -1,3 +1,4 @@
+import { hydrateTrack } from './metadata.js';
 import { t } from '../i18n/bot.js';
 import { spawn } from 'node:child_process';
 import { Readable } from 'node:stream';
@@ -22,7 +23,7 @@ export async function resolveTrack(query, source = 'youtube', { signal } = {}) {
   const results = await searchTracks(sourceQuery, { flat: !direct, signal });
   const track = selectRequestedTrack(results, { direct });
   if (!track) throw new Error(t('ไม่พบเพลงจากแหล่งค้นหา'));
-  return track;
+  return hydrateTrack(track, { signal });
 }
 
 export async function cacheTrackAudio(track, { signal } = {}) {
@@ -256,13 +257,31 @@ export function createRadioResource(station) {
       `[radio] ffmpeg ended (${code}; signal=${signal || 'none'}); PCM=${Math.round(pcmBytes / 192000)}s`,
     );
   });
+  const resource = createAudioResource(transcoder.stdout, {
+    inputType: StreamType.Raw,
+  });
+  resource.playStream.on('error', (error) => {
+    failed = true;
+    console.warn('[radio] resource error:', error.message);
+  });
+  let stopped = false;
   return {
     get failed() {
       return failed;
     },
-    resource: createAudioResource(transcoder.stdout, { inputType: StreamType.Raw }),
+    resource,
     stop: () => {
-      if (!transcoder.killed) transcoder.kill();
+      if (stopped) return;
+      stopped = true;
+      resource.playStream.destroy();
+      transcoder.stdout.destroy();
+      transcoder.kill();
+      const forceStop = setTimeout(() => {
+        if (transcoder.exitCode === null && transcoder.signalCode === null)
+          transcoder.kill('SIGKILL');
+      }, 2000);
+      forceStop.unref();
+      transcoder.once('close', () => clearTimeout(forceStop));
     },
   };
 }

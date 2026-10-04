@@ -23,8 +23,8 @@ export function shuffleTracks(queue, random = Math.random) {
 }
 export function repeatFinishedTrack(state, played) {
   // Unavailable streams must never be put back into a looping queue.
-  if (!played || state.bypassLoop || !state.current || state.queue.length >= MAX_QUEUE_TRACKS)
-    return;
-  if (state.loopMode === 'queue') state.queue.push(state.current);
-  else if (state.loopMode) state.queue.unshift(state.current);
+  if (!played || !state.current || state.queue.length >= MAX_QUEUE_TRACKS) return;
+  if (state.loopMode === 'queue' && !state.randomMode) state.queue.push(state.current);
+  else if (state.bypassLoop) return;
+  else if (state.loopMode && state.loopMode !== 'queue') state.queue.unshift(state.current);
 }

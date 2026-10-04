@@ -25,6 +25,8 @@ import {
   stop,
   destroyPlayer,
   applySmoothMode,
+  setLoop,
+  returnToMusic,
 } from './player.js';
 import {
   getMusicSource,
@@ -32,7 +34,10 @@ import {
   musicSourceLabel,
   getSmoothMode,
   setSmoothMode,
+  getLoopMode,
+  saveLoopMode,
 } from './settings.js';
+import { openRadioPanel, handleRadioPanel } from './radio-panel.js';
 import { playRequest } from './requests.js';
 import { randomGenre } from './genres.js';
 import { randomGenres } from './genres.js';
@@ -48,6 +53,22 @@ function musicSettingsBody(interaction, messageId) {
       enabled ? t('เปิด') : t('ปิด'),
     ),
     components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`music:loop-setting:${interaction.user.id}:${messageId}`)
+          .setPlaceholder(t('เลือกโหมด Loop'))
+          .addOptions(
+            [
+              ['off', 'ปิด Loop'],
+              ['track', 'Loop song · วนเพลง'],
+              ['queue', 'Loop queue · วนคิว'],
+            ].map(([value, label]) => ({
+              value,
+              label: t(label),
+              default: getLoopMode(interaction.guildId) === value,
+            })),
+          ),
+      ),
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder().setCustomId(`music:source:${interaction.user.id}`).addOptions(
           ['youtube', 'soundcloud'].map((source) => ({
@@ -192,7 +213,11 @@ function panelBody(guildId, record) {
               : t('ปิด'),
         inline: true,
       },
-      { name: t('แหล่งค้นหา'), value: musicSourceLabel(getMusicSource(guildId)), inline: true },
+      {
+        name: t('แหล่งค้นหา'),
+        value: musicSourceLabel(getMusicSource(guildId)),
+        inline: true,
+      },
       {
         name: t('คิวถัดไป · {0} เพลง', state?.queue.length || 0),
         value:
@@ -200,7 +225,9 @@ function panelBody(guildId, record) {
           (state?.randomMode ? t('สุ่มเพลงใหม่เมื่อคิวว่าง') : t('คิวว่าง · กดเพิ่มเพลงได้เลย')),
       },
     )
-    .setFooter({ text: t('Tutel · by Double_P · ปุ่มควบคุมใช้ในห้องเสียงเดียวกับบอท') });
+    .setFooter({
+      text: t('Tutel · by Double_P · ปุ่มควบคุมใช้ในห้องเสียงเดียวกับบอท'),
+    });
   const image = safeUrl(last?.thumbnail);
   if (image) embed.setThumbnail(image);
   const button = (action, label, style = ButtonStyle.Secondary, disabled = false) =>
@@ -236,7 +263,7 @@ function panelBody(guildId, record) {
       new ActionRowBuilder().addComponents(
         button(
           'random',
-          state?.randomMode ? t('🔀 ปิดสุ่ม') : t('🔀 เปิดสุ่ม'),
+          t('🔀 สุ่ม'),
           state?.randomMode ? ButtonStyle.Success : ButtonStyle.Secondary,
         ),
         button('queue', t('📋 ดูคิว')),
@@ -244,6 +271,7 @@ function panelBody(guildId, record) {
       ),
       new ActionRowBuilder().addComponents(
         button('settings', t('⚙ ตั้งค่า')),
+        button('radio', t('📻 วิทยุ'), state?.radio ? ButtonStyle.Success : ButtonStyle.Secondary),
         button('leave', t('🚪 ออกจากห้อง'), ButtonStyle.Secondary, !state?.connection),
       ),
     ],
@@ -313,7 +341,10 @@ export async function ensureMusicPanel(interaction) {
       try {
         const previousChannel = await client.channels.fetch(old.channelId);
         const previous = await previousChannel.messages.fetch(old.messageId);
-        await previous.delete();
+        const body = panelBody(guildId, old);
+        await previous.edit(body);
+        fingerprints.set(guildId, JSON.stringify(body));
+        return;
       } catch (error) {
         if (![10008, 10003].includes(error.code)) throw error;
       }
@@ -324,7 +355,10 @@ export async function ensureMusicPanel(interaction) {
       lastTrack: old?.lastTrack || null,
     };
     const body = panelBody(guildId, record);
-    const message = await channel.send(body);
+    const message = await channel.send({
+      ...body,
+      flags: MessageFlags.SuppressNotifications,
+    });
     record.messageId = message.id;
     record.lastTrack = snapshotTrack(getPlayer(guildId), record.lastTrack);
     await setSetting(key(guildId), JSON.stringify(record));
@@ -388,7 +422,9 @@ export async function initializeMusicPanels(discordClient) {
     }
   }, 15000);
   refreshTimer.unref();
-  for (const row of await data.findMany('app_settings', { key: { $like: 'music_panel:%' } })) {
+  for (const row of await data.findMany('app_settings', {
+    key: { $like: 'music_panel:%' },
+  })) {
     const guildId = row.key.slice('music_panel:'.length);
     await removeMusicPanel(guildId).catch((error) =>
       console.warn('[music panel] restore:', error.message),
@@ -463,6 +499,24 @@ export async function handleMusicPanelInteraction(interaction) {
     return true;
   }
   const parts = interaction.customId.split(':');
+  if (await handleRadioPanel(interaction, voiceChannelFor)) return true;
+  if (parts[1] === 'loop-setting') {
+    const record = storedPanel(interaction.guildId);
+    if (
+      parts[2] !== interaction.user.id ||
+      !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ||
+      record?.messageId !== parts[3]
+    ) {
+      await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์และใช้เมนูของคุณเอง'));
+      return true;
+    }
+    await interaction.deferUpdate();
+    const mode = interaction.values[0];
+    await saveLoopMode(interaction.guildId, mode);
+    setLoop(interaction.guildId, mode);
+    await interaction.editReply(musicSettingsBody(interaction, record.messageId));
+    return true;
+  }
   if (parts[1] === 'smooth') {
     if (
       parts[2] !== interaction.user.id ||
@@ -528,16 +582,29 @@ export async function handleMusicPanelInteraction(interaction) {
     return true;
   }
   const action = parts[1] === 'genre' ? 'genre-select' : parts[1] === 'add' ? 'submit' : parts[2];
-  if (action === 'genre' || (action === 'random' && !getPlayer(interaction.guildId)?.randomMode)) {
+  if (action === 'radio' && !getPlayer(interaction.guildId)?.radio) {
+    if (!(await voiceChannelFor(interaction))) return true;
+    await openRadioPanel(interaction, record.messageId);
+    return true;
+  }
+  if (action === 'genre' || action === 'random') {
+    if (!(await voiceChannelFor(interaction))) return true;
+    const randomState = getPlayer(interaction.guildId);
     await interaction.reply({
-      content: t('เลือกแนวเพื่อเปิดสุ่มต่อเนื่อง · เพลงปัจจุบันจะเล่นต่อจนจบ'),
+      content: t('เลือกแนวสุ่มเพลง · เพลงปัจจุบันเล่นต่อ เพลงถัดไปใช้แนวที่เลือก'),
       flags: MessageFlags.Ephemeral,
-      components: genreMenuRows(interaction.user.id, record.messageId),
+      components: genreMenuRows(interaction.user.id, record.messageId, {
+        enabled: !!randomState?.randomMode,
+        genre: randomState?.randomGenre,
+      }),
     });
     return true;
   }
   if (action === 'queue') {
-    await interaction.reply({ ...queueBody(interaction, 0), flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      ...queueBody(interaction, 0),
+      flags: MessageFlags.Ephemeral,
+    });
     return true;
   }
   if (action === 'settings') {
@@ -583,7 +650,10 @@ export async function handleMusicPanelInteraction(interaction) {
   try {
     const state = getPlayer(guildId);
     let result;
-    if (action === 'genre-select') {
+    if (action === 'genre-select' && parts[4] === 'off') {
+      disableRandomMode(guildId);
+      result = t('ปิดสุ่มแล้ว เพลงปัจจุบันและเพลงในคิวจะเล่นต่อ');
+    } else if (action === 'genre-select') {
       const genre = parts[4] === 'all' ? 'all' : interaction.values?.[0];
       if (!randomGenres.some((item) => item.value === genre)) throw new Error('Invalid genre');
       await setRandomGenre(guildId, genre);
@@ -597,6 +667,10 @@ export async function handleMusicPanelInteraction(interaction) {
         voiceChannel: voice,
       });
       return true;
+    } else if (action === 'radio' || action === 'music') {
+      result = (await returnToMusic(guildId))
+        ? t('กลับไปเพลงแล้ว · เพลงที่พักไว้เริ่มจากต้นเพลง')
+        : t('ไม่มีคิวเพลงที่พักไว้');
     } else if (action === 'toggle') {
       const paused = ['paused', 'autopaused'].includes(state?.player.state.status);
       result = (paused ? resumePlayer(guildId) : pausePlayer(guildId))
@@ -618,7 +692,7 @@ export async function handleMusicPanelInteraction(interaction) {
       result = skip(guildId) ? t('ข้ามเพลงแล้ว') : t('ไม่มีเพลงให้ข้าม');
     else if (action === 'stop') {
       stop(guildId);
-      result = t('หยุดเพลง ล้างคิว ปิดสุ่มและวนเพลงแล้ว');
+      result = t('หยุดเพลง ล้างคิวและปิดสุ่มแล้ว · จำค่า Loop ไว้');
     } else if (action === 'leave') {
       destroyPlayer(guildId);
       result = t('ออกจากห้องเสียงแล้ว');

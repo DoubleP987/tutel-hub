@@ -4,6 +4,14 @@ import { musicChanged } from './events.js';
 import { randomGenres } from './genres.js';
 
 export const musicSources = ['youtube', 'soundcloud'];
+export function getLoopMode(guildId) {
+  const value = setting(`music_loop:${guildId}`);
+  return ['off', 'track', 'queue'].includes(value) ? value : 'queue';
+}
+export async function saveLoopMode(guildId, value) {
+  if (!['off', 'track', 'queue'].includes(value)) throw new Error('Invalid loop mode');
+  await setSetting(`music_loop:${guildId}`, value);
+}
 export function getSmoothMode(guildId) {
   return setting(`music_smooth:${guildId}`) === '1';
 }

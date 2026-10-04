@@ -1,30 +1,26 @@
 # Radio and control panel / วิทยุและหน้าควบคุม
 
-## Music menus and standby / เมนูเพลงและสแตนบาย
+## Music menus and radio / เมนูเพลงและวิทยุ
 
-Press **🔀 เปิดสุ่ม / Enable random** in the latest music panel. One dropdown includes all 25 choices, including mixed mode and Japanese music. There is no separate genre button. Opening the menu does not start random playback until a genre is selected. Choosing one remembers it for that guild and starts continuous random music. The current track finishes first. The menu is private to its opener; only someone in the bot's voice channel can apply the selection.
+/join joins voice and displays the existing shared player without starting audio. Five idle minutes with no queue, song, random playback or radio triggers leave. A new play request edits the same message even if requested from another text channel; leaving removes it. Restart does not restore audio or the in-memory queue.
 
-`/join` joins the user's voice channel and shows the music panel without starting audio. After five minutes with no track, queue, radio or random mode, the bot leaves and removes its panel. Starting playback cancels the standby countdown; finishing playback starts a new idle countdown. The separate empty-voice timeout can still leave an empty room earlier.
+The Random button always opens a private genre selector. Its 25 choices include mixed music and Japanese music. Selecting a genre while random playback is active keeps the current song playing, discards unsuitable preloaded random audio, and uses the new genre for subsequent random songs. User-queued songs still have priority. Disable random is inside this private menu.
 
-กด **🔀 เปิดสุ่ม** ในแผงเพลงล่าสุด แล้วเลือกแนวจากเมนูได้เลย ไม่ต้องพิมพ์ `/randommusic` การเลือกจะเปิดสุ่มต่อเนื่องและจำแนวแยกแต่ละเซิร์ฟเวอร์ ใช้ `/join` ให้บอทมารอ ถ้าไม่มีเพลงเล่น 5 นาทีจะออกเองและลบแผงควบคุม
+The single Radio button opens a private station selector while in music mode. Select a station to validate it and prepare audio before replacing the music. The old queue and random preference are retained. Press the same Radio button while radio is active to return to music. An interrupted song restarts from its beginning; the queue is not a seekable recording. There is no separate Return to music button.
 
-## Radio / วิทยุ
+Radio list has ten station choices per page, region/type filters, search, page navigation, a refresh check and the last station. The player radio selector uses at most twenty choices per page. Only the opener can use the private selector, and playback requires the same voice channel as the bot. Station health is measured from decoded samples, not just HTTP status. A one-second silent sample may mean a quiet interval rather than an offline station.
 
-`/radio list` is visible only to its opener, with Previous, Next and Refresh status buttons that update the same message. Each list preserves its category/area and station snapshot for twelve minutes; after expiry or a restart, open the command again. Buttons are restricted to the opener and original guild/channel. The optional `page` argument still works. The list checks ten stations per page, using a one-second audio sample on demand. Two probes at most run concurrently. Successful results are cached for three minutes; failed results for thirty seconds. No radio media is saved to disk. Categories: `music`, `news`, `talk`, `sport`, `local`.
+Private interactive messages have a hard three-minute lifetime from creation; navigation does not extend it. Expired visible buttons are rejected and ask the user to reopen the menu. Text-only music/radio confirmations expire fifteen seconds after work finishes. The public music panel has no three-minute timer. Discord modals cannot be remotely closed by the bot. Graceful shutdown cleans private replies; a crash cannot guarantee timely message deletion.
 
-`/radio list` เห็นเฉพาะคนที่เปิด มีปุ่ม **ก่อนหน้า / ถัดไป / ตรวจสถานะใหม่** เปลี่ยนหน้าในข้อความเดิมโดยเก็บหมวดและภาคที่เลือกไว้ รายการหมดอายุใน 12 นาทีหรือเมื่อบอทรีสตาร์ท ให้เปิดคำสั่งใหม่ เมนูสุ่มเพลงมีช่องเดียว รวม 25 ตัวเลือกและ **คละแนว** กดเปิดสุ่มแล้วเลือกแนวเพื่อเริ่ม ไม่มีปุ่มแนวสุ่มแยก
+/join เข้าห้องเสียงและแสดงแผงเดิมโดยไม่เริ่มเล่นอะไร ว่างครบ 5 นาทีโดยไม่มีคิว เพลง สุ่มหรือวิทยุจะออกเอง การสั่งเล่นใหม่แก้ข้อความเดิมแม้เรียกจากคนละช่องแชท ไม่ส่งแผงใหม่ซ้ำ ออกจากห้องแล้วลบแผง รีสตาร์ตไม่กู้คืนเสียงและคิวใน RAM
 
-มีสถานีแนะนำ 21 สถานี และค้นสถานีเพิ่มเติมจาก Radio Browser ได้ รายการแสดงครั้งละ 10 สถานี ตรวจโดยถอดเสียงหนึ่งวินาที ไม่บันทึกเพลงลงดิสก์ สถานะมีเสียง, สตรีมเงียบ, ออฟไลน์, ปฏิเสธการเข้าถึง, หาโดเมนไม่เจอ และไม่ตอบกลับ แยกจากกัน สถานะเงียบไม่ได้แปลว่าปิดสถานี การเชื่อมต่อล้มเหลวจากเครื่องบอทไม่ได้พิสูจน์ว่าสถานีหยุดออกอากาศ FM
+ปุ่มสุ่มเปิดเมนูแนวเพลงเฉพาะคนกดเสมอ มี 25 ตัวเลือกรวมคละแนวและเพลงญี่ปุ่น เปลี่ยนแนวตอนเปิดสุ่มได้ เพลงปัจจุบันเล่นต่อ ยกเลิกเพลงสุ่มที่เตรียมไว้แล้วไม่ตรงแนวใหม่ และสุ่มเพลงถัด ๆ ไปตามแนวใหม่ เพลงที่ผู้ใช้เพิ่มไว้ในคิวยังมีสิทธิ์เล่นก่อน ปุ่มปิดสุ่มอยู่ในเมนูส่วนตัวนี้
 
-Examples / ตัวอย่าง:
+เหลือปุ่มวิทยุปุ่มเดียว กดตอนฟังเพลงเพื่อเลือกสถานี ตรวจสถานีและเตรียมเสียงก่อนแทนเพลง เก็บคิวเพลงและความชอบโหมดสุ่มไว้ กดปุ่มวิทยุอีกครั้งขณะวิทยุทำงานจะกลับไปเล่นเพลง เพลงที่ถูกพักเริ่มใหม่จากต้นเพลง ไม่ได้จำตำแหน่งเสียง ไม่มีปุ่มกลับไปเพลงแยกอีกแล้ว
 
-- `/radio list category:news` — ข่าวและจราจร เช่น JS100, FM91, MCOT News, NBT
-- `/radio list category:talk` — สาระและการศึกษา เช่น Thinking Radio, Chula Radio
-- `/radio list category:sport` — Active Radio FM99
-- `/radio list page:2` — หน้าถัดไป
-- `/radio play station:js100` or `station:chula` — เล่นสถานี
+radio list เลือกเล่นได้ 10 สถานีต่อหน้า กรองพื้นที่และประเภท ค้นหา เลื่อนหน้า ตรวจสถานะใหม่ และเปิดสถานีล่าสุดได้ ตัวเลือกวิทยุจากแผงใช้ไม่เกิน 20 สถานีต่อหน้า ใช้ได้เฉพาะคนเปิดและต้องอยู่ห้องเสียงเดียวกับบอท สถานะมีเสียงตรวจจากการถอดเสียงจริง ไม่ได้ดูเพียง HTTP การตรวจหนึ่งวินาทีที่เงียบอาจเป็นช่วงเงียบ ไม่ได้ยืนยันว่าสถานีปิด
 
-Endpoint URLs and directory metadata can become stale. Playback checks actual decoding before claiming success. Offline stations are retained so users can see their status and retry later.
+เมนูส่วนตัวที่มีปุ่มหมดอายุสูงสุด 3 นาทีจากเปิด ไม่ต่อเวลาเมื่อเลื่อนหน้า ถ้าข้อความยังมองเห็นหลังหมดอายุ จะปฏิเสธปุ่มและให้เปิดเมนูใหม่ คำยืนยันเพลงและวิทยุสั้น ๆ หายหลังงานเสร็จ 15 วินาที แผงเพลงหลักไม่จับเวลา 3 นาที บอทปิดฟอร์ม modal ของ Discord แทนผู้ใช้ไม่ได้ การปิดปกติล้างข้อความส่วนตัว แต่เมื่อโปรเซส crash ไม่รับประกันว่าจะลบทันเวลา
 
 ## Calendar commands / คำสั่งปฏิทิน
 

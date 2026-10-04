@@ -1,3 +1,4 @@
+import { hydrateTrack } from './metadata.js';
 import { t } from '../i18n/bot.js';
 import {
   joinVoiceChannel,
@@ -12,9 +13,15 @@ import {
 import { createTrackResource, createRadioResource, cacheTrackAudio } from './stream.js';
 import { ContinuousPcm } from './continuous-pcm.js';
 import { resolveRandomTrack, clearRandomSession } from './random.js';
-import { getMusicSource, getRandomGenre, getSmoothMode } from './settings.js';
+import {
+  getMusicSource,
+  getRandomGenre,
+  getSmoothMode,
+  getLoopMode,
+  saveLoopMode,
+} from './settings.js';
 import { FADE_MS, resourceReady } from './transition.js';
-import { musicChanged, musicLeft, invalidateMusicRequests } from './events.js';
+import { musicChanged, musicLeft, invalidateMusicRequests, musicRequestVersion } from './events.js';
 import { requireBotLease } from '../cluster/state.js';
 import {
   insertTracks,
@@ -24,20 +31,25 @@ import {
   repeatFinishedTrack,
 } from './queue.js';
 const players = new Map();
+const canSmooth = (track) => Number(track?.duration) > 0 && Number(track.duration) <= 600;
 function getState(guildId) {
   if (!players.has(guildId)) {
     const state = {
       queue: [],
       current: null,
       lastTrack: null,
-      player: createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Pause } }),
+      player: createAudioPlayer({
+        behaviors: { noSubscriber: NoSubscriberBehavior.Pause },
+      }),
       connection: null,
       stream: null,
       randomMode: false,
       randomGenre: getRandomGenre(guildId),
-      loopMode: false,
+      loopMode: getLoopMode(guildId) === 'off' ? false : getLoopMode(guildId),
       bypassLoop: false,
       radio: null,
+      suspendedMusic: null,
+      radioPrepareAbort: null,
       randomHistory: [],
       loadingNext: false,
       generation: 0,
@@ -150,7 +162,7 @@ function continuousStream(guildId, state, source, track) {
     smooth: state.smoothMode,
     onSwitch: (oldTrack, nextTrack, skipped, nextSource) => {
       state.bypassLoop = skipped;
-      repeatFinishedTrack(state, !skipped && !activeSource.failed);
+      repeatFinishedTrack(state, !activeSource.failed);
       const position = state.queue.findIndex((item) => item.url === nextTrack.url);
       if (position >= 0) state.queue.splice(position, 1);
       activeSource = nextSource;
@@ -170,6 +182,8 @@ function continuousStream(guildId, state, source, track) {
     },
     onEnd: () => {
       if (!state.smoothMode) return false;
+      if (state.queue[0] && !canSmooth(state.queue[0])) return false;
+      if (state.preloadExcluded) return false;
       const pending =
         state.prepareTask ||
         state.prepared ||
@@ -204,6 +218,7 @@ function continuousStream(guildId, state, source, track) {
 function ensureContinuous(guildId, state) {
   if (
     state.mixer ||
+    !canSmooth(state.current) ||
     !state.current ||
     state.radio ||
     !state.stream?.takePcm ||
@@ -231,7 +246,7 @@ function preparedMatches(guildId, state, item) {
       : state.queue[0];
   if (expected) return expected.url === item.track.url;
   if (state.current && state.loopMode === 'queue' && !state.queue.length)
-    return state.current.url === item.track.url;
+    return !state.randomMode && state.current.url === item.track.url;
   return (
     item.random &&
     state.randomMode &&
@@ -240,7 +255,7 @@ function preparedMatches(guildId, state, item) {
   );
 }
 async function prepareNext(guildId, state) {
-  if (!state.smoothMode || !state.current || state.radio) return;
+  if (!state.smoothMode || !canSmooth(state.current) || state.radio) return;
   if (state.prepareTask || state.prepared || Date.now() < state.prepareRetryAt) return;
   const current = state.current;
   const generation = state.generation;
@@ -260,8 +275,16 @@ async function prepareNext(guildId, state) {
           signal: abort.signal,
           genre,
         });
-      if (!track && state.loopMode === 'queue') track = current;
+      if (!track && state.loopMode === 'queue' && !state.randomMode) track = current;
       if (!track || abort.signal.aborted) return;
+      await hydrateTrack(track, { signal: abort.signal });
+      if (abort.signal.aborted) return;
+      if (!canSmooth(track)) {
+        state.preloadExcluded = true;
+        if (random && state.queue.length < 500) state.queue.push(track);
+        return;
+      }
+      state.preloadExcluded = false;
       let media;
       try {
         media = await cacheTrackAudio(track, { signal: abort.signal });
@@ -443,7 +466,10 @@ async function playNext(guildId) {
       track = queued;
     }
     if (!track) return;
+    await hydrateTrack(track, { signal: abort.signal });
+    if (players.get(guildId) !== state || state.generation !== generation) return;
     state.current = track;
+    state.preloadExcluded = false;
     state.bypassLoop = false;
     state.lastTrack = track;
     state.trackStartedAtResourceMs = 0;
@@ -457,7 +483,7 @@ async function playNext(guildId) {
       ? prepared.stream
       : createTrackResource(track, {
           smooth: false,
-          pcmOnly: state.smoothMode,
+          pcmOnly: state.smoothMode && canSmooth(track),
         });
     state.stream = source.pcm ? continuousStream(guildId, state, source, track) : source;
     if (prepared && !usePrepared) prepared.stream.stop();
@@ -527,9 +553,13 @@ export function enqueueMany(guildId, voiceChannel, tracks, options = {}) {
     state.stream?.stop();
     state.stream = null;
     state.radio = null;
+    state.randomMode = !!state.suspendedMusic?.randomMode;
+    state.suspendedMusic = null;
+    state.loopMode = getLoopMode(guildId) === 'off' ? false : getLoopMode(guildId);
     state.player.stop(true);
   }
   const result = insertTracks(state.queue, tracks, options);
+  state.preloadExcluded = false;
   if (state.prepareTask || (state.prepared && !preparedMatches(guildId, state, state.prepared)))
     clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
@@ -551,6 +581,7 @@ export function editQueue(guildId, action, from, to) {
   }
   if (state.prepareTask || (state.prepared && !preparedMatches(guildId, state, state.prepared)))
     clearPrepared(state);
+  state.preloadExcluded = false;
   musicChanged(guildId, state.lastTrack);
   return result;
 }
@@ -563,11 +594,16 @@ export async function enableRandomMode(guildId, voiceChannel) {
     state.searchAbort?.abort();
   }
   state.randomGenre = genre;
+  state.preloadExcluded = false;
+  state.prepareRetryAt = 0;
   clearPrepared(state);
   if (state.radio) {
     state.stream?.stop();
     state.stream = null;
     state.radio = null;
+    state.randomMode = !!state.suspendedMusic?.randomMode;
+    state.suspendedMusic = null;
+    state.loopMode = getLoopMode(guildId) === 'off' ? false : getLoopMode(guildId);
     state.player.stop(true);
   }
   state.randomMode = true;
@@ -596,40 +632,85 @@ export function disableRandomMode(guildId) {
   musicChanged(guildId, state.lastTrack);
   return true;
 }
-export async function playRadio(guildId, voiceChannel, station) {
-  invalidateMusicRequests(guildId);
+export async function playRadio(
+  guildId,
+  voiceChannel,
+  station,
+  { valid = () => true, requestedVersion = musicRequestVersion(guildId) } = {},
+) {
+  if (requestedVersion !== musicRequestVersion(guildId) || !valid())
+    throw new Error('RADIO_CANCELLED');
   const state = getState(guildId);
-  ensureConnection(guildId, voiceChannel, state);
-  state.generation++;
-  clearPrepared(state, true);
-  clearInterval(state.transitionTimer);
   const generation = state.generation;
-  state.searchAbort?.abort();
-  cancelFade(state);
-  clearTimeout(state.nextTimer);
-  clearTimeout(state.startupTimer);
-  clearTimeout(state.radioTimer);
-  state.queue.length = 0;
-  state.randomMode = false;
-  state.current = null;
-  state.stream?.stop();
-  state.loopMode = false;
-  state.bypassLoop = false;
-  state.radio = station;
-  state.radioRetries = 0;
-  state.lastTrack = { title: t('วิทยุสด · {0}', station.name), duration: 0 };
-  state.stream = createRadioResource(station);
-  state.player.play(state.stream.resource);
-  musicChanged(guildId, state.lastTrack);
+  state.radioPrepareAbort?.abort();
+  const abort = new AbortController();
+  state.radioPrepareAbort = abort;
+  const prepared = createRadioResource(station);
   try {
-    await entersState(state.player, AudioPlayerStatus.Playing, 30000);
-    if (state.generation !== generation || state.radio !== station)
+    await resourceReady(prepared, abort.signal, 25000);
+    if (
+      abort.signal.aborted ||
+      requestedVersion !== musicRequestVersion(guildId) ||
+      players.get(guildId) !== state ||
+      state.generation !== generation ||
+      !valid()
+    )
       throw new Error('RADIO_CANCELLED');
+    ensureConnection(guildId, voiceChannel, state);
+    invalidateMusicRequests(guildId);
+    state.generation++;
+    state.searchAbort?.abort();
+    clearPrepared(state, true);
+    cancelFade(state);
+    clearInterval(state.transitionTimer);
+    clearTimeout(state.nextTimer);
+    clearTimeout(state.startupTimer);
+    clearTimeout(state.radioTimer);
+    if (!state.radio) {
+      state.suspendedMusic = {
+        randomMode: state.randomMode,
+        loopMode: state.loopMode,
+      };
+      // A returning interrupted song starts from its beginning; audio is not retained.
+      if (state.current && state.queue.length < 500) state.queue.unshift(state.current);
+    }
+    const previous = state.stream;
+    state.randomMode = false;
+    state.current = null;
+    state.loopMode = false;
+    state.bypassLoop = false;
+    state.radio = station;
+    state.radioRetries = 0;
+    state.lastTrack = { title: t('วิทยุสด · {0}', station.name), duration: 0 };
+    state.stream = prepared;
+    state.player.play(prepared.resource);
+    previous?.stop();
+    musicChanged(guildId, state.lastTrack);
   } catch (error) {
-    if (state.generation === generation && state.radio === station) stop(guildId);
+    if (state.stream !== prepared) prepared.stop();
     throw error;
+  } finally {
+    if (state.radioPrepareAbort === abort) state.radioPrepareAbort = null;
   }
   return state;
+}
+export async function returnToMusic(guildId) {
+  const state = players.get(guildId);
+  if (!state?.radio && !state?.suspendedMusic) return false;
+  state.generation++;
+  state.radioPrepareAbort?.abort();
+  clearTimeout(state.radioTimer);
+  const saved = state.suspendedMusic;
+  state.radio = null;
+  state.suspendedMusic = null;
+  state.randomMode = !!saved?.randomMode;
+  state.loopMode = getLoopMode(guildId) === 'off' ? false : getLoopMode(guildId);
+  state.stream?.stop();
+  state.stream = null;
+  state.player.stop(true);
+  musicChanged(guildId, state.lastTrack);
+  await playNext(guildId);
+  return true;
 }
 export function getPlayer(guildId) {
   return players.get(guildId);
@@ -646,8 +727,13 @@ export function skip(guildId) {
   const state = players.get(guildId);
   if (!state?.current) return false;
   state.bypassLoop = true;
-  if (state.mixer && state.smoothMode) {
-    if (!state.queue.length && !state.randomMode) {
+  if (
+    state.mixer &&
+    state.smoothMode &&
+    !state.preloadExcluded &&
+    (!state.queue[0] || canSmooth(state.queue[0]))
+  ) {
+    if (!state.queue.length && !state.randomMode && state.loopMode !== 'queue') {
       clearPrepared(state);
       state.mixer.requestFinish();
       return true;
@@ -663,6 +749,7 @@ export function skip(guildId) {
   if (state.smoothMode) void prepareNext(guildId, state);
   if (
     state.smoothMode &&
+    canSmooth(state.current) &&
     state.stream?.resource.volume &&
     state.player.state.status === AudioPlayerStatus.Playing
   ) {
@@ -697,6 +784,9 @@ export function toggleLoop(guildId) {
   state.loopMode = state.loopMode === 'queue' ? false : state.loopMode ? 'queue' : 'track';
   clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
+  void saveLoopMode(guildId, state.loopMode || 'off').catch((error) =>
+    console.warn('[loop]', error.message),
+  );
   return state.loopMode;
 }
 export function setLoop(guildId, mode) {
@@ -705,6 +795,7 @@ export function setLoop(guildId, mode) {
   state.loopMode = mode === 'off' ? false : mode;
   clearPrepared(state);
   musicChanged(guildId, state.lastTrack);
+  void saveLoopMode(guildId, mode).catch((error) => console.warn('[loop]', error.message));
   return mode;
 }
 export function stop(guildId) {
@@ -712,6 +803,9 @@ export function stop(guildId) {
   const state = players.get(guildId);
   if (!state) return;
   state.generation++;
+  state.radioPrepareAbort?.abort();
+  state.radioPrepareAbort = null;
+  state.suspendedMusic = null;
   clearPrepared(state, true);
   cancelFade(state);
   clearInterval(state.transitionTimer);
@@ -720,7 +814,7 @@ export function stop(guildId) {
   clearTimeout(state.startupTimer);
   clearTimeout(state.radioTimer);
   state.randomMode = false;
-  state.loopMode = false;
+  state.loopMode = getLoopMode(guildId) === 'off' ? false : getLoopMode(guildId);
   state.bypassLoop = false;
   state.radio = null;
   state.queue.length = 0;

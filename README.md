@@ -1,5 +1,13 @@
 # Tutel Hub
 
+## Latest music update / อัปเดตเมนูเพลงล่าสุด
+
+[Current music controls and duration lookup / เมนูสุ่ม วิทยุ Loop และข้อมูลเวลาเพลง](docs/MUSIC-CONTROLS.md)
+
+/join opens the idle player; Random permits changing genres while active; Radio toggles back to music; private menus expire within three minutes. Loop Queue is the per-guild default.
+
+/join เปิดแผงโดยยังไม่เล่น ปุ่มสุ่มเปลี่ยนแนวได้ทันที ปุ่มวิทยุสลับกลับไปเพลง เมนูส่วนตัวหมดอายุสูงสุด 3 นาที และ Loop เริ่มต้นเป็นวนคิวแยกเซิร์ฟเวอร์
+
 **Discord music, live radio, Thai calendar reminders, and a private control panel.**  
 Created by **Double_P** · Suggested GitHub repository: `tutel-hub`
 

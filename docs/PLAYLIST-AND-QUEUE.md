@@ -1,5 +1,7 @@
 # Playlists, queue controls and random genres
 
+**Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
+
 [ภาษาไทย](#ภาษาไทย) · Updated 3 October 2026
 
 ## English
@@ -57,6 +59,6 @@ After installing the updated source, run `npm run register` once to update **glo
 
 ## Continuous audio update / อัปเดตเสียงต่อเนื่อง
 
-[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Default off; radio unchanged. Preparation failure, provider limits and connection problems can still cause waiting.
+[Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Repository fallback off; live homeserver/Oracle fallback on. Radio unchanged; known finite tracks up to ten minutes only. Preparation failure, provider limits and connection problems can still cause waiting.
 
-เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม ค่าเริ่มต้นปิด ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย
+เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม repo เริ่มต้นปิด แต่ homeserver และ Oracle เปิดโดยเริ่มต้นเมื่อยังไม่บันทึกค่า ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย

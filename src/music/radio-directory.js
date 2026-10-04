@@ -1,5 +1,37 @@
 export const RADIO_STATIONS = [
   {
+    name: '106 Family News Radio · ข่าวและครอบครัว',
+    frequency: '106',
+    aliases: ['family', 'family news', '106'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://radio11.plathong.net/7138/;stream.mp3',
+  },
+  {
+    name: '90.5 Smart News · มิติข่าว',
+    frequency: '90.5',
+    aliases: ['smart news', 'มิติข่าว'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'http://live3.smartbomb.co.th:8624/;stream.mp3',
+  },
+  {
+    name: 'NBT Radio Thailand FM 92.5 · ข่าวและสาระ',
+    frequency: '92.5',
+    aliases: ['nbt925', 'radio thailand 92.5', 'ข่าว92.5'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://cdn-edge.iiptvcdn.com/radio_edge/45d4-d521-cbfc-d686-0123/playlist.m3u8',
+  },
+  {
+    name: 'Zaab News Radio FM 96 · ข่าว',
+    frequency: '96',
+    aliases: ['zaab news', 'ข่าว96'],
+    region: 'bangkok',
+    category: 'news',
+    url: 'https://sapircast.caster.fm:17039/aRsGW',
+  },
+  {
     name: 'Active Radio FM99 · กีฬาและสุขภาพ',
     frequency: '99',
     aliases: ['active', 'active radio', 'fm99', '99', 'กีฬา'],
@@ -352,7 +384,17 @@ export async function getRadioDirectory() {
   );
   if (!response.ok) throw new Error('Radio directory HTTP ' + response.status);
   const rows = await response.json();
-  radioDirectory = { expires: Date.now() + 10 * 60 * 1000, data: Array.isArray(rows) ? rows : [] };
+  radioDirectory = {
+    expires: Date.now() + 10 * 60 * 1000,
+    data: Array.isArray(rows)
+      ? rows.filter(
+          (row) =>
+            !/\/hls\/(?:topnews|mobile_v1)|television/i.test(
+              `${row.url_resolved || row.url || ''} ${row.tags || ''}`,
+            ),
+        )
+      : [],
+  };
   return radioDirectory.data;
 }
 export function stationMatchesRegion(station, region) {

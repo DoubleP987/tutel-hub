@@ -19,7 +19,7 @@ import {
   radioCategory,
 } from '../music/radio-directory.js';
 import { playRadio } from '../music/player.js';
-import { showMusicPanel } from '../music/panel.js';
+import { showMusicPanel, recordMusicAction } from '../music/panel.js';
 import { setting, setSetting } from '../database/settings.js';
 import { radioAreas, radioCategories } from '../music/radio-panel.js';
 import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
@@ -280,6 +280,7 @@ export async function handleRadioListButton(interaction) {
           region: station.region,
         }),
       ).catch((error) => console.warn('[radio preference]', error.message));
+      await recordMusicAction(interaction, t('เปิดวิทยุ {0}', station.name));
       await showMusicPanel(interaction);
       await interaction.editReply(t('กำลังเปิดวิทยุสด ') + station.name);
     } catch (error) {

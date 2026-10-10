@@ -5,7 +5,7 @@ import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 import { t } from '../i18n/bot.js';
 import { playRadio } from '../music/player.js';
 import { guildOnly } from './shared.js';
-import { showMusicPanel } from '../music/panel.js';
+import { showMusicPanel, recordMusicAction } from '../music/panel.js';
 import {
   RADIO_STATIONS,
   RADIO_REGIONS,
@@ -109,6 +109,7 @@ export const radioHandlers = {
         t('เปิดเสียงวิทยุไม่สำเร็จ สถานีอาจออฟไลน์หรือสตรีมมีปัญหา ลองเลือกสถานีอื่น'),
       );
     }
+    await recordMusicAction(interaction, t('เปิดวิทยุ {0}', selected.name));
     await showMusicPanel(interaction);
     return interaction.editReply(
       t('กำลังเปิดวิทยุสด ') +

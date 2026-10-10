@@ -40,7 +40,7 @@ export async function cacheTrackAudio(track, { signal } = {}) {
       '--retries',
       '2',
       '-f',
-      'bestaudio[protocol^=http]/bestaudio/best',
+      'bestaudio[ext=m4a]/bestaudio[protocol^=http]/bestaudio/best',
       '--no-playlist',
       '-o',
       '-',
@@ -83,8 +83,17 @@ export async function cacheTrackAudio(track, { signal } = {}) {
   });
 }
 
-export function createTrackResource(track, { smooth = false, pcmOnly = false, media } = {}) {
+export function createTrackResource(
+  track,
+  {
+    smooth = false,
+    pcmOnly = false,
+    media,
+    format = 'bestaudio[protocol^=http]/bestaudio/best',
+  } = {},
+) {
   let failed = false;
+  let stopping = false;
   console.log(`[stream] Starting ${track.title}`);
   const downloader = media
     ? null
@@ -101,7 +110,7 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
           '--retries',
           '3',
           '-f',
-          'bestaudio[protocol^=http]/bestaudio/best',
+          format,
           '--no-playlist',
           '-o',
           '-',
@@ -111,11 +120,12 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
       );
   downloader?.stderr.on('data', (chunk) => process.stderr.write(`[yt-dlp] ${chunk}`));
   downloader?.once('error', (error) => {
+    if (stopping) return;
     failed = true;
     console.error('[yt-dlp] process failed:', error);
   });
   downloader?.once('close', (code) => {
-    if (code !== 0) failed = true;
+    if (!stopping && code !== 0) failed = true;
     console.log(`[yt-dlp] process ended (${code})`);
   });
   const transcoder = spawn(
@@ -150,12 +160,13 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
     pcmBytes += chunk.length;
   });
   transcoder.once('error', (error) => {
+    if (stopping) return;
     failed = true;
     console.error('[ffmpeg] process failed:', error);
     downloader?.kill();
   });
   transcoder.once('close', (code) => {
-    if (code !== 0) failed = true;
+    if (!stopping && code !== 0) failed = true;
     console.log(
       `[ffmpeg] process ended (${code}); produced ${Math.round(pcmBytes / 192000)} seconds of PCM`,
     );
@@ -167,13 +178,14 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
       return failed;
     },
     stop: () => {
+      stopping = true;
       input.destroy();
       downloader?.kill();
       transcoder.kill();
     },
   };
   transcoder.stdout.on('error', () => {
-    failed = true;
+    if (!stopping) failed = true;
   });
   if (pcmOnly) return raw;
   const fade = new SmoothPcm(smooth);
@@ -185,6 +197,7 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
   });
   // A prepared resource has no AudioPlayer attached yet; absorb and record errors.
   resource.playStream.on('error', (error) => {
+    if (stopping) return;
     failed = true;
     console.warn('[stream] resource error:', error.message);
   });
@@ -203,6 +216,7 @@ export function createTrackResource(track, { smooth = false, pcmOnly = false, me
       fade.enabled = enabled;
     },
     stop: () => {
+      stopping = true;
       input.destroy();
       downloader?.kill();
       transcoder.kill();

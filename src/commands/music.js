@@ -20,7 +20,7 @@ import {
   setRandomGenre,
 } from '../music/settings.js';
 import { randomGenre, randomGenres } from '../music/genres.js';
-import { showMusicPanel, musicPanelPending } from '../music/panel.js';
+import { showMusicPanel, musicPanelPending, recordMusicAction } from '../music/panel.js';
 import { musicRequestVersion } from '../music/events.js';
 
 export const musicHandlers = {
@@ -34,6 +34,7 @@ export const musicHandlers = {
       });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     await joinStandby(interaction.guildId, channel);
+    await recordMusicAction(interaction, t('เข้าห้องเสียงมารอ'));
     await showMusicPanel(interaction);
     return interaction.editReply(t('เข้าห้องเสียงมารอแล้ว · ถ้าไม่มีเพลงเล่นครบ 5 นาทีจะออกเอง'));
   },
@@ -48,6 +49,11 @@ export const musicHandlers = {
     const selected = source
       ? await setMusicSource(interaction.guildId, source)
       : getMusicSource(interaction.guildId);
+    if (source)
+      await recordMusicAction(
+        interaction,
+        t('เปลี่ยนแหล่งเพลงเป็น {0}', musicSourceLabel(selected)),
+      );
     return interaction.reply({
       content: t(
         'แหล่งค้นหาเพลงของเซิร์ฟเวอร์นี้: **{0}**\nใช้กับ /play และ /randommusic เพลงที่อยู่ในคิวแล้วจะเล่นต่อจากแหล่งเดิม และลิงก์ตรงจะใช้แหล่งของลิงก์นั้น',
@@ -82,6 +88,7 @@ export const musicHandlers = {
   async loop(interaction) {
     if (!(await canControl(interaction))) return;
     const mode = setLoop(interaction.guildId, interaction.options.getString('mode', true));
+    if (mode !== null) await recordMusicAction(interaction, t('เปลี่ยน Loop: {0}', mode));
     return interaction.reply({
       content:
         mode === null
@@ -111,6 +118,10 @@ export const musicHandlers = {
       return interaction.editReply(t('ยกเลิกการสุ่มเพลงแล้ว'));
     const state = await enableRandomMode(interaction.guildId, channel);
     if (!state.randomMode) return interaction.editReply(t('โหมดสุ่มถูกหยุดแล้ว'));
+    await recordMusicAction(
+      interaction,
+      t('เปิดสุ่มแนว {0}', t(randomGenre(getRandomGenre(interaction.guildId)).label)),
+    );
     const playing = state.player.state.status === 'playing' && state.current;
     return interaction.editReply(
       t(
@@ -151,23 +162,26 @@ export const musicHandlers = {
       return interaction.reply(
         t('กำลังฟังวิทยุ ใช้ /radio play เพื่อเปลี่ยน หรือ /stop เพื่อหยุด'),
       );
-    return interaction.reply(
-      skip(interaction.guildId) ? t('ข้ามเพลงแล้ว') : t('ไม่มีเพลงที่กำลังเล่น'),
-    );
+    const skipped = skip(interaction.guildId);
+    if (skipped) await recordMusicAction(interaction, t('ข้ามเพลง'));
+    return interaction.reply(skipped ? t('กำลังข้ามเพลง…') : t('ไม่มีเพลงที่กำลังเล่น'));
   },
   async stop(interaction) {
     if (!guildOnly(interaction)) return;
     stop(interaction.guildId);
+    await recordMusicAction(interaction, t('หยุดเพลงและล้างคิว'));
     return interaction.reply(t('หยุดเพลงและล้างคิวแล้ว'));
   },
   async pause(interaction) {
     if (!guildOnly(interaction)) return;
     const ok = getPlayer(interaction.guildId) && getPlayer(interaction.guildId).player.pause();
+    if (ok) await recordMusicAction(interaction, t('พักเพลง'));
     return interaction.reply(ok ? t('พักเพลงแล้ว') : t('ไม่มีเพลงที่กำลังเล่น'));
   },
   async resume(interaction) {
     if (!guildOnly(interaction)) return;
     const ok = getPlayer(interaction.guildId) && getPlayer(interaction.guildId).player.unpause();
+    if (ok) await recordMusicAction(interaction, t('เล่นเพลงต่อ'));
     return interaction.reply(ok ? t('เล่นเพลงต่อแล้ว') : t('ไม่มีเพลงที่พักอยู่'));
   },
   async nowplaying(interaction) {
@@ -190,6 +204,7 @@ export const musicHandlers = {
   async leave(interaction) {
     if (!guildOnly(interaction)) return;
     destroyPlayer(interaction.guildId);
+    await recordMusicAction(interaction, t('ออกจากห้องเสียง'));
     return interaction.reply(t('ออกจาก voice channel แล้ว'));
   },
 };
@@ -227,6 +242,8 @@ async function changeQueue(interaction, action) {
         : action === 'clear'
           ? t('ล้าง {0} เพลงที่รอแล้ว · เพลงปัจจุบันยังเล่นต่อ', result || 0)
           : t('สุ่มลำดับคิว {0} เพลงแล้ว', result || 0);
+  if (result !== null && result !== undefined && result !== false)
+    await recordMusicAction(interaction, message);
   return interaction.reply({
     content: message,
     flags: MessageFlags.Ephemeral,

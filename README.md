@@ -262,3 +262,8 @@ Enable or disable Smooth transition in the private settings message on the Disco
 Tutel’s public promotional website describes the Discord music and live-radio bot. The calendar is a personal application sharing the current repository, database adapter and bot notification runtime; it is not offered as a public bot feature on the promotional site. Its private admin and separate read-only Vercel frontend remain operational. No calendar data or functionality was removed by this presentation change.
 
 เว็บโปรโมทนำเสนอเฉพาะบอทเพลงและวิทยุ ปฏิทินเป็นแอปใช้งานส่วนตัวที่ใช้โครงสร้าง ฐานข้อมูล และระบบส่งข้อความของบอทร่วมกันอยู่ใน repo ตอนนี้ หน้า admin และเว็บปฏิทิน Vercel แยกยังทำงานตามเดิม การแยกการนำเสนอไม่ได้ลบข้อมูลหรือความสามารถปฏิทิน
+
+## Discord identities and retained music history
+
+- [English guide](docs/BOT-IDENTITIES.md)
+- [คู่มือภาษาไทย](docs/BOT-IDENTITIES.th.md)

@@ -6,7 +6,7 @@ import { randomGenres } from './genres.js';
 export const musicSources = ['youtube', 'soundcloud'];
 export function getLoopMode(guildId) {
   const value = setting(`music_loop:${guildId}`);
-  return ['off', 'track', 'queue'].includes(value) ? value : 'queue';
+  return ['off', 'track', 'queue'].includes(value) ? value : 'off';
 }
 export async function saveLoopMode(guildId, value) {
   if (!['off', 'track', 'queue'].includes(value)) throw new Error('Invalid loop mode');

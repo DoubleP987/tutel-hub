@@ -104,6 +104,14 @@ export class ContinuousPcm extends Readable {
         this.fill(this.next);
         const available = Math.floor(this.active.buffer.length / BYTES);
         const nextFrames = Math.floor((this.next?.buffer.length || 0) / BYTES);
+        if (this.finishRequested && !available) {
+          // Skip must also end a stalled or empty decoder; there is no tail to fade.
+          const old = this.active;
+          this.active = null;
+          this.release(old);
+          this.push(null);
+          break;
+        }
         const ready = nextFrames >= FADE || (this.next?.ended && nextFrames > 0);
         const boundary = this.skipRequested || (this.active.ended && available <= FADE);
         if (!this.fade && this.finishRequested && available > 0)

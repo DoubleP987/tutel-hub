@@ -1,3 +1,4 @@
+import { openTrackSource } from './startup.js';
 import { hydrateTrack } from './metadata.js';
 import { t } from '../i18n/bot.js';
 import {
@@ -181,6 +182,9 @@ function continuousStream(guildId, state, source, track) {
       void prepareNext(guildId, state);
     },
     onEnd: () => {
+      // A real source failure must reach Idle and advance, rather than keep
+      // waiting for a loop preload of the same unavailable track forever.
+      if (activeSource.failed) return false;
       if (!state.smoothMode) return false;
       if (state.queue[0] && !canSmooth(state.queue[0])) return false;
       if (state.preloadExcluded) return false;
@@ -471,23 +475,27 @@ async function playNext(guildId) {
     state.current = track;
     state.preloadExcluded = false;
     state.bypassLoop = false;
-    state.lastTrack = track;
     state.trackStartedAtResourceMs = 0;
-    musicChanged(guildId, track);
+    musicChanged(guildId);
     if (state.randomMode) {
       state.randomHistory.push(track.url);
       if (state.randomHistory.length > 80) state.randomHistory.shift();
     }
     const usePrepared = prepared && prepared.track.url === track.url;
-    const source = usePrepared
-      ? prepared.stream
-      : createTrackResource(track, {
-          smooth: false,
-          pcmOnly: state.smoothMode && canSmooth(track),
-        });
-    state.stream = source.pcm ? continuousStream(guildId, state, source, track) : source;
     if (prepared && !usePrepared) prepared.stream.stop();
+    const source = await openTrackSource(track, {
+      signal: abort.signal,
+      pcmOnly: state.smoothMode && canSmooth(track),
+      prepared: usePrepared ? prepared.stream : null,
+    });
+    if (players.get(guildId) !== state || state.generation !== generation) {
+      source.stop();
+      return;
+    }
+    state.stream = source.pcm ? continuousStream(guildId, state, source, track) : source;
     state.player.play(state.stream.resource);
+    state.lastTrack = track;
+    musicChanged(guildId, track);
     watchTransition(guildId, state);
     clearTimeout(state.startupTimer);
     state.startupTimer = setTimeout(() => {
@@ -725,28 +733,45 @@ export function resumePlayer(guildId) {
 }
 export function skip(guildId) {
   const state = players.get(guildId);
-  if (!state?.current) return false;
-  state.bypassLoop = true;
+  if (!state) return false;
+  if (state.loadingNext && !state.stream) {
+    // The selected track has not started. Cancel it rather than wait for extraction.
+    state.generation++;
+    state.searchAbort?.abort();
+    clearPrepared(state, true);
+    state.current = null;
+    clearTimeout(state.startupTimer);
+    musicChanged(guildId, state.lastTrack);
+    return true; // playNext's finally advances remaining queued requests after cancellation.
+  }
+  if (!state.current) return false;
+  // Skip the current song repeat only when there is another destination.
+  // With a one-song loop, Skip restarts the song rather than silently stopping.
+  state.bypassLoop = !!(state.queue.length || state.randomMode);
+  if (['paused', 'autopaused'].includes(state.player.state.status)) state.player.unpause();
   if (
     state.mixer &&
     state.smoothMode &&
     !state.preloadExcluded &&
     (!state.queue[0] || canSmooth(state.queue[0]))
   ) {
-    if (!state.queue.length && !state.randomMode && state.loopMode !== 'queue') {
+    if (!state.queue.length && !state.randomMode && !state.loopMode) {
       clearPrepared(state);
       state.mixer.requestFinish();
       return true;
     }
-    if (state.prepared && !preparedMatches(guildId, state, state.prepared)) clearPrepared(state);
-    if (state.smoothMode) void prepareNext(guildId, state);
-    if (state.prepared || state.prepareTask || state.queue.length || state.randomMode) {
+    if (state.prepared && preparedMatches(guildId, state, state.prepared)) {
       state.mixer.requestSkip();
       return true;
     }
+    // Smooth is optional: never wait for a downloader after the user presses Skip.
+    clearPrepared(state, true);
+    state.preloadExcluded = true;
+    state.mixer.requestFinish();
+    return true;
   }
   if (state.prepared && !preparedMatches(guildId, state, state.prepared)) clearPrepared(state);
-  if (state.smoothMode) void prepareNext(guildId, state);
+  clearPrepared(state, true);
   if (
     state.smoothMode &&
     canSmooth(state.current) &&

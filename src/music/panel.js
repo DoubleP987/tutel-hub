@@ -142,9 +142,32 @@ function snapshotTrack(state, fallback) {
       duration: track.duration,
       artist: track.artist,
       thumbnail: track.thumbnail,
+      requestedBy: track.requestedBy,
     };
-  if (state?.radio) return { title: t('วิทยุสด · {0}', state.radio.name), duration: 0 };
+  if (state?.radio)
+    return { title: t('วิทยุสด · {0}', state.radio.name), url: state.radio.url, duration: 0 };
   return fallback || null;
+}
+function playbackSnapshot(state, fallback) {
+  // A visible loading title is not evidence that the track ever produced audio.
+  if (state?.loadingNext) return fallback || null;
+  return snapshotTrack(state, fallback);
+}
+export async function recordMusicAction(interaction, description) {
+  if (!interaction.guildId) return;
+  const actor =
+    interaction.member?.displayName || interaction.user.globalName || interaction.user.username;
+  await serialize(interaction.guildId, async () => {
+    await setSetting(
+      `music_action:${interaction.guildId}`,
+      JSON.stringify({
+        actor: String(actor).slice(0, 80),
+        description: String(description).slice(0, 300),
+        at: Date.now(),
+      }),
+    );
+  });
+  musicChanged(interaction.guildId);
 }
 function panelBody(guildId, record) {
   const state = getPlayer(guildId);
@@ -229,6 +252,18 @@ function panelBody(guildId, record) {
     .setFooter({
       text: t('Tutel · by Double_P · ปุ่มควบคุมใช้ในห้องเสียงเดียวกับบอท'),
     });
+  try {
+    const action = JSON.parse(setting(`music_action:${guildId}`) || 'null');
+    if (action)
+      embed.addFields({
+        name: t('การกระทำล่าสุด'),
+        value: `${text(action.actor, 80)} · ${text(action.description, 300)}\n<t:${Math.floor(action.at / 1000)}:R>`,
+      });
+  } catch {
+    /* Ignore malformed legacy metadata. */
+  }
+  if (last?.requestedBy)
+    embed.addFields({ name: t('เพิ่มโดย'), value: text(last.requestedBy, 80) });
   const image = safeUrl(last?.thumbnail);
   if (image) embed.setThumbnail(image);
   const button = (action, label, style = ButtonStyle.Secondary, disabled = false) =>
@@ -281,14 +316,33 @@ function panelBody(guildId, record) {
 async function refresh(guildId) {
   if (!client?.isReady()) return;
   if (!getPlayer(guildId)?.connection && !pending.has(guildId)) {
-    await deletePanel(guildId);
+    await archivePanel(guildId);
     return;
   }
   const record = storedPanel(guildId);
   if (!record?.messageId || !client.guilds.cache.has(guildId)) return;
-  const last = snapshotTrack(getPlayer(guildId), record.lastTrack);
+  const state = getPlayer(guildId);
+  if (
+    record.lastTrack &&
+    !state?.current &&
+    !state?.radio &&
+    !state?.randomMode &&
+    !state?.loadingNext &&
+    !state?.queue.length &&
+    !pending.has(guildId)
+  ) {
+    await archivePanel(guildId);
+    return;
+  }
+  const last = playbackSnapshot(getPlayer(guildId), record.lastTrack);
   if (last && JSON.stringify(last) !== JSON.stringify(record.lastTrack)) {
     record.lastTrack = last;
+    record.history = [
+      ...(record.history || []).filter(
+        (item) => item.url !== last.url || item.title !== last.title,
+      ),
+      last,
+    ].slice(-10);
     await setSetting(key(guildId), JSON.stringify(record));
   }
   const body = panelBody(guildId, record);
@@ -309,14 +363,21 @@ async function refresh(guildId) {
   }
 }
 async function scheduleRefresh(guildId, lastTrack = null) {
-  if (lastTrack) {
-    const record = storedPanel(guildId);
-    const saved = snapshotTrack({ current: lastTrack }, null);
-    if (record && JSON.stringify(record.lastTrack) !== JSON.stringify(saved)) {
-      record.lastTrack = saved;
-      await setSetting(key(guildId), JSON.stringify(record));
-    }
-  }
+  if (lastTrack)
+    await serialize(guildId, async () => {
+      const record = storedPanel(guildId);
+      const saved = snapshotTrack({ current: lastTrack }, null);
+      if (record && JSON.stringify(record.lastTrack) !== JSON.stringify(saved)) {
+        record.lastTrack = saved;
+        record.history = [
+          ...(record.history || []).filter(
+            (item) => item.url !== saved.url || item.title !== saved.title,
+          ),
+          saved,
+        ].slice(-10);
+        await setSetting(key(guildId), JSON.stringify(record));
+      }
+    });
   if (!client || timers.has(guildId)) return;
   const timer = setTimeout(() => {
     timers.delete(guildId);
@@ -338,7 +399,7 @@ export async function ensureMusicPanel(interaction) {
     const old = storedPanel(guildId);
     const channel = interaction.channel;
     if (!channel?.isSendable?.()) throw new Error(t('ช่องนี้ส่งแผงควบคุมไม่ได้'));
-    if (old?.messageId) {
+    if (old?.messageId && !old.archived) {
       try {
         const previousChannel = await client.channels.fetch(old.channelId);
         const previous = await previousChannel.messages.fetch(old.messageId);
@@ -353,7 +414,7 @@ export async function ensureMusicPanel(interaction) {
     const record = {
       channelId: interaction.channelId,
       messageId: null,
-      lastTrack: old?.lastTrack || null,
+      lastTrack: old?.archived ? null : old?.lastTrack || null,
     };
     const body = panelBody(guildId, record);
     const message = await channel.send({
@@ -361,15 +422,16 @@ export async function ensureMusicPanel(interaction) {
       flags: MessageFlags.SuppressNotifications,
     });
     record.messageId = message.id;
-    record.lastTrack = snapshotTrack(getPlayer(guildId), record.lastTrack);
+    record.lastTrack = playbackSnapshot(getPlayer(guildId), record.lastTrack);
+    record.history = record.lastTrack ? [record.lastTrack] : [];
     await setSetting(key(guildId), JSON.stringify(record));
     fingerprints.set(guildId, JSON.stringify(body));
   });
 }
 export async function removeMusicPanel(guildId) {
-  return serialize(guildId, () => deletePanel(guildId));
+  return serialize(guildId, () => archivePanel(guildId));
 }
-async function deletePanel(guildId) {
+async function archivePanel(guildId) {
   clearTimeout(timers.get(guildId));
   timers.delete(guildId);
   pending.delete(guildId);
@@ -378,12 +440,31 @@ async function deletePanel(guildId) {
     try {
       const channel = await client.channels.fetch(record.channelId);
       const message = await channel.messages.fetch(record.messageId);
-      await message.delete();
+      const history = (record.history || []).slice(-10);
+      const last = record.lastTrack;
+      const embed = new EmbedBuilder()
+        .setTitle(t('🐢 ประวัติการเล่นเพลง'))
+        .setColor(0x64748b)
+        .setDescription(
+          history.length
+            ? history
+                .map(
+                  (item) =>
+                    `${text(item.title, 160)}${item.requestedBy ? ' · ' + text(item.requestedBy, 80) : ''}`,
+                )
+                .join('\n')
+            : text(last?.title || t('เข้าห้องเสียงมารอแล้ว'), 200) +
+                (last?.requestedBy ? ' · ' + text(last.requestedBy, 80) : ''),
+        );
+      await message.edit({ embeds: [embed], components: [], allowedMentions: { parse: [] } });
     } catch (error) {
       if (![10008, 10003].includes(error.code)) throw error;
     }
   }
-  await setSetting(key(guildId), 'null');
+  if (record) {
+    record.archived = true;
+    await setSetting(key(guildId), JSON.stringify(record));
+  }
   fingerprints.delete(guildId);
 }
 function onMusicLeave(guildId) {
@@ -515,6 +596,7 @@ export async function handleMusicPanelInteraction(interaction) {
     const mode = interaction.values[0];
     await saveLoopMode(interaction.guildId, mode);
     setLoop(interaction.guildId, mode);
+    await recordMusicAction(interaction, t('เปลี่ยนการตั้งค่าเพลง'));
     await interaction.editReply(musicSettingsBody(interaction, record.messageId));
     return true;
   }
@@ -534,6 +616,7 @@ export async function handleMusicPanelInteraction(interaction) {
     await interaction.deferUpdate();
     const enabled = await setSmoothMode(interaction.guildId, parts[4] === 'enable');
     applySmoothMode(interaction.guildId, enabled);
+    await recordMusicAction(interaction, t('เปลี่ยนการตั้งค่าเพลง'));
     await interaction.editReply(musicSettingsBody(interaction, record.messageId));
     return true;
   }
@@ -555,6 +638,7 @@ export async function handleMusicPanelInteraction(interaction) {
     }
     await interaction.deferUpdate();
     const source = await setMusicSource(interaction.guildId, interaction.values[0]);
+    await recordMusicAction(interaction, t('เปลี่ยนแหล่งเพลงเป็น {0}', musicSourceLabel(source)));
     musicChanged(interaction.guildId);
     const record = storedPanel(interaction.guildId);
     await interaction.editReply(
@@ -690,7 +774,7 @@ export async function handleMusicPanelInteraction(interaction) {
               ? t('เปิดวนเพลงแล้ว · ปุ่มข้ามยังไปเพลงถัดไปได้')
               : t('ปิดวนเพลงแล้ว');
     } else if (action === 'skip')
-      result = skip(guildId) ? t('ข้ามเพลงแล้ว') : t('ไม่มีเพลงให้ข้าม');
+      result = skip(guildId) ? t('กำลังข้ามเพลง…') : t('ไม่มีเพลงให้ข้าม');
     else if (action === 'stop') {
       stop(guildId);
       result = t('หยุดเพลง ล้างคิวและปิดสุ่มแล้ว · จำค่า Loop ไว้');
@@ -706,6 +790,7 @@ export async function handleMusicPanelInteraction(interaction) {
         result = updated.randomMode ? t('เปิดสุ่มต่อเนื่องแล้ว') : t('โหมดสุ่มถูกหยุดแล้ว');
       }
     } else result = t('ไม่รู้จักปุ่มนี้');
+    await recordMusicAction(interaction, result);
     await privateReply(interaction, result);
   } finally {
     if (ownsBusy) busy.delete(guildId);

@@ -273,6 +273,8 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
           region: station.region,
         }),
       ).catch((error) => console.warn('[radio preference]', error.message));
+      const { recordMusicAction } = await import('./panel.js');
+      await recordMusicAction(interaction, t('เปิดวิทยุ {0}', station.name));
       await interaction.editReply(t('กำลังเปิดวิทยุสด ') + station.name);
     } catch (error) {
       console.warn('[radio panel]', error.message);

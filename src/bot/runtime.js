@@ -22,13 +22,32 @@ import {
   handleMusicPanelInteraction,
 } from '../music/panel.js';
 
+import {
+  separateCalendarBot,
+  getSeparateCalendarClient,
+  startSeparateCalendarBot,
+  stopSeparateCalendarBot,
+} from './calendar-runtime.js';
+
 let client = null;
 let starting = null;
 export function getDiscordClient() {
   return canRunBot() ? client : null;
 }
+export function getCalendarDiscordClient() {
+  return separateCalendarBot() ? getSeparateCalendarClient() : getDiscordClient();
+}
 export function botStatus() {
-  return { enabled: !!client, ready: !!client?.isReady(), tag: client?.user?.tag || null };
+  return {
+    enabled: !!client,
+    ready: !!client?.isReady(),
+    tag: client?.user?.tag || null,
+    calendar: {
+      separate: separateCalendarBot(),
+      ready: !!getCalendarDiscordClient()?.isReady(),
+      tag: getCalendarDiscordClient()?.user?.tag || null,
+    },
+  };
 }
 export async function startBot() {
   requireBotLease();
@@ -49,9 +68,21 @@ export async function startBot() {
       });
       console.log('[bot] presence: ' + botConfig.statusText);
       console.log('Ready as ' + ready.user.tag);
-      void startCalendarCommands(ready).catch((error) =>
-        console.error('[calendar commands]', error.message),
-      );
+      if (!separateCalendarBot())
+        void startCalendarCommands(ready).catch((error) =>
+          console.error('[calendar commands]', error.message),
+        );
+      if (separateCalendarBot())
+        void (async () => {
+          const global = await ready.application.commands.fetch();
+          for (const command of global.values())
+            if (command.name === 'calendar') await command.delete();
+          for (const guild of ready.guilds.cache.values()) {
+            const commands = await guild.commands.fetch();
+            for (const command of commands.values())
+              if (command.name === 'calendar') await command.delete();
+          }
+        })().catch((error) => console.warn('[calendar bot] music command cleanup:', error.name));
       void initializeMusicPanels(ready).catch((error) =>
         console.error('[music panel] initialize:', error.message),
       );
@@ -106,7 +137,7 @@ export async function startBot() {
             !(await handleMusicRequestButton(interaction)) &&
             !(await handleMusicPanelInteraction(interaction))
           )
-            await handleCalendarButton(interaction);
+            if (!separateCalendarBot()) await handleCalendarButton(interaction);
         } catch (error) {
           console.error('[component] interaction:', error.message);
           const response = { content: t('ทำคำสั่งไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'), flags: 64 };
@@ -119,6 +150,10 @@ export async function startBot() {
         return;
       }
       if (!interaction.isChatInputCommand()) return;
+      if (separateCalendarBot() && interaction.commandName === 'calendar') {
+        await interaction.reply({ content: 'ใช้คำสั่งนี้กับบอทปฏิทินแทนครับ', flags: 64 });
+        return;
+      }
       const handler = commandHandlers[interaction.commandName];
       if (!handler) return;
       try {
@@ -153,6 +188,9 @@ export async function startBot() {
     });
     try {
       await instance.login(token);
+      await startSeparateCalendarBot().catch((error) =>
+        console.error('[calendar bot] startup failed:', error.name),
+      );
       return botStatus();
     } catch (error) {
       instance.destroy();
@@ -168,6 +206,7 @@ export async function startBot() {
 }
 export async function stopBot() {
   stopCalendarCommands();
+  stopSeparateCalendarBot();
   const old = client;
   if (!old) return botStatus();
   for (const guildId of old.guilds.cache.keys()) destroyPlayer(guildId);

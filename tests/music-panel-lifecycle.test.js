@@ -6,7 +6,22 @@ import { EventEmitter } from 'node:events';
 import * as discord from 'discord.js';
 import { genreMenuRows } from '../src/music/genre-menu.js';
 
-test('A new play edits the same panel; leave and restart remove it', async () => {
+test('Playback history excludes a selected track while its audio is still loading', () => {
+  const source = readFileSync(new URL('../src/music/panel.js', import.meta.url), 'utf8')
+    .replace(/^import[\s\S]*?from\s+['"][^'"]+['"];\s*/gm, '')
+    .replace(/export /g, '');
+  const context = { t: (text) => text };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  const previous = { title: 'Played song' };
+  const state = { loadingNext: true, current: { title: 'Unavailable song' } };
+  assert.equal(context.playbackSnapshot(state, previous), previous);
+  assert.equal(context.playbackSnapshot(state, null), null);
+  state.loadingNext = false;
+  assert.equal(context.playbackSnapshot(state, previous).title, 'Unavailable song');
+});
+
+test('A new play edits the same panel; leave and restart retain playback history', async () => {
   const settings = new Map(),
     messages = new Map(),
     deleted = [];
@@ -78,11 +93,13 @@ test('A new play edits the same panel; leave and restart remove it', async () =>
     assert.equal(JSON.parse(settings.get('music_panel:guild')).messageId, '1');
     events.emit('leave', 'guild');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    assert.equal(messages.size, 0);
-    assert.equal(settings.get('music_panel:guild'), 'null');
+    assert.equal(messages.size, 1);
+    assert.equal(JSON.parse(settings.get('music_panel:guild')).archived, true);
+    assert.deepEqual(deleted, []);
     await context.ensureMusicPanel(request);
     await context.stopMusicPanels();
-    assert.equal(messages.size, 0);
+    assert.equal(messages.size, 2);
+    assert.deepEqual(deleted, []);
   } finally {
     await context.stopMusicPanels();
   }

@@ -6,7 +6,7 @@ import { readPlaylist, MAX_PLAYLIST_TRACKS } from './playlist.js';
 import { resolveTrack } from './stream.js';
 import { enqueueMany } from './player.js';
 import { getMusicSource } from './settings.js';
-import { showMusicPanel, musicPanelPending } from './panel.js';
+import { showMusicPanel, musicPanelPending, recordMusicAction } from './panel.js';
 import { musicEvents, musicRequestVersion } from './events.js';
 
 const jobs = new Map();
@@ -166,8 +166,17 @@ export async function playRequest(
       ];
     }
     valid();
+    const requestedBy =
+      interaction.member?.displayName || interaction.user.globalName || interaction.user.username;
+    tracks = tracks.map((track) => ({ ...track, requestedBy: String(requestedBy).slice(0, 80) }));
     const result = enqueueMany(interaction.guildId, channel, tracks, { next });
     committed = true;
+    await recordMusicAction(
+      interaction,
+      playlist
+        ? t('เพิ่ม Playlist {0} เพลง · {1}', result.added, tracks[0].title)
+        : t('เพิ่มเพลง {0}', tracks[0].title),
+    );
     const title = tracks[0].title.replace(/([\\`*_<>|])/g, '\\$1').slice(0, 180);
     await update({
       content:

@@ -13,10 +13,14 @@ import { startCluster, stopCluster } from './cluster/runtime.js';
 import { data } from './database/connection.js';
 import { startCommandRelay, stopCommandRelay } from './cluster/jobs.js';
 
+import { separateCalendarBot, getSeparateCalendarClient } from './bot/calendar-runtime.js';
+
+const getCalendarClient = () =>
+  separateCalendarBot() ? getSeparateCalendarClient() : getDiscordClient();
 await initializeAccounts();
 const stopScheduler = calendarConfigured()
-  ? startGroupCalendarWorker(getDiscordClient)
-  : startReminderScheduler(getDiscordClient);
+  ? startGroupCalendarWorker(getCalendarClient)
+  : startReminderScheduler(getCalendarClient);
 const stopPublisher = startCalendarPublisher();
 const server = await startControlServer();
 if (clusterEnabled()) {

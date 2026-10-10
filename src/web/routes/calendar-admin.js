@@ -1,6 +1,6 @@
 import { calendarConfigured, calendarRequest } from '../../integrations/calendar/client.js';
 import { auth, admin, csrf } from '../middleware/security.js';
-import { getDiscordClient } from '../../bot/runtime.js';
+import { getCalendarDiscordClient } from '../../bot/runtime.js';
 import { PermissionFlagsBits } from 'discord.js';
 
 const readPaths = [
@@ -53,10 +53,10 @@ export function registerCalendarAdmin(app) {
           previous.guild_id === String(req.body.guildId) &&
           previous.channel_id === String(req.body.channelId);
         if (!sameDestination) {
-          const channel = await getDiscordClient()?.channels.fetch(
+          const channel = await getCalendarDiscordClient()?.channels.fetch(
             String(req.body.channelId || ''),
           );
-          const permissions = channel?.permissionsFor?.(getDiscordClient()?.user);
+          const permissions = channel?.permissionsFor?.(getCalendarDiscordClient()?.user);
           if (
             !channel?.isTextBased() ||
             channel.guildId !== String(req.body.guildId) ||

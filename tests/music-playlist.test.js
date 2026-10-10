@@ -228,6 +228,7 @@ function requestHarness({ playlist = false, mixed = false, wait = false } = {}) 
     getMusicSource: () => 'youtube',
     showMusicPanel: async () => {},
     musicPanelPending: () => {},
+    recordMusicAction: async () => {},
   };
   vm.createContext(context);
   const source = readFileSync(new URL('../src/music/requests.js', import.meta.url), 'utf8')

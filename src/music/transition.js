@@ -61,6 +61,7 @@ export function resourceReady(stream, signal, timeout = 25000) {
       clearTimeout(timer);
       readable.off('readable', check);
       readable.off('end', ended);
+      readable.off('close', ended);
       readable.off('error', finish);
       signal.removeEventListener('abort', cancelled);
       error ? reject(error) : resolve();
@@ -75,9 +76,11 @@ export function resourceReady(stream, signal, timeout = 25000) {
     timer.unref?.();
     readable.on('readable', check);
     readable.once('end', ended);
+    readable.once('close', ended);
     readable.once('error', finish);
     signal.addEventListener('abort', cancelled, { once: true });
     if (signal.aborted) cancelled();
+    else if (readable.destroyed || readable.readableEnded) ended();
     else check();
   });
 }

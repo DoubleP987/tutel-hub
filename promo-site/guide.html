@@ -19,11 +19,11 @@
   <body>
     <header class="header">
       <div class="wrap navigation">
-        <a class="brand" href="index.html"
-          ><img alt="" height="36" src="assets/tutel.png" width="36" />Tutel<span class="brand-dot"
-            >.</span
-          ></a
-        >
+        <a class="brand" href="index.html">
+          <img alt="" height="36" src="assets/tutel.png" width="36" />
+          Tutel
+          <span class="brand-dot">.</span>
+        </a>
         <div class="nav-actions">
           <button
             aria-label="Switch to dark theme"
@@ -34,10 +34,10 @@
           >
             ☾
           </button>
-          <button class="language" id="language" type="button">ไทย</button
-          ><a class="button primary small" data-i18n="inviteShort" data-link="invite"
-            >Add Tutel ↗</a
-          >
+          <button class="language" id="language" type="button">ไทย</button>
+          <a class="button primary small" data-i18n="inviteShort" data-link="invite">
+            Add Tutel ↗
+          </a>
         </div>
       </div>
     </header>
@@ -50,33 +50,44 @@
           Everything you need for your first song, live station and smooth transition.
         </p>
         <nav aria-label="Guide contents" class="guide-nav">
-          <a data-i18n="tagMusic" href="#music">Music</a
-          ><a data-i18n="guidePermissionsHeading" href="#permissions">Permissions</a
-          ><a data-i18n="privacy" href="#privacy">Privacy &amp; data</a>
+          <a data-i18n="tagMusic" href="#music">Music</a>
+          <a data-i18n="guidePermissionsHeading" href="#permissions">Permissions</a>
+          <a data-i18n="privacy" href="#privacy">Privacy &amp; data</a>
           <a data-i18n="guideSmooth" href="#smooth">Smooth playback guide</a>
         </nav>
         <section id="music">
           <h2 data-i18n="guideMusicHeading">Music &amp; radio</h2>
           <div data-i18n="guideMusicBody">
             <p>
-              Join a voice channel, then use <code>/play query:song name</code> or provide a
-              supported track URL. Tutel joins and posts player controls with the latest music
-              message.
+              Join a voice channel, then use
+              <code>/play query:song name</code>
+              or provide a supported track URL. Tutel joins and posts player controls with the
+              latest music message.
             </p>
             <p>
-              Use <code>/music settings source:youtube</code> or <code>soundcloud</code> to choose a
-              search source. Changing it requires Manage Server permission. Availability may vary by
-              the host running the bot.
+              Use
+              <code>/music settings source:youtube</code>
+              or
+              <code>soundcloud</code>
+              to choose a search source. Changing it requires Manage Server permission. Availability
+              may vary by the host running the bot.
             </p>
             <p>
-              Use <code>/randommusic</code> for continuous single-song discovery.
-              <code>/stop</code> stops playback and clears the queue;
-              <code>/leave</code> disconnects.
+              Use
+              <code>/randommusic</code>
+              for continuous single-song discovery.
+              <code>/stop</code>
+              stops playback and clears the queue;
+              <code>/leave</code>
+              disconnects.
             </p>
             <p>
-              Start radio with <code>/radio list area:hatyai</code>, then
-              <code>/radio play station:station name area:hatyai</code>. An FM frequency is not an
-              online stream; the station must provide an accessible live audio feed.
+              Start radio with
+              <code>/radio list area:hatyai</code>
+              , then
+              <code>/radio play station:station name area:hatyai</code>
+              . An FM frequency is not an online stream; the station must provide an accessible live
+              audio feed.
             </p>
           </div>
         </section>
@@ -84,15 +95,18 @@
           <h2 data-i18n="guideSmoothHeading">Smooth transitions</h2>
           <div data-i18n="guideSmoothBody">
             <p>
-              Open <strong>Settings</strong> on the music panel, then choose
-              <strong>Enable smooth transition</strong>. Use Disable to return to ordinary playback.
-              Manage Server permission is required; the setting is remembered separately for each
-              server and is off by default.
+              Open
+              <strong>Settings</strong>
+              on the music panel, then choose
+              <strong>Enable smooth transition</strong>
+              . Use Disable to return to ordinary playback. Manage Server permission is required;
+              the setting is remembered separately for each server and is off by default.
             </p>
             <p>
               When a song starts, Tutel prepares one successor in RAM. At the boundary, the old song
-              fades down as the new song fades up over <strong>350 ms</strong>. Skip uses the same
-              short overlap through one continuous audio stream.
+              fades down as the new song fades up over
+              <strong>350 ms</strong>
+              . Skip uses the same short overlap through one continuous audio stream.
             </p>
             <p>
               If you Skip before preparation finishes, the current song keeps playing while the next
@@ -139,26 +153,32 @@
           <h2 data-i18n="guideCreditsHeading">Credits &amp; further reading</h2>
           <div data-i18n="guideCreditsBody">
             <p>
-              Created and maintained by <strong>Double_P</strong>. Built with discord.js,
-              @discordjs/voice, yt-dlp and FFmpeg. The turtle image uses the existing project logo.
+              Created and maintained by
+              <strong>Double_P</strong>
+              . Built with discord.js, @discordjs/voice, yt-dlp and FFmpeg. The turtle image uses
+              the existing project logo.
             </p>
             <p>
               Read the GitHub music guides for installation, playback and project structure. Each
               dependency retains its own license.
             </p>
           </div>
-          <a class="button secondary" data-i18n="docsLink" data-link="docs"
-            >Read the project documentation ↗</a
-          >
+          <a class="button secondary" data-i18n="docsLink" data-link="docs">
+            Read the project documentation ↗
+          </a>
         </section>
       </article>
     </main>
     <footer class="wrap footer">
       <span class="release-version" data-version="">v1.0.0</span>
-      <p>© <span id="year"></span> Double_P · Tutel</p>
+      <p>
+        ©
+        <span id="year"></span>
+        Double_P · Tutel
+      </p>
       <nav>
-        <a data-link="github">GitHub ↗</a
-        ><a data-i18n="guideBack" href="index.html">← Back to the homepage</a>
+        <a data-link="github">GitHub ↗</a>
+        <a data-i18n="guideBack" href="index.html">← Back to the homepage</a>
       </nav>
     </footer>
   </body>

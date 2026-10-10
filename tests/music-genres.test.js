@@ -14,17 +14,25 @@ test('Genre is optional autocomplete with 25 unique genres', () => {
   assert.equal(option.choices, undefined);
   assert.equal(randomGenres.length, 25);
   assert.equal(new Set(randomGenres.map((genre) => genre.value)).size, 25);
-  for (const value of ['all', 'jpop', 'russian', 'hiphop', 'lofi', 'bass', 'meme'])
+
+  for (const value of ['all', 'jpop', 'russian', 'hiphop', 'lofi', 'bass', 'meme']) {
     assert(randomGenres.some((genre) => genre.value === value));
+  }
+
   assert.equal(randomGenre('unknown').value, 'all');
 });
 
 test('Bass aliases resolve to suggestions and all genres remain searchable', () => {
   assert.equal(genreSuggestions().length, 25);
-  for (const query of ['เบส', 'bass', 'dubstep', 'phonk', 'dnb', 'hardstyle'])
+
+  for (const query of ['เบส', 'bass', 'dubstep', 'phonk', 'dnb', 'hardstyle']) {
     assert(genreSuggestions(query).some((choice) => choice.value === 'bass'));
-  for (const genre of randomGenres)
+  }
+
+  for (const genre of randomGenres) {
     assert(genreSuggestions(genre.value).some((choice) => choice.value === genre.value));
+  }
+
   assert.deepEqual(genreSuggestions('unknown style'), []);
 });
 

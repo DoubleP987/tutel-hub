@@ -7,7 +7,11 @@ export const botConfig = Object.freeze({
   statusText: '/help | tutelbot.vercel.app',
 });
 const selected = (process.env.BOT_LANGUAGE || botConfig.language).trim().toLowerCase();
-if (!['th', 'en'].includes(selected)) throw new Error('BOT_LANGUAGE must be th or en.');
+
+if (!['th', 'en'].includes(selected)) {
+  throw new Error('BOT_LANGUAGE must be th or en.');
+}
+
 export const botLanguage = selected;
 export const botLocale = selected === 'th' ? 'th-TH' : 'en-GB';
 export const botWebsite = process.env.BOT_WEBSITE_URL || botConfig.website;

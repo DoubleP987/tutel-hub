@@ -15,8 +15,10 @@ const targets = ['vercel-public', 'netlify-public'];
 
 for (const target of targets) {
   await mkdir(resolve(root, target), { recursive: true });
+
   for (const asset of assets) {
     await copyFile(resolve(root, 'src/web/public', asset), resolve(root, target, asset));
   }
+
   console.log(`Updated shared assets in ${target}.`);
 }

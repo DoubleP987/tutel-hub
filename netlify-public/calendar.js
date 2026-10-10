@@ -1,7 +1,9 @@
 'use strict';
 const $ = (selector) => document.querySelector(selector);
-const TZ = 'Asia/Bangkok',
-  query = new URLSearchParams(location.search);
+
+const TZ = 'Asia/Bangkok';
+const query = new URLSearchParams(location.search);
+
 const dateKey = (date) => {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-CA', {
@@ -15,11 +17,14 @@ const dateKey = (date) => {
   );
   return p.year + '-' + p.month + '-' + p.day;
 };
+
 const today = () => dateKey(new Date());
+
 const validDay = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value || '') &&
   !Number.isNaN(new Date(value + 'T12:00:00Z').valueOf()) &&
   new Date(value + 'T12:00:00Z').toISOString().slice(0, 10) === value;
+
 const selected = validDay(query.get('date')) ? query.get('date') : today();
 const state = {
   day: selected,
@@ -29,16 +34,19 @@ const state = {
   opened: false,
   request: 0,
 };
+
 const esc = (value) =>
   String(value ?? '').replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
+
 function toast(message) {
   $('#toast').textContent = message;
   $('#toast').classList.add('show');
   setTimeout(() => $('#toast').classList.remove('show'), 4000);
 }
+
 function occursOn(event, day) {
   const start = new Date(day + 'T00:00:00+07:00').getTime();
   return (
@@ -46,6 +54,7 @@ function occursOn(event, day) {
     new Date(event.occurrence_end).getTime() > start
   );
 }
+
 function showDetails(event) {
   $('#detail-title').textContent = event.title;
   $('#detail-when').textContent =
@@ -55,8 +64,12 @@ function showDetails(event) {
       ...(event.all_day ? {} : { timeStyle: 'short' }),
     }).format(new Date(event.occurrence_at)) + (event.all_day ? ' · ทั้งวัน' : '');
   $('#detail-description').textContent = event.description || 'ไม่มีรายละเอียดเพิ่มเติม';
-  if (!$('#details-dialog').open) $('#details-dialog').showModal();
+
+  if (!$('#details-dialog').open) {
+    $('#details-dialog').showModal();
+  }
 }
+
 function selectDay(day) {
   state.day = day;
   document
@@ -64,6 +77,7 @@ function selectDay(day) {
     .forEach((x) => x.classList.toggle('selected', x.dataset.day === day));
   renderList();
 }
+
 function renderList() {
   $('#selected-title').textContent =
     'รายการวันที่ ' +
@@ -97,7 +111,9 @@ function renderList() {
     : '<div class="muted">ไม่มีรายการในวันนี้</div>';
   document.querySelectorAll('.event-card').forEach((x) => {
     x.style.borderLeftColor = events[Number(x.dataset.index)].color || '#4285f4';
+
     x.onclick = () => showDetails(events[Number(x.dataset.index)]);
+
     x.onkeydown = (e) => {
       if (['Enter', ' '].includes(e.key)) {
         e.preventDefault();
@@ -106,9 +122,11 @@ function renderList() {
     };
   });
 }
+
 let workspace;
+
 function renderCalendar() {
-  if (!workspace)
+  if (!workspace) {
     workspace = new TutelCalendar($('#calendar-workspace'), {
       day: state.day,
       onNavigate: (day) => {
@@ -119,9 +137,12 @@ function renderCalendar() {
       onSelect: (day) => selectDay(day),
       onOpen: showDetails,
     });
+  }
+
   workspace.update({ events: state.events, day: state.day });
   renderList();
 }
+
 function changeMonth(offset) {
   state.month = new Date(
     Date.UTC(state.month.getUTCFullYear(), state.month.getUTCMonth() + offset, 1, 12),
@@ -129,14 +150,27 @@ function changeMonth(offset) {
   state.day = state.month.toISOString().slice(0, 10);
   renderCalendar();
 }
+
 async function loadSnapshot() {
   const request = ++state.request;
+
   try {
     const response = await fetch('/calendar.json', { cache: 'no-store' });
-    if (!response.ok) throw new Error('โหลดข้อมูล HTTP ' + response.status);
+
+    if (!response.ok) {
+      throw new Error('โหลดข้อมูล HTTP ' + response.status);
+    }
+
     const data = await response.json();
-    if (!Array.isArray(data.events)) throw new Error('รูปแบบข้อมูลปฏิทินไม่ถูกต้อง');
-    if (request !== state.request) return;
+
+    if (!Array.isArray(data.events)) {
+      throw new Error('รูปแบบข้อมูลปฏิทินไม่ถูกต้อง');
+    }
+
+    if (request !== state.request) {
+      return;
+    }
+
     state.events = data.events;
     state.snapshot = data;
     renderCalendar();
@@ -147,23 +181,32 @@ async function loadSnapshot() {
         dateStyle: 'medium',
         timeStyle: 'short',
       }).format(new Date(data.generatedAt));
+
     if (query.get('event') && !state.opened) {
       const event = state.events.find(
         (e) =>
           String(e.id) === query.get('event') &&
           (query.get('at') ? e.occurrence_at === query.get('at') : occursOn(e, state.day)),
       );
+
       if (event) {
         showDetails(event);
         state.opened = true;
-      } else if (request === 1) toast('ยังไม่พบรายการนี้ อาจรอซิงก์หรือถูกลบแล้ว');
+      } else if (request === 1) {
+        toast('ยังไม่พบรายการนี้ อาจรอซิงก์หรือถูกลบแล้ว');
+      }
     }
   } catch (error) {
     $('#sync-status').textContent = 'โหลดปฏิทินไม่สำเร็จ: ' + error.message;
-    if (request === 1) toast('ตรวจว่าอัปโหลด calendar.json มาพร้อมโฟลเดอร์เว็บ');
+
+    if (request === 1) {
+      toast('ตรวจว่าอัปโหลด calendar.json มาพร้อมโฟลเดอร์เว็บ');
+    }
   }
 }
+
 $('#close-details').onclick = () => $('#details-dialog').close();
+
 void loadSnapshot();
 setInterval(() => void loadSnapshot(), 60000);
 

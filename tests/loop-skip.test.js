@@ -110,6 +110,7 @@ const resourceCode = streamSource
     streamSource.indexOf('export function createRadioResource('),
   )
   .replace('export function', 'function');
+
 function decoder() {
   const children = [];
   const context = {
@@ -124,9 +125,11 @@ function decoder() {
       child.stdout = new PassThrough();
       child.stderr = new PassThrough();
       child.stdin = new PassThrough();
+
       child.kill = () => {
         child.emit('close', 255);
       };
+
       children.push(child);
       return child;
     },
@@ -141,6 +144,7 @@ function decoder() {
     children,
   };
 }
+
 test('Intentional decoder stop does not mark a looping track failed', () => {
   const { resource } = decoder();
   resource.stop();

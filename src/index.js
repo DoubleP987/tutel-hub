@@ -17,12 +17,14 @@ import { separateCalendarBot, getSeparateCalendarClient } from './bot/calendar-r
 
 const getCalendarClient = () =>
   separateCalendarBot() ? getSeparateCalendarClient() : getDiscordClient();
+
 await initializeAccounts();
 const stopScheduler = calendarConfigured()
   ? startGroupCalendarWorker(getCalendarClient)
   : startReminderScheduler(getCalendarClient);
 const stopPublisher = startCalendarPublisher();
 const server = await startControlServer();
+
 if (clusterEnabled()) {
   await startCommandRelay();
   await startCluster();
@@ -33,9 +35,14 @@ if (clusterEnabled()) {
     console.error('[bot] failed to start:', error.message);
   }
 }
+
 let closing = false;
+
 async function shutdown(signal) {
-  if (closing) return;
+  if (closing) {
+    return;
+  }
+
   closing = true;
   console.log('Received ' + signal + '; shutting down.');
   stopScheduler();
@@ -47,5 +54,7 @@ async function shutdown(signal) {
   await data.close();
   process.exit(0);
 }
+
 process.on('SIGINT', () => void shutdown('SIGINT'));
+
 process.on('SIGTERM', () => void shutdown('SIGTERM'));

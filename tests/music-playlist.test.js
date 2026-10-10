@@ -19,8 +19,10 @@ test('YouTube links distinguish a track, playlist and mixed URL; provider hosts 
     'https://youtu.be/Rc2k_8skxtI',
     'https://www.youtube.com/watch?v=Rc2k_8skxtI',
     'https://m.youtube.com/shorts/Rc2k_8skxtI',
-  ])
+  ]) {
     assert.equal(musicLink(url).singleUrl, 'https://www.youtube.com/watch?v=Rc2k_8skxtI');
+  }
+
   assert.equal(musicLink('https://www.youtube.com/watch?v=Rc2k_8skxtI&list=PLtest').mixed, true);
   assert.equal(musicLink('https://youtube.com/playlist?list=PLtest').mixed, false);
   assert.equal(musicLink('https://soundcloud.com/artist/sets/test').playlist, true);
@@ -36,10 +38,12 @@ test('Direct YouTube metadata hydrates duration and caches its fast oEmbed title
     AbortSignal,
     hydrateTrack: async (track) => ({ ...track, duration: 250 }),
   };
+
   context.fetch = async () => {
     calls++;
     return { ok: true, json: async () => ({ title: 'Short requested track' }) };
   };
+
   vm.createContext(context);
   vm.runInContext(
     readFileSync(new URL('../src/music/links.js', import.meta.url), 'utf8')
@@ -118,8 +122,8 @@ test('Queue loop recycles skipped tracks; failed playback and song-loop skips do
 });
 
 function playlistHarness(produce) {
-  let killed = false,
-    args;
+  let killed = false;
+  let args;
   const context = {
     console,
     Buffer,
@@ -135,10 +139,12 @@ function playlistHarness(produce) {
       child.stdout = new EventEmitter();
       child.stderr = new EventEmitter();
       child.stdout.setEncoding = child.stderr.setEncoding = () => {};
+
       child.kill = () => {
         killed = true;
         setImmediate(() => child.emit('close', null));
       };
+
       setImmediate(() => produce(child));
       return child;
     },
@@ -158,6 +164,7 @@ function playlistHarness(produce) {
     },
   };
 }
+
 test('NDJSON playlist reader handles split chunks and final lines without downloading media', async () => {
   const h = playlistHarness((child) => {
     const a = JSON.stringify({ title: 'One', url: 'https://example.test/one' });
@@ -172,13 +179,16 @@ test('NDJSON playlist reader handles split chunks and final lines without downlo
   const result = await h.context.readPlaylist('url');
   assert.equal(result.tracks.map((x) => x.title).join(','), 'One,Two');
   assert.equal(result.skipped, 1);
-  for (const flag of ['--skip-download', '--flat-playlist', '--dump-json', '--ignore-config'])
+
+  for (const flag of ['--skip-download', '--flat-playlist', '--dump-json', '--ignore-config']) {
     assert(h.args.includes(flag));
+  }
+
   assert.equal(h.args[h.args.indexOf('--playlist-end') + 1], '100');
 });
 test('Aborting the playlist reader kills the child process', async () => {
-  const h = playlistHarness(() => {}),
-    controller = new AbortController();
+  const h = playlistHarness(() => {});
+  const controller = new AbortController();
   const pending = h.context.readPlaylist('url', { signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, /PLAYLIST_CANCELLED/);
@@ -186,11 +196,11 @@ test('Aborting the playlist reader kills the child process', async () => {
 });
 
 function requestHarness({ playlist = false, mixed = false, wait = false } = {}) {
-  const events = new EventEmitter(),
-    replies = [],
-    added = [];
-  let reads = 0,
-    finish;
+  const events = new EventEmitter();
+  const replies = [];
+  const added = [];
+  let reads = 0;
+  let finish;
   const context = {
     ...discord,
     console,
@@ -210,13 +220,17 @@ function requestHarness({ playlist = false, mixed = false, wait = false } = {}) 
     readPlaylist: async (_url, options) => {
       reads++;
       options.onProgress({ found: 2, skipped: 1 });
-      if (wait)
+
+      if (wait) {
         await new Promise((resolve, reject) => {
           finish = resolve;
+
           options.signal.addEventListener('abort', () => reject(new Error('PLAYLIST_CANCELLED')), {
             once: true,
           });
         });
+      }
+
       return { tracks: [{ title: 'A' }, { title: 'B' }], skipped: 1, limited: false };
     },
     MAX_PLAYLIST_TRACKS: 100,
@@ -248,6 +262,7 @@ function requestHarness({ playlist = false, mixed = false, wait = false } = {}) 
       replies.push(value);
     },
   };
+
   const button = (action) => ({
     isButton: () => true,
     customId: 'music:request:test-job:' + action,
@@ -257,6 +272,7 @@ function requestHarness({ playlist = false, mixed = false, wait = false } = {}) 
     deferUpdate: async () => {},
     reply: async () => {},
   });
+
   return {
     context,
     interaction,
@@ -270,7 +286,9 @@ function requestHarness({ playlist = false, mixed = false, wait = false } = {}) 
     finish: () => finish?.(),
   };
 }
+
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
 test('Playlist request queues the entire ordered list once and removes its buttons', async () => {
   const h = requestHarness({ playlist: true });
   await h.context.playRequest(h.interaction, { query: 'url' });

@@ -204,18 +204,34 @@ export const RADIO_STATIONS = [
     url: 'http://rstream.mcot.net:9044/;.mp3',
   },
 ];
+
 export function radioCategory(station) {
-  if (station.category) return station.category;
+  if (station.category) {
+    return station.category;
+  }
+
   const text = norm(`${station.name} ${station.tags || ''}`);
-  if (/news|traffic|ข่าว|จราจร|สวท\./.test(text)) return 'news';
-  if (/talk|education|สาระ|การศึกษา/.test(text)) return 'talk';
-  if (/sport|กีฬา/.test(text)) return 'sport';
+
+  if (/news|traffic|ข่าว|จราจร|สวท\./.test(text)) {
+    return 'news';
+  }
+
+  if (/talk|education|สาระ|การศึกษา/.test(text)) {
+    return 'talk';
+  }
+
+  if (/sport|กีฬา/.test(text)) {
+    return 'sport';
+  }
+
   return 'music';
 }
+
 export const norm = (value) =>
   String(value || '')
     .toLowerCase()
     .trim();
+
 export const RADIO_REGIONS = {
   bangkok: ['bangkok', 'กรุงเทพ'],
   north: [
@@ -373,8 +389,12 @@ export const RADIO_REGIONS = {
   ],
 };
 let radioDirectory = { expires: 0, data: [] };
+
 export async function getRadioDirectory() {
-  if (radioDirectory.expires > Date.now() && radioDirectory.data.length) return radioDirectory.data;
+  if (radioDirectory.expires > Date.now() && radioDirectory.data.length) {
+    return radioDirectory.data;
+  }
+
   const response = await fetch(
     'https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/TH?hidebroken=false',
     {
@@ -382,7 +402,11 @@ export async function getRadioDirectory() {
       signal: AbortSignal.timeout(8000),
     },
   );
-  if (!response.ok) throw new Error('Radio directory HTTP ' + response.status);
+
+  if (!response.ok) {
+    throw new Error('Radio directory HTTP ' + response.status);
+  }
+
   const rows = await response.json();
   radioDirectory = {
     expires: Date.now() + 10 * 60 * 1000,
@@ -397,14 +421,19 @@ export async function getRadioDirectory() {
   };
   return radioDirectory.data;
 }
+
 export function stationMatchesRegion(station, region) {
-  if (!region) return true;
+  if (!region) {
+    return true;
+  }
+
   const terms = RADIO_REGIONS[region] || [];
   const haystack = norm(
     [station.state, station.name, station.tags, station.homepage].filter(Boolean).join(' '),
   );
   return terms.some((term) => haystack.includes(norm(term)));
 }
+
 export function stationFrequency(station) {
   const values = String(station.name || '').match(/\d{2,3}(?:\.\d{1,2})?/g) || [];
   const match = values.find((value) => Number(value) >= 87 && Number(value) <= 108);

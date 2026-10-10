@@ -171,3 +171,7 @@ Rollback กลับ release ที่บันทึก รักษา creden
 **ส่งต่อให้ dev คนใหม่:** บอท/guild ทดสอบ ช่องทางรับ secret ส่วนตัว provider/lease revisionจริง panel exposure backup/restore owner extractor versions งาน Calendar cutover และ deliveries uncertain รวมถึงสิ่งที่ยังไม่ได้ตรวจ อย่าส่ง secret ใน repo
 
 **งานค้าง:** Calendar worker/panel cutover, Calendar Discord client ที่รันแยก และ durable audio failover ยังไม่เสร็จ ส่วน Calendar มีงานหลายกลุ่ม/ลิงก์ Discord และ mail/Push verification การแยก repo ไม่ได้ทำงานเหล่านี้ให้เสร็จเอง
+
+## Source readability / รูปแบบโค้ดปัจจุบัน
+
+See [the repository conventions](CODE-STYLE.md): explicit control-flow braces, one declaration per statement, paragraphs by responsibility, formatted embedded HTML and multiline SQL with bound parameters.

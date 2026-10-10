@@ -10,19 +10,31 @@ import { musicLink, youtubeTrack } from './links.js';
 import { SmoothPcm } from './transition.js';
 
 const executable = ytDlpPath;
+
 export async function resolveTrack(query, source = 'youtube', { signal } = {}) {
   query = String(query || '').trim();
   const direct = /^https?:\/\//i.test(query);
   const link = musicLink(query);
-  if (link.singleUrl) return youtubeTrack(link, { signal });
-  if (link.playlist) throw new Error('Use the playlist importer for playlist links');
+
+  if (link.singleUrl) {
+    return youtubeTrack(link, { signal });
+  }
+
+  if (link.playlist) {
+    throw new Error('Use the playlist importer for playlist links');
+  }
+
   const sourcePrefix = source === 'soundcloud' ? 'scsearch5' : 'ytsearch5';
   const sourceQuery = direct ? query : sourcePrefix + ':' + query;
   // Flat name search avoids extracting full media metadata for five videos.
   // The chosen URL is extracted when the audio stream starts.
   const results = await searchTracks(sourceQuery, { flat: !direct, signal });
   const track = selectRequestedTrack(results, { direct });
-  if (!track) throw new Error(t('ไม่พบเพลงจากแหล่งค้นหา'));
+
+  if (!track) {
+    throw new Error(t('ไม่พบเพลงจากแหล่งค้นหา'));
+  }
+
   return hydrateTrack(track, { signal });
 }
 
@@ -50,36 +62,53 @@ export async function cacheTrackAudio(track, { signal } = {}) {
   );
   return new Promise((resolve, reject) => {
     const chunks = [];
-    let bytes = 0,
-      error = null;
+    let bytes = 0;
+    let error = null;
+
     const abort = () => {
       error = new Error('PRELOAD_CANCELLED');
       child.kill();
     };
+
     const timeout = setTimeout(() => {
       error = new Error('PRELOAD_TIMEOUT');
       child.kill();
     }, 90000);
     timeout.unref?.();
+
     child.stderr.on('data', (chunk) => process.stderr.write('[preload] ' + chunk));
+
     child.stdout.on('data', (chunk) => {
       bytes += chunk.length;
+
       if (bytes > 32 * 1024 * 1024) {
         error = new Error('PRELOAD_TOO_LARGE');
         child.kill();
-      } else if (!error) chunks.push(chunk);
+      } else if (!error) {
+        chunks.push(chunk);
+      }
     });
+
     child.once('error', (cause) => {
       error = cause;
     });
+
     child.once('close', (code) => {
       clearTimeout(timeout);
       signal?.removeEventListener('abort', abort);
-      if (error || code !== 0 || !bytes) reject(error || new Error('PRELOAD_FAILED'));
-      else resolve(Buffer.concat(chunks, bytes));
+
+      if (error || code !== 0 || !bytes) {
+        reject(error || new Error('PRELOAD_FAILED'));
+      } else {
+        resolve(Buffer.concat(chunks, bytes));
+      }
     });
+
     signal?.addEventListener('abort', abort, { once: true });
-    if (signal?.aborted) abort();
+
+    if (signal?.aborted) {
+      abort();
+    }
   });
 }
 
@@ -120,12 +149,18 @@ export function createTrackResource(
       );
   downloader?.stderr.on('data', (chunk) => process.stderr.write(`[yt-dlp] ${chunk}`));
   downloader?.once('error', (error) => {
-    if (stopping) return;
+    if (stopping) {
+      return;
+    }
+
     failed = true;
     console.error('[yt-dlp] process failed:', error);
   });
   downloader?.once('close', (code) => {
-    if (!stopping && code !== 0) failed = true;
+    if (!stopping && code !== 0) {
+      failed = true;
+    }
+
     console.log(`[yt-dlp] process ended (${code})`);
   });
   const transcoder = spawn(
@@ -149,29 +184,45 @@ export function createTrackResource(
     ],
     { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true },
   );
+
   transcoder.stdin.on('error', (error) => {
-    if (error.code !== 'EPIPE') console.error('[ffmpeg] input error:', error);
+    if (error.code !== 'EPIPE') {
+      console.error('[ffmpeg] input error:', error);
+    }
   });
+
   const input = downloader?.stdout || Readable.from([media]);
   input.pipe(transcoder.stdin);
+
   transcoder.stderr.on('data', (chunk) => process.stderr.write(`[ffmpeg] ${chunk}`));
+
   let pcmBytes = 0;
+
   transcoder.stdout.on('data', (chunk) => {
     pcmBytes += chunk.length;
   });
+
   transcoder.once('error', (error) => {
-    if (stopping) return;
+    if (stopping) {
+      return;
+    }
+
     failed = true;
     console.error('[ffmpeg] process failed:', error);
     downloader?.kill();
   });
+
   transcoder.once('close', (code) => {
-    if (!stopping && code !== 0) failed = true;
+    if (!stopping && code !== 0) {
+      failed = true;
+    }
+
     console.log(
       `[ffmpeg] process ended (${code}); produced ${Math.round(pcmBytes / 192000)} seconds of PCM`,
     );
     downloader?.kill();
   });
+
   const raw = {
     pcm: transcoder.stdout,
     get failed() {
@@ -184,10 +235,17 @@ export function createTrackResource(
       transcoder.kill();
     },
   };
+
   transcoder.stdout.on('error', () => {
-    if (!stopping) failed = true;
+    if (!stopping) {
+      failed = true;
+    }
   });
-  if (pcmOnly) return raw;
+
+  if (pcmOnly) {
+    return raw;
+  }
+
   const fade = new SmoothPcm(smooth);
   transcoder.stdout.pipe(fade);
   const resource = createAudioResource(fade, {
@@ -197,10 +255,14 @@ export function createTrackResource(
   });
   // A prepared resource has no AudioPlayer attached yet; absorb and record errors.
   resource.playStream.on('error', (error) => {
-    if (stopping) return;
+    if (stopping) {
+      return;
+    }
+
     failed = true;
     console.warn('[stream] resource error:', error.message);
   });
+
   return {
     get failed() {
       return failed;
@@ -257,27 +319,37 @@ export function createRadioResource(station) {
     ],
     { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
   );
+
   transcoder.stderr.on('data', (chunk) => process.stderr.write('[radio] ' + chunk));
+
   transcoder.stdout.on('data', (chunk) => {
     pcmBytes += chunk.length;
   });
+
   transcoder.once('error', (error) => {
     failed = true;
     console.error('[radio] ffmpeg failed:', error.message);
   });
+
   transcoder.once('close', (code, signal) => {
-    if (code !== 0) failed = true;
+    if (code !== 0) {
+      failed = true;
+    }
+
     console.log(
       `[radio] ffmpeg ended (${code}; signal=${signal || 'none'}); PCM=${Math.round(pcmBytes / 192000)}s`,
     );
   });
+
   const resource = createAudioResource(transcoder.stdout, {
     inputType: StreamType.Raw,
   });
+
   resource.playStream.on('error', (error) => {
     failed = true;
     console.warn('[radio] resource error:', error.message);
   });
+
   let stopped = false;
   return {
     get failed() {
@@ -285,16 +357,21 @@ export function createRadioResource(station) {
     },
     resource,
     stop: () => {
-      if (stopped) return;
+      if (stopped) {
+        return;
+      }
+
       stopped = true;
       resource.playStream.destroy();
       transcoder.stdout.destroy();
       transcoder.kill();
       const forceStop = setTimeout(() => {
-        if (transcoder.exitCode === null && transcoder.signalCode === null)
+        if (transcoder.exitCode === null && transcoder.signalCode === null) {
           transcoder.kill('SIGKILL');
+        }
       }, 2000);
       forceStop.unref();
+
       transcoder.once('close', () => clearTimeout(forceStop));
     },
   };

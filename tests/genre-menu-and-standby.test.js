@@ -27,7 +27,9 @@ test('Standby leaves after exactly five idle minutes and cancels while music is 
     Set,
     console,
     clearTimeout: (timer) => {
-      if (timer) timer.cancelled = true;
+      if (timer) {
+        timer.cancelled = true;
+      }
     },
     setTimeout: (callback, delay) => {
       const timer = { callback, delay, unref() {} };

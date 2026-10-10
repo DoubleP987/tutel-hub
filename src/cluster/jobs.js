@@ -12,13 +12,18 @@ const routes = [
 const key = process.env.CLUSTER_CONTROL_SECRET
   ? createHash('sha256').update(process.env.CLUSTER_CONTROL_SECRET).digest()
   : null;
-let timer,
-  busy = false;
+let timer;
+let busy = false;
+
 function jobs() {
   return data.database.collection('cluster_jobs');
 }
+
 function encrypt(value) {
-  if (!key) throw new Error('CLUSTER_CONTROL_SECRET is required');
+  if (!key) {
+    throw new Error('CLUSTER_CONTROL_SECRET is required');
+  }
+
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   const bytes = Buffer.concat([cipher.update(JSON.stringify(value), 'utf8'), cipher.final()]);
@@ -28,6 +33,7 @@ function encrypt(value) {
     bytes: bytes.toString('base64'),
   };
 }
+
 function decrypt(value) {
   const cipher = createDecipheriv('aes-256-gcm', key, Buffer.from(value.iv, 'base64'));
   cipher.setAuthTag(Buffer.from(value.tag, 'base64'));
@@ -37,23 +43,37 @@ function decrypt(value) {
     ),
   );
 }
+
 export async function forwardActiveBot(req, res, next) {
-  if (!clusterEnabled() || canRunBot()) return next();
+  if (!clusterEnabled() || canRunBot()) {
+    return next();
+  }
+
   const path = req.path;
-  if (!routes.some((route) => route.test(path))) return next();
+
+  if (!routes.some((route) => route.test(path))) {
+    return next();
+  }
   // This middleware is installed after the original auth/admin/CSRF checks.
   const status = await clusterStatus();
+
   if (!status.botEnabled || !status.activeNode) {
-    if (path === '/api/bot/logs') return next();
-    if (path === '/api/bot')
+    if (path === '/api/bot/logs') {
+      return next();
+    }
+
+    if (path === '/api/bot') {
       return res.json({
         status: { enabled: false, ready: false, tag: null },
         configured: status.botEnabled,
         guilds: [],
         music: [],
       });
+    }
+
     return res.status(503).json({ error: 'บอทกำลังสลับเครื่องหรือปิดอยู่ กรุณาลองอีกครั้ง' });
   }
+
   const id = randomBytes(16).toString('hex');
   await jobs().insertOne({
     _id: id,
@@ -70,20 +90,29 @@ export async function forwardActiveBot(req, res, next) {
     }),
   });
   const deadline = Date.now() + 15000;
+
   while (Date.now() < deadline && !res.destroyed) {
     const job = await jobs().findOne({ _id: id });
+
     if (job?.state === 'done') {
       const response = decrypt(job.response);
       return res.status(response.status).json(response.body);
     }
+
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
+
   await jobs().updateOne({ _id: id, state: 'pending' }, { $set: { state: 'cancelled' } });
   return res.status(504).json({ error: 'เครื่องที่รันบอทยังไม่ตอบรับ กรุณารีเฟรชก่อนลองอีกครั้ง' });
 }
+
 async function processJobs() {
-  if (busy || !canRunBot()) return;
+  if (busy || !canRunBot()) {
+    return;
+  }
+
   busy = true;
+
   try {
     for (let count = 0; count < 5 && canRunBot(); count++) {
       const job = await jobs().findOneAndUpdate(
@@ -91,14 +120,25 @@ async function processJobs() {
         { $set: { state: 'running' } },
         { returnDocument: 'after' },
       );
-      if (!job) break;
+
+      if (!job) {
+        break;
+      }
+
       let response;
+
       try {
         const request = decrypt(job.payload);
         const path = new URL(request.path, 'http://localhost');
-        if (!routes.some((route) => route.test(path.pathname)))
+
+        if (!routes.some((route) => route.test(path.pathname))) {
           throw new Error('Invalid command route');
-        if (!canRunBot()) throw new Error('Bot ownership expired');
+        }
+
+        if (!canRunBot()) {
+          throw new Error('Bot ownership expired');
+        }
+
         const result = await fetch(
           `http://127.0.0.1:${process.env.CONTROL_PORT || 3000}${path.pathname}${path.search}`,
           {
@@ -119,6 +159,7 @@ async function processJobs() {
           body: { error: 'ส่งคำสั่งไปยังบอทไม่สำเร็จ ตรวจสถานะก่อนลองอีกครั้ง' },
         };
       }
+
       await jobs().updateOne(
         { _id: job._id },
         {
@@ -137,15 +178,22 @@ async function processJobs() {
     busy = false;
   }
 }
+
 export async function startCommandRelay() {
-  if (!clusterEnabled()) return;
-  if (!key || process.env.CLUSTER_CONTROL_SECRET.length < 32)
+  if (!clusterEnabled()) {
+    return;
+  }
+
+  if (!key || process.env.CLUSTER_CONTROL_SECRET.length < 32) {
     throw new Error('Set a strong shared CLUSTER_CONTROL_SECRET');
+  }
+
   await jobs().createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   await jobs().createIndex({ target: 1, state: 1 });
   timer = setInterval(() => void processJobs(), 500);
   timer.unref();
 }
+
 export function stopCommandRelay() {
   clearInterval(timer);
 }

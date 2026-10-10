@@ -1,5 +1,6 @@
 import Holidays from 'date-holidays';
 import { readFileSync } from 'node:fs';
+
 const holyDays = JSON.parse(readFileSync(new URL('./holy-days.json', import.meta.url), 'utf8'));
 
 // Thai months 9/11 have 29 days and 10/12 have 30. Lent's published start
@@ -87,8 +88,12 @@ const annual = {
   ],
 };
 const cache = new Map();
+
 export function thaiImportantDays(year) {
-  if (cache.has(year)) return cache.get(year);
+  if (cache.has(year)) {
+    return cache.get(year);
+  }
+
   const lib = new Holidays('TH', { timezone: 'Asia/Bangkok', languages: ['th', 'en'] });
   const rows = lib.getHolidays(year).map((h) => ({
     date: h.date.slice(0, 10),
@@ -96,18 +101,30 @@ export function thaiImportantDays(year) {
     type: h.type,
     source: sources.public,
   }));
+
   for (const row of rows) {
-    if (row.date.endsWith('-10-13')) row.title = 'วันนวมินทรมหาราช — วันคล้ายวันสวรรคต รัชกาลที่ 9';
-    if (row.date.endsWith('-12-05')) row.title += ' / วันชาติ / วันพ่อแห่งชาติ';
-    if (row.date.endsWith('-08-12')) row.title += ' / วันแม่แห่งชาติ';
+    if (row.date.endsWith('-10-13')) {
+      row.title = 'วันนวมินทรมหาราช — วันคล้ายวันสวรรคต รัชกาลที่ 9';
+    }
+
+    if (row.date.endsWith('-12-05')) {
+      row.title += ' / วันชาติ / วันพ่อแห่งชาติ';
+    }
+
+    if (row.date.endsWith('-08-12')) {
+      row.title += ' / วันแม่แห่งชาติ';
+    }
   }
-  for (const [day, title] of fixed)
+
+  for (const [day, title] of fixed) {
     rows.push({
       date: `${year}-${day}`,
       title,
       type: day === '05-01' ? 'bank' : 'observance',
       source: sources.culture,
     });
+  }
+
   const secondSaturday = 8 + ((6 - new Date(Date.UTC(year, 0, 8)).getUTCDay() + 7) % 7);
   rows.push({
     date: `${year}-01-${String(secondSaturday).padStart(2, '0')}`,
@@ -116,6 +133,7 @@ export function thaiImportantDays(year) {
     source: sources.culture,
   });
   const lent = rows.find((x) => x.title === 'วันเข้าพรรษา');
+
   if (lent) {
     for (const [offset, title] of [
       [59, 'สารทเดือนสิบ — วันรับตายาย'],
@@ -134,14 +152,17 @@ export function thaiImportantDays(year) {
       });
     }
   }
+
   const chinese = new Intl.DateTimeFormat('en-u-ca-chinese', {
     timeZone: 'Asia/Bangkok',
     month: 'numeric',
     day: 'numeric',
   });
+
   for (let n = 0; n < 40; n++) {
-    const day = new Date(Date.UTC(year, 0, 20 + n, 12)),
-      parts = Object.fromEntries(chinese.formatToParts(day).map((x) => [x.type, x.value]));
+    const day = new Date(Date.UTC(year, 0, 20 + n, 12));
+    const parts = Object.fromEntries(chinese.formatToParts(day).map((x) => [x.type, x.value]));
+
     if (parts.month === '1' && parts.day === '1') {
       rows.push({
         date: day.toISOString().slice(0, 10),
@@ -152,26 +173,35 @@ export function thaiImportantDays(year) {
       break;
     }
   }
-  for (const [day, title, type] of annual[year] || [])
+
+  for (const [day, title, type] of annual[year] || []) {
     rows.push({
       date: `${year}-${day}`,
       title,
       type,
       source: year === 2026 ? sources.year2026 : sources.culture,
     });
+  }
   // Weekend substitutions apply to recurring nationwide public holidays, not observances.
   const publicDates = new Set(rows.filter((x) => x.type === 'public').map((x) => x.date));
+
   for (const row of [...rows].filter((x) => x.type === 'public')) {
     const d = new Date(row.date + 'T00:00:00Z');
-    if (![0, 6].includes(d.getUTCDay())) continue;
+
+    if (![0, 6].includes(d.getUTCDay())) {
+      continue;
+    }
+
     do {
       d.setUTCDate(d.getUTCDate() + 1);
     } while ([0, 6].includes(d.getUTCDay()) || publicDates.has(d.toISOString().slice(0, 10)));
+
     const date = d.toISOString().slice(0, 10);
     publicDates.add(date);
     rows.push({ date, title: 'ชดเชย' + row.title, type: 'public', source: row.source });
   }
-  for (const day of holyDays.years[year] || [])
+
+  for (const day of holyDays.years[year] || []) {
     rows.push({
       date: day.date,
       title:
@@ -183,10 +213,16 @@ export function thaiImportantDays(year) {
       type: 'holy',
       source: holyDays.source,
     });
+  }
+
   const unique = Array.from(new Map(rows.map((x) => [x.date + '|' + x.title, x])).values()).sort(
     (a, b) => a.date.localeCompare(b.date),
   );
-  if (cache.size > 8) cache.clear();
+
+  if (cache.size > 8) {
+    cache.clear();
+  }
+
   cache.set(year, unique);
   return unique;
 }

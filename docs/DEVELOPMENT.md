@@ -178,3 +178,7 @@ Rollback to the recorded release while retaining credentials and database. Addit
 **Next-maintainer checklist:** development bot and guild; secret access through a private channel; provider and lease settings; current production revision; panel exposure; backup/restore owner; source-extractor availability; pending Calendar cutover; uncertain reminder deliveries; current guide/test limitations. Transfer secrets outside Git.
 
 **Known pending work:** coordinated Calendar worker/panel cutover; a separately running Calendar Discord client is not implemented; durable audio failover is not implemented. The Calendar repository also tracks multi-group display/Discord-link visibility and unverified mail/Push delivery. Repository separation does not complete these tasks.
+
+## Source readability / รูปแบบโค้ดปัจจุบัน
+
+See [the repository conventions](CODE-STYLE.md): explicit control-flow braces, one declaration per statement, paragraphs by responsibility, formatted embedded HTML and multiline SQL with bound parameters.

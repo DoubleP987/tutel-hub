@@ -1,5 +1,6 @@
 import { t } from '../i18n/bot.js';
 import { SlashCommandBuilder, ChannelType } from 'discord.js';
+
 export const commands = [
   new SlashCommandBuilder()
     .setName('join')

@@ -28,9 +28,11 @@ test('Missing duration is hydrated once, cached and never fabricated for live or
   assert.equal(calls, 1);
   await context.hydrateTrack({ url: 'https://example.com/live', live: true, duration: 0 });
   assert.equal(calls, 1);
+
   context.searchTracks = async () => {
     throw new Error('unavailable');
   };
+
   const unknown = { url: 'https://example.com/song', duration: 0 };
   assert.equal(await context.hydrateTrack(unknown), unknown);
   assert.equal(unknown.duration, 0);

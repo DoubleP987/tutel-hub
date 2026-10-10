@@ -2,7 +2,7 @@
 
 ## Current Calendar boundary - 10 October 2026
 
-Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new grouped Discord worker cutover remains pending; the privileged panel bridge is implemented. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
 
 ## Group integration update — 10 October 2026
 
@@ -155,3 +155,9 @@ continuous-pcm.js ใช้สตรีมเสียง ตัวเข้า�
 - [Music controls](MUSIC-CONTROLS.md)
 - [Smooth transition](SMOOTH-TRANSITION.md)
 - [Radio and panel](RADIO-AND-PANEL.md)
+
+## Calendar Feedback bridge and readable source (10 October 2026)
+
+The homeserver main panel's admin-only Feedback inbox reads Calendar messages and private attachments through CALENDAR_SERVICE_URL/CALENDAR_CONTROL_SECRET. Group managers have no server-panel privileges. Custom display names are accompanied by original provider name and verified email in authorized management views. See FEEDBACK.md.
+
+CODE-STYLE.md describes the project-wide local readability cleanup. Git publication does not deploy a runtime or activate the grouped reminder worker. No Oracle changes are part of this cleanup. Learning Lab is maintained outside both repositories at D:/Tutel-Learning-Lab and is not included in public source publication.

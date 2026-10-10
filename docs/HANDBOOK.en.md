@@ -1,8 +1,8 @@
-> **Current edition, 4 October 2026:** Read [current operation](CURRENT-OPERATIONS.md) first. The matching PDF includes a bookmarked current-operation supplement at the end; it supersedes older single-host, reminder, Loop and command descriptions in the baseline chapters.
+> **Current edition, 10 October 2026:** Read [current operation](CURRENT-OPERATIONS.md) first. The matching PDF includes the current-operation guide and Feedback/readability chapters; it supersedes older single-host, reminder, Loop and command descriptions in the baseline chapters.
 
 ## Current Calendar boundary - 10 October 2026
 
-Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new grouped Discord worker cutover remains pending; the privileged panel bridge is implemented. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
 
 ## Group integration update — 10 October 2026
 
@@ -1936,3 +1936,7 @@ Event colors and all-day creation are web form capabilities; current Discord add
 [Complete smooth-transition guide / คู่มือเปลี่ยนเพลงต่อเนื่อง](SMOOTH-TRANSITION.md): optional per-guild setting, one prepared successor in RAM (32 MiB cap), 350 ms overlapping fades and a persistent PCM/Opus resource. Skip uses the same mixer. Repository fallback off; live homeserver/Oracle fallback on. Radio unchanged; known finite tracks up to ten minutes only. Preparation failure, provider limits and connection problems can still cause waiting.
 
 เลือกเปิดแยกเซิร์ฟเวอร์ในตั้งค่าแผงเพลง เตรียมเพลงถัดไปหนึ่งเพลงใน RAM และซ้อนเสียง 350 มิลลิวินาทีผ่านตัวเล่นเดียว รวมกดข้าม repo เริ่มต้นปิด แต่ homeserver และ Oracle เปิดโดยเริ่มต้นเมื่อยังไม่บันทึกค่า ไม่เปลี่ยนวิทยุ และยังมีข้อจำกัดจากแหล่งเพลง/เครือข่าย
+
+## Current source and learning material / โค้ดและสื่อเรียนรู้ปัจจุบัน
+
+The repository conventions are documented in [CODE-STYLE.md](CODE-STYLE.md). The independent Learning Lab is at D:/Tutel-Learning-Lab, contains current snapshots of both repositories, and is not deployed or published with either project. Earlier architecture examples are explicitly identified as historical; current feature explanations take precedence.

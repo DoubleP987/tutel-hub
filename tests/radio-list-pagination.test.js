@@ -62,6 +62,7 @@ function fixture() {
     },
     editReply: async (body) => bodies.push(body),
   };
+
   const click = (id, user = 'owner') => ({
     customId: id,
     user: { id: user },
@@ -74,7 +75,9 @@ function fixture() {
     reply: async (body) => bodies.push(body),
     followUp: async (body) => bodies.push(body),
   });
+
   const buttons = () => bodies.at(-1).components[3].toJSON().components;
+
   return { clock, checks, context, interaction, bodies, click, buttons };
 }
 

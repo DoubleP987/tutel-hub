@@ -1,11 +1,14 @@
-const form = document.querySelector('#login-form'),
-  errorBox = document.querySelector('#login-error');
+const form = document.querySelector('#login-form');
+const errorBox = document.querySelector('#login-error');
+
 function cookie(name) {
   const item = document.cookie.split('; ').find((x) => x.startsWith(name + '='));
   return item ? decodeURIComponent(item.slice(name.length + 1)) : '';
 }
+
 async function loadToken() {
   let token = cookie('tutel_pre');
+
   if (!token) {
     token = crypto.randomUUID() + crypto.randomUUID().replaceAll('-', '');
     document.cookie =
@@ -14,12 +17,15 @@ async function loadToken() {
       '; Path=/; SameSite=Strict' +
       (location.protocol === 'https:' ? '; Secure' : '');
   }
+
   return token;
 }
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorBox.textContent = '';
   const data = Object.fromEntries(new FormData(form));
+
   try {
     const response = await fetch('/api/login', {
       method: 'POST',
@@ -27,10 +33,15 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify({ ...data, csrf: await loadToken() }),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'เข้าสู่ระบบไม่สำเร็จ');
+
+    if (!response.ok) {
+      throw new Error(result.error || 'เข้าสู่ระบบไม่สำเร็จ');
+    }
+
     location.href = result.redirect;
   } catch (error) {
     errorBox.textContent = error.message;
   }
 });
+
 loadToken();

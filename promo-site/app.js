@@ -198,16 +198,24 @@
   const originals = new Map();
   document.querySelectorAll('[data-i18n]').forEach((node) => originals.set(node, node.innerHTML));
   let language;
+
   try {
     language = localStorage.getItem('tutel-promo-language');
   } catch {}
-  if (!['th', 'en'].includes(language))
+
+  if (!['th', 'en'].includes(language)) {
     language = (navigator.language || '').toLowerCase().startsWith('th') ? 'th' : 'en';
+  }
+
   let filter = 'all';
   const list = document.querySelector('#command-list');
   const search = document.querySelector('#command-search');
+
   function renderCommands() {
-    if (!list) return;
+    if (!list) {
+      return;
+    }
+
     const query = (search.value || '').trim().toLowerCase();
     const rows = commandData.filter(
       (row) =>
@@ -227,9 +235,11 @@
     );
     document.querySelector('#empty-commands').hidden = rows.length > 0;
   }
+
   function renderTheme() {
     const dark = document.documentElement.dataset.theme === 'dark';
     const button = document.querySelector('#theme');
+
     if (button) {
       const label =
         language === 'th'
@@ -244,18 +254,23 @@
       button.setAttribute('title', label);
       button.setAttribute('aria-pressed', String(dark));
     }
+
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', dark ? '#141b18' : '#ffffff');
   }
+
   document.querySelector('#theme')?.addEventListener('click', () => {
     const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = theme;
+
     try {
       localStorage.setItem('tutel-promo-theme', theme);
     } catch {}
+
     renderTheme();
   });
+
   function renderLanguage() {
     document.documentElement.lang = language;
     document.querySelectorAll('[data-i18n]').forEach((node) => {
@@ -269,6 +284,7 @@
         language === 'th' ? translations.th[node.dataset.i18nPlaceholder] : 'Find a command';
     });
     const button = document.querySelector('#language');
+
     if (button) {
       button.textContent = language === 'th' ? 'EN' : 'ไทย';
       button.setAttribute(
@@ -276,6 +292,7 @@
         language === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย',
       );
     }
+
     const isGuide = document.querySelector('#privacy') !== null;
     document.title = isGuide
       ? language === 'th'
@@ -288,15 +305,19 @@
     renderTheme();
     renderCommands();
   }
+
   document.querySelector('#language')?.addEventListener('click', () => {
     language = language === 'th' ? 'en' : 'th';
+
     try {
       localStorage.setItem('tutel-promo-language', language);
     } catch {}
+
     renderLanguage();
   });
   document.querySelectorAll('[data-link]').forEach((node) => {
     const url = window.TUTEL_SITE?.[node.dataset.link];
+
     if (url) {
       node.href = url;
       node.target = '_blank';
@@ -325,6 +346,10 @@
     node.textContent = `v${window.TUTEL_SITE?.version || '1.0.0'}`;
   });
   const year = document.querySelector('#year');
-  if (year) year.textContent = new Date().getFullYear();
+
+  if (year) {
+    year.textContent = new Date().getFullYear();
+  }
+
   renderLanguage();
 })();

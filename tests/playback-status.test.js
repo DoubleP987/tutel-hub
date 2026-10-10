@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { playbackStatus } from '../src/music/status.js';
+
 test('Panel playback status distinguishes playback, pause, loading, standby and disconnected guilds', () => {
   const state = {
     connection: {},

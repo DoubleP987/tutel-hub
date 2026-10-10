@@ -14,8 +14,8 @@ import { registerBotRoutes } from './routes/bot.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerClusterRoutes } from './routes/cluster.js';
 
-const app = express(),
-  here = fileURLToPath(new URL('.', import.meta.url));
+const app = express();
+const here = fileURLToPath(new URL('.', import.meta.url));
 app.set('trust proxy', 'loopback');
 app.disable('x-powered-by');
 app.use(
@@ -85,7 +85,9 @@ export function publicEvent(e) {
     systemHoliday,
   };
 }
+
 export { app };
+
 export async function startControlServer() {
   const port = Number(process.env.CONTROL_PORT || 3000);
   const server = app.listen(port, process.env.CONTROL_HOST || '127.0.0.1', () =>

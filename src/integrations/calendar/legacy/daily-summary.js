@@ -23,7 +23,10 @@ export function calendarDay(value = new Date()) {
 }
 
 export function dailySummarySchedule(day, options) {
-  if (!options.enabled || !options.dayEnabled) return null;
+  if (!options.enabled || !options.dayEnabled) {
+    return null;
+  }
+
   const [h, min] = options.dayTime.split(':').map(Number);
   return { key: 'daily-summary', at: fromLocal({ ...day.local, h, min }), label: t('วันนี้') };
 }
@@ -32,13 +35,23 @@ export function dailySummaryEvents(events, day, config, options) {
   const start = Date.parse(day.startsAt);
   const end = Date.parse(day.endsAt);
   const unique = new Map();
+
   for (const event of events) {
-    if (event.guild_id && event.guild_id !== config.guild_id) continue;
-    if (!shouldNotify(event, options)) continue;
-    if (Date.parse(event.occurrence_at) >= end || Date.parse(event.occurrence_end) <= start)
+    if (event.guild_id && event.guild_id !== config.guild_id) {
       continue;
+    }
+
+    if (!shouldNotify(event, options)) {
+      continue;
+    }
+
+    if (Date.parse(event.occurrence_at) >= end || Date.parse(event.occurrence_end) <= start) {
+      continue;
+    }
+
     unique.set(`${event.id}|${event.occurrence_at}`, event);
   }
+
   return [...unique.values()].sort(
     (a, b) =>
       Number(!!b.all_day) - Number(!!a.all_day) ||
@@ -48,7 +61,10 @@ export function dailySummaryEvents(events, day, config, options) {
 }
 
 function eventTime(event, day) {
-  if (event.all_day) return t('ทั้งวัน');
+  if (event.all_day) {
+    return t('ทั้งวัน');
+  }
+
   const start = Date.parse(event.occurrence_at);
   const end = Date.parse(event.occurrence_end);
   const startLabel =
@@ -102,13 +118,19 @@ export function buildDailySummary(day, events, options, { test = false } = {}) {
   const description = `${heading}\n\n${entries.map((entry) => entry.markdown).join('\n\n') || emptyText}`;
   const overflow = description.length > 3900;
   let visible = heading;
+
   if (overflow) {
     for (const entry of entries) {
-      if (visible.length + entry.markdown.length + 180 > 3900) break;
+      if (visible.length + entry.markdown.length + 180 > 3900) {
+        break;
+      }
+
       visible += '\n\n' + entry.markdown;
     }
+
     visible += t('\n\nรายการครบทั้งหมดอยู่ในไฟล์แนบและปุ่มปฏิทินด้านล่าง');
   }
+
   const hash = createHash('sha256')
     .update(JSON.stringify({ date: day.key, title, description, color: options.color }))
     .digest('hex');

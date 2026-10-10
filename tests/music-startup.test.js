@@ -13,9 +13,10 @@ const code = readFileSync(new URL('../src/music/startup.js', import.meta.url), '
     ),
   )
   .replace('export async function', 'async function');
+
 function startup({ fail = 0, abort } = {}) {
-  const sources = [],
-    options = [];
+  const sources = [];
+  const options = [];
   const context = {
     createTrackResource(track, config) {
       const source = {
@@ -31,7 +32,10 @@ function startup({ fail = 0, abort } = {}) {
     },
     async resourceReady() {
       abort?.abort();
-      if (fail-- > 0) throw new Error('HTTP 403 / empty PCM');
+
+      if (fail-- > 0) {
+        throw new Error('HTTP 403 / empty PCM');
+      }
     },
     console: { warn() {} },
   };
@@ -39,6 +43,7 @@ function startup({ fail = 0, abort } = {}) {
   vm.runInContext(code, context);
   return { open: context.openTrackSource, sources, options };
 }
+
 test('First queued song retries an empty initial extraction without requiring another /play', async () => {
   const run = startup({ fail: 1 });
   const stream = await run.open(

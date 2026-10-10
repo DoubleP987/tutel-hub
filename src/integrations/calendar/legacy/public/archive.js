@@ -17,21 +17,28 @@ export const siteFiles = [
 ];
 // ZIP contains an explicit public file whitelist; account records and .env cannot enter it.
 export function publicZip(directory) {
-  const locals = [],
-    central = [];
+  const locals = [];
+  const central = [];
   let offset = 0;
+
   const crc32 = (buffer) => {
     let crc = 0xffffffff;
+
     for (const byte of buffer) {
       crc ^= byte;
-      for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+
+      for (let bit = 0; bit < 8; bit++) {
+        crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+      }
     }
+
     return (crc ^ 0xffffffff) >>> 0;
   };
+
   for (const file of siteFiles) {
-    const name = Buffer.from(file),
-      data = readFileSync(resolve(directory, file)),
-      crc = crc32(data);
+    const name = Buffer.from(file);
+    const data = readFileSync(resolve(directory, file));
+    const crc = crc32(data);
     const header = Buffer.alloc(30);
     header.writeUInt32LE(0x04034b50);
     header.writeUInt16LE(20, 4);
@@ -54,8 +61,9 @@ export function publicZip(directory) {
     central.push(entry, name);
     offset += header.length + name.length + data.length;
   }
-  const directoryBuffer = Buffer.concat(central),
-    end = Buffer.alloc(22);
+
+  const directoryBuffer = Buffer.concat(central);
+  const end = Buffer.alloc(22);
   end.writeUInt32LE(0x06054b50);
   end.writeUInt16LE(siteFiles.length, 8);
   end.writeUInt16LE(siteFiles.length, 10);

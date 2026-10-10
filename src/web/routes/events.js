@@ -19,6 +19,7 @@ export function registerEventsRoutes(app) {
       res.status(400).json({ error: error.message });
     }
   });
+
   app.post('/api/events', auth, admin, csrf, async (req, res) => {
     try {
       const { secretPin, id: ignoredId, ...event } = req.body;
@@ -29,6 +30,7 @@ export function registerEventsRoutes(app) {
       res.status(400).json({ error: error.message });
     }
   });
+
   app.put('/api/events/:id', auth, admin, csrf, async (req, res) => {
     try {
       const id = await saveEvent({ ...req.body, id: req.params.id }, req.auth.user.id);
@@ -38,6 +40,7 @@ export function registerEventsRoutes(app) {
       res.status(400).json({ error: error.message });
     }
   });
+
   app.delete('/api/events/:id', auth, admin, csrf, async (req, res) => {
     try {
       await deleteEvent(req.params.id);

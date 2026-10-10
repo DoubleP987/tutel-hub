@@ -22,15 +22,18 @@ test('Playback history excludes a selected track while its audio is still loadin
 });
 
 test('A new play edits the same panel; leave and restart retain playback history', async () => {
-  const settings = new Map(),
-    messages = new Map(),
-    deleted = [];
+  const settings = new Map();
+  const messages = new Map();
+  const deleted = [];
   let id = 0;
   const channel = {
     isSendable: () => true,
     messages: {
       fetch: async (messageId) => {
-        if (!messages.has(messageId)) throw Object.assign(new Error('Missing'), { code: 10008 });
+        if (!messages.has(messageId)) {
+          throw Object.assign(new Error('Missing'), { code: 10008 });
+        }
+
         return messages.get(messageId);
       },
     },
@@ -82,6 +85,7 @@ test('A new play edits the same panel; leave and restart retain playback history
     guilds: { cache: new Map([['guild', {}]]) },
     channels: { fetch: async () => channel },
   };
+
   try {
     await context.initializeMusicPanels(client);
     const request = { guildId: 'guild', channelId: 'channel', channel };

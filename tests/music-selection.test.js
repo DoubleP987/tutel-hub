@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectRequestedTrack } from '../src/music/selection.js';
+
 const short = { title: 'Short clip', duration: 12 };
 const song = { title: 'Full song', duration: 240 };
 test('A short first search result does not hide a full song', () => {

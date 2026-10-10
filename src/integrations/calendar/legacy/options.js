@@ -1,6 +1,7 @@
 import { t } from '../../../i18n/bot.js';
 import { setting, setSetting } from '../../../database/settings.js';
 import { categories, eventCategories } from './categories.js';
+
 export const defaults = {
   enabled: true,
   categories: categories.map((c) => c.id).filter((c) => c !== 'holy'),
@@ -14,39 +15,66 @@ export const defaults = {
   dayTime: '07:00',
   showDetails: true,
 };
+
 export function normalizeOptions(input = {}) {
   const result = { ...defaults };
-  for (const key of ['enabled', 'notifyNonHolidays', 'beforeEnabled', 'dayEnabled', 'showDetails'])
-    if (typeof input[key] === 'boolean') result[key] = input[key];
+
+  for (const key of [
+    'enabled',
+    'notifyNonHolidays',
+    'beforeEnabled',
+    'dayEnabled',
+    'showDetails',
+  ]) {
+    if (typeof input[key] === 'boolean') {
+      result[key] = input[key];
+    }
+  }
+
   if (input.categories !== undefined) {
     if (
       !Array.isArray(input.categories) ||
       input.categories.some((c) => !categories.some((x) => x.id === c))
-    )
+    ) {
       throw new Error(t('หมวดแจ้งเตือนไม่ถูกต้อง'));
+    }
+
     result.categories = [...new Set(input.categories)];
   }
-  for (const key of ['beforeTime', 'dayTime'])
+
+  for (const key of ['beforeTime', 'dayTime']) {
     if (input[key] !== undefined) {
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input[key]))
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input[key])) {
         throw new Error(t('เวลาแจ้งเตือนไม่ถูกต้อง'));
+      }
+
       result[key] = input[key];
     }
+  }
+
   if (input.color !== undefined) {
-    if (!/^#[\da-f]{6}$/i.test(input.color)) throw new Error(t('สีแจ้งเตือนไม่ถูกต้อง'));
+    if (!/^#[\da-f]{6}$/i.test(input.color)) {
+      throw new Error(t('สีแจ้งเตือนไม่ถูกต้อง'));
+    }
+
     result.color = input.color;
   }
+
   if (input.template !== undefined) {
     if (
       typeof input.template !== 'string' ||
       !input.template.trim() ||
       input.template.length > 1200
-    )
+    ) {
       throw new Error(t('ข้อความต้องมี 1–1200 ตัวอักษร'));
+    }
+
     result.template = input.template;
   }
+
   return result;
 }
+
 export function reminderOptions(guild) {
   try {
     return normalizeOptions(JSON.parse(setting('reminder_options:' + guild) || '{}'));
@@ -54,11 +82,13 @@ export function reminderOptions(guild) {
     return { ...defaults };
   }
 }
+
 export async function saveReminderOptions(guild, input) {
   const options = normalizeOptions(input);
   await setSetting('reminder_options:' + guild, JSON.stringify(options));
   return options;
 }
+
 export function shouldNotify(event, options) {
   return (
     options.enabled &&
@@ -66,6 +96,7 @@ export function shouldNotify(event, options) {
     eventCategories(event).some((c) => options.categories.includes(c))
   );
 }
+
 export function notificationText(event, when, schedule, options) {
   const data = {
     title: event.title,

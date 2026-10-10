@@ -7,10 +7,14 @@ import {
 } from 'discord.js';
 import { botWebsite, botConfig } from '../config/bot.js';
 import { t } from '../i18n/bot.js';
+
 export function helpReply() {
   const website = new URL(botWebsite);
-  if (!['https:', 'http:'].includes(website.protocol))
+
+  if (!['https:', 'http:'].includes(website.protocol)) {
     throw new Error('BOT_WEBSITE_URL must be an HTTP(S) URL.');
+  }
+
   const guide = new URL(
     'guide.html',
     website.href.endsWith('/') ? website.href : website.href + '/',
@@ -40,6 +44,7 @@ export function helpReply() {
     allowedMentions: { parse: [] },
   };
 }
+
 export async function help(interaction) {
   return interaction.reply(helpReply());
 }

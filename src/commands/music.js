@@ -25,13 +25,19 @@ import { musicRequestVersion } from '../music/events.js';
 
 export const musicHandlers = {
   async join(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const channel = interaction.member.voice?.channel;
-    if (!channel)
+
+    if (!channel) {
       return interaction.reply({
         content: t('เข้าห้อง voice ก่อนนะ'),
         flags: MessageFlags.Ephemeral,
       });
+    }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     await joinStandby(interaction.guildId, channel);
     await recordMusicAction(interaction, t('เข้าห้องเสียงมารอ'));
@@ -39,21 +45,30 @@ export const musicHandlers = {
     return interaction.editReply(t('เข้าห้องเสียงมารอแล้ว · ถ้าไม่มีเพลงเล่นครบ 5 นาทีจะออกเอง'));
   },
   async music(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const source = interaction.options.getString('source');
-    if (source && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
+
+    if (source && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({
         content: t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง'),
         flags: MessageFlags.Ephemeral,
       });
+    }
+
     const selected = source
       ? await setMusicSource(interaction.guildId, source)
       : getMusicSource(interaction.guildId);
-    if (source)
+
+    if (source) {
       await recordMusicAction(
         interaction,
         t('เปลี่ยนแหล่งเพลงเป็น {0}', musicSourceLabel(selected)),
       );
+    }
+
     return interaction.reply({
       content: t(
         'แหล่งค้นหาเพลงของเซิร์ฟเวอร์นี้: **{0}**\nใช้กับ /play และ /randommusic เพลงที่อยู่ในคิวแล้วจะเล่นต่อจากแหล่งเดิม และลิงก์ตรงจะใช้แหล่งของลิงก์นั้น',
@@ -63,11 +78,17 @@ export const musicHandlers = {
     });
   },
   async play(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     return playRequest(interaction, { query: interaction.options.getString('query', true) });
   },
   async playnext(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     return playRequest(interaction, {
       query: interaction.options.getString('query', true),
       next: true,
@@ -86,9 +107,16 @@ export const musicHandlers = {
     return changeQueue(interaction, 'shuffle');
   },
   async loop(interaction) {
-    if (!(await canControl(interaction))) return;
+    if (!(await canControl(interaction))) {
+      return;
+    }
+
     const mode = setLoop(interaction.guildId, interaction.options.getString('mode', true));
-    if (mode !== null) await recordMusicAction(interaction, t('เปลี่ยน Loop: {0}', mode));
+
+    if (mode !== null) {
+      await recordMusicAction(interaction, t('เปลี่ยน Loop: {0}', mode));
+    }
+
     return interaction.reply({
       content:
         mode === null
@@ -103,21 +131,40 @@ export const musicHandlers = {
   },
 
   async randommusic(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const channel = interaction.member.voice && interaction.member.voice.channel;
-    if (!channel)
+
+    if (!channel) {
       return interaction.reply({ content: t('เข้าห้อง voice ก่อนนะ'), ephemeral: true });
+    }
+
     await interaction.deferReply();
     const version = musicRequestVersion(interaction.guildId);
     const genre = interaction.options.getString('genre');
-    if (genre && !randomGenres.some((item) => item.value === genre))
+
+    if (genre && !randomGenres.some((item) => item.value === genre)) {
       return interaction.editReply(t('เลือกแนวเพลงจากรายการแนะนำ หรือเว้นว่างเพื่อใช้แนวล่าสุด'));
-    if (genre) await setRandomGenre(interaction.guildId, genre);
+    }
+
+    if (genre) {
+      await setRandomGenre(interaction.guildId, genre);
+    }
+
     await showMusicPanel(interaction);
-    if (version !== musicRequestVersion(interaction.guildId))
+
+    if (version !== musicRequestVersion(interaction.guildId)) {
       return interaction.editReply(t('ยกเลิกการสุ่มเพลงแล้ว'));
+    }
+
     const state = await enableRandomMode(interaction.guildId, channel);
-    if (!state.randomMode) return interaction.editReply(t('โหมดสุ่มถูกหยุดแล้ว'));
+
+    if (!state.randomMode) {
+      return interaction.editReply(t('โหมดสุ่มถูกหยุดแล้ว'));
+    }
+
     await recordMusicAction(
       interaction,
       t('เปิดสุ่มแนว {0}', t(randomGenre(getRandomGenre(interaction.guildId)).label)),
@@ -137,10 +184,16 @@ export const musicHandlers = {
   },
 
   async queue(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const state = getPlayer(interaction.guildId);
-    if (!state || (!state.radio && !state.current && !state.queue.length))
+
+    if (!state || (!state.radio && !state.current && !state.queue.length)) {
       return interaction.reply(t('คิวว่างอยู่'));
+    }
+
     const playing = state.radio
       ? t('วิทยุสด · ') + state.radio.name
       : (state.current && state.current.title) || t('ไม่มี');
@@ -150,47 +203,83 @@ export const musicHandlers = {
         .slice(0, 10)
         .map((track, n) => n + 1 + '. ' + String(track.title).slice(0, 140)),
     ];
-    if (state.queue.length > 10) lines.push(t('และอีก ') + (state.queue.length - 10) + t(' เพลง'));
+
+    if (state.queue.length > 10) {
+      lines.push(t('และอีก ') + (state.queue.length - 10) + t(' เพลง'));
+    }
+
     return interaction.reply({
       content: lines.join('\n').slice(0, 1950),
       allowedMentions: { parse: [] },
     });
   },
   async skip(interaction) {
-    if (!guildOnly(interaction)) return;
-    if (getPlayer(interaction.guildId) && getPlayer(interaction.guildId).radio)
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
+    if (getPlayer(interaction.guildId) && getPlayer(interaction.guildId).radio) {
       return interaction.reply(
         t('กำลังฟังวิทยุ ใช้ /radio play เพื่อเปลี่ยน หรือ /stop เพื่อหยุด'),
       );
+    }
+
     const skipped = skip(interaction.guildId);
-    if (skipped) await recordMusicAction(interaction, t('ข้ามเพลง'));
+
+    if (skipped) {
+      await recordMusicAction(interaction, t('ข้ามเพลง'));
+    }
+
     return interaction.reply(skipped ? t('กำลังข้ามเพลง…') : t('ไม่มีเพลงที่กำลังเล่น'));
   },
   async stop(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     stop(interaction.guildId);
     await recordMusicAction(interaction, t('หยุดเพลงและล้างคิว'));
     return interaction.reply(t('หยุดเพลงและล้างคิวแล้ว'));
   },
   async pause(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const ok = getPlayer(interaction.guildId) && getPlayer(interaction.guildId).player.pause();
-    if (ok) await recordMusicAction(interaction, t('พักเพลง'));
+
+    if (ok) {
+      await recordMusicAction(interaction, t('พักเพลง'));
+    }
+
     return interaction.reply(ok ? t('พักเพลงแล้ว') : t('ไม่มีเพลงที่กำลังเล่น'));
   },
   async resume(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const ok = getPlayer(interaction.guildId) && getPlayer(interaction.guildId).player.unpause();
-    if (ok) await recordMusicAction(interaction, t('เล่นเพลงต่อ'));
+
+    if (ok) {
+      await recordMusicAction(interaction, t('เล่นเพลงต่อ'));
+    }
+
     return interaction.reply(ok ? t('เล่นเพลงต่อแล้ว') : t('ไม่มีเพลงที่พักอยู่'));
   },
   async nowplaying(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     const state = getPlayer(interaction.guildId);
-    if (state && state.radio)
+
+    if (state && state.radio) {
       return interaction.reply(
         t('กำลังฟังวิทยุสด ') + state.radio.name + ' (' + state.radio.frequency + ' MHz)',
       );
+    }
+
     const track = state && state.current;
     return interaction.reply(
       track
@@ -202,7 +291,10 @@ export const musicHandlers = {
     );
   },
   async leave(interaction) {
-    if (!guildOnly(interaction)) return;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
     destroyPlayer(interaction.guildId);
     await recordMusicAction(interaction, t('ออกจากห้องเสียง'));
     return interaction.reply(t('ออกจาก voice channel แล้ว'));
@@ -210,9 +302,13 @@ export const musicHandlers = {
 };
 
 async function canControl(interaction) {
-  if (!guildOnly(interaction)) return false;
+  if (!guildOnly(interaction)) {
+    return false;
+  }
+
   const voiceId = interaction.member.voice?.channelId;
   const botVoice = getPlayer(interaction.guildId)?.connection?.joinConfig.channelId;
+
   if (!voiceId || !botVoice || voiceId !== botVoice) {
     await interaction.reply({
       content: t('ต้องอยู่ห้องเสียงเดียวกับบอทเพื่อจัดการคิว'),
@@ -220,10 +316,15 @@ async function canControl(interaction) {
     });
     return false;
   }
+
   return true;
 }
+
 async function changeQueue(interaction, action) {
-  if (!(await canControl(interaction))) return;
+  if (!(await canControl(interaction))) {
+    return;
+  }
+
   const result = editQueue(
     interaction.guildId,
     action,
@@ -242,8 +343,11 @@ async function changeQueue(interaction, action) {
         : action === 'clear'
           ? t('ล้าง {0} เพลงที่รอแล้ว · เพลงปัจจุบันยังเล่นต่อ', result || 0)
           : t('สุ่มลำดับคิว {0} เพลงแล้ว', result || 0);
-  if (result !== null && result !== undefined && result !== false)
+
+  if (result !== null && result !== undefined && result !== false) {
     await recordMusicAction(interaction, message);
+  }
+
   return interaction.reply({
     content: message,
     flags: MessageFlags.Ephemeral,

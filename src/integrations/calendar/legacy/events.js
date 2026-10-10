@@ -12,15 +12,18 @@ import {
 } from './recurrence.js';
 
 export async function listExpandedEvents(fromValue, toValue, guildId = null) {
-  const from = new Date(fromValue),
-    to = new Date(toValue);
+  const from = new Date(fromValue);
+  const to = new Date(toValue);
+
   if (
     Number.isNaN(from.valueOf()) ||
     Number.isNaN(to.valueOf()) ||
     to <= from ||
     to - from > 1000 * 60 * 60 * 24 * 400
-  )
+  ) {
     throw new Error(t('ช่วงวันที่ไม่ถูกต้อง'));
+  }
+
   const rows = await data.findMany(
     'events',
     guildId ? { $or: [{ guild_id: null }, { guild_id: guildId }] } : {},
@@ -34,11 +37,16 @@ export async function listExpandedEvents(fromValue, toValue, guildId = null) {
       reminders: JSON.parse(event.reminders),
     })),
   );
+
   for (let year = dateParts(from).y; year <= dateParts(to).y; year++) {
     for (const h of thaiImportantDays(year)) {
-      const at = localDateTimeToIso(h.date + ' 00:00'),
-        d = dateParts(new Date(at));
-      if (new Date(at) < from || new Date(at) >= to) continue;
+      const at = localDateTimeToIso(h.date + ' 00:00');
+      const d = dateParts(new Date(at));
+
+      if (new Date(at) < from || new Date(at) >= to) {
+        continue;
+      }
+
       const end = fromLocal(addLocal({ ...d, h: 0, min: 0 }, 'daily'));
       const key =
         'holiday:' + h.date + ':' + createHash('sha1').update(h.title).digest('hex').slice(0, 10);
@@ -67,21 +75,30 @@ export async function listExpandedEvents(fromValue, toValue, guildId = null) {
       });
     }
   }
+
   return expanded
     .map((e) => ({ ...e, color: e.color || '#4285f4', categories: eventCategories(e) }))
     .sort((a, b) => a.occurrence_at.localeCompare(b.occurrence_at));
 }
+
 export async function saveEvent(input, creatorId) {
   const title = String(input.title || '')
     .trim()
     .slice(0, 160);
-  if (!title) throw new Error(t('ใส่ชื่อกิจกรรมก่อน'));
+
+  if (!title) {
+    throw new Error(t('ใส่ชื่อกิจกรรมก่อน'));
+  }
+
   const existing = input.id ? await data.findOne('events', { id: Number(input.id) }) : null;
   const color = input.color ?? existing?.color ?? '#4285f4';
-  if (typeof color !== 'string' || !/^#[\da-f]{6}$/i.test(color))
+
+  if (typeof color !== 'string' || !/^#[\da-f]{6}$/i.test(color)) {
     throw new Error(t('สีกิจกรรมไม่ถูกต้อง'));
-  const allDay = !!input.allDay,
-    day = String(input.date || input.startsAt || '').slice(0, 10);
+  }
+
+  const allDay = !!input.allDay;
+  const day = String(input.date || input.startsAt || '').slice(0, 10);
   const start = localDateTimeToIso(allDay ? day + ' 00:00' : input.startsAt);
   const end = allDay
     ? new Date(
@@ -90,7 +107,11 @@ export async function saveEvent(input, creatorId) {
     : input.endsAt
       ? localDateTimeToIso(input.endsAt)
       : new Date(new Date(start).getTime() + 60 * 60 * 1000).toISOString();
-  if (new Date(end) <= new Date(start)) throw new Error(t('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม'));
+
+  if (new Date(end) <= new Date(start)) {
+    throw new Error(t('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม'));
+  }
+
   const recurrence = ['none', 'daily', 'weekly', 'monthly', 'yearly'].includes(input.recurrence)
     ? input.recurrence
     : 'none';
@@ -133,23 +154,34 @@ export async function saveEvent(input, creatorId) {
     'created_by',
   ];
   const document = Object.fromEntries(fields.map((field, index) => [field, values[index]]));
+
   if (input.id) {
     delete document.created_by;
     const changes = await data.update('events', { id: Number(input.id) }, document);
-    if (!changes) throw new Error(t('ไม่พบกิจกรรมนี้'));
+
+    if (!changes) {
+      throw new Error(t('ไม่พบกิจกรรมนี้'));
+    }
+
     await data.remove('reminder_log', { event_id: Number(input.id) });
     return Number(input.id);
   }
+
   const result = await data.insert('events', document);
   return result.id;
 }
+
 export async function deleteEvent(id, guildId = null) {
   const changes = await data.remove('events', {
     id: Number(id),
     ...(guildId ? { guild_id: String(guildId) } : {}),
   });
-  if (!changes) throw new Error(t('ไม่พบกิจกรรมนี้'));
+
+  if (!changes) {
+    throw new Error(t('ไม่พบกิจกรรมนี้'));
+  }
 }
+
 export async function saveGuildConfig(guildId, guildName, channelId, defaultReminder = 15) {
   await data.upsert(
     'guild_config',
@@ -162,6 +194,7 @@ export async function saveGuildConfig(guildId, guildName, channelId, defaultRemi
     },
   );
 }
+
 export async function listGuildConfigs() {
   return data.findMany('guild_config');
 }

@@ -8,15 +8,27 @@ export function calendarConfigured(kind = 'bot') {
   );
 }
 
-export async function calendarRequest(path, { kind = 'bot', method = 'GET', body, actor } = {}) {
-  if (!calendarConfigured(kind)) throw new Error('ยังไม่ได้ตั้งการเชื่อม Tutel Calendar');
+export async function calendarRequest(
+  path,
+  { kind = 'bot', method = 'GET', body, actor, image = false } = {},
+) {
+  if (!calendarConfigured(kind)) {
+    throw new Error('ยังไม่ได้ตั้งการเชื่อม Tutel Calendar');
+  }
+
   const base = new URL(process.env.CALENDAR_SERVICE_URL);
+
   if (
     base.protocol !== 'https:' &&
     !(base.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname))
-  )
+  ) {
     throw new Error('Calendar API ต้องเป็น HTTPS หรือ loopback');
-  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Invalid service path');
+  }
+
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    throw new Error('Invalid service path');
+  }
+
   const url = new URL(`/internal/v1/${kind === 'control' ? 'control' : 'bot'}${path}`, base);
   const response = await fetch(url, {
     method,
@@ -29,13 +41,37 @@ export async function calendarRequest(path, { kind = 'bot', method = 'GET', body
     signal: AbortSignal.timeout(15000),
     redirect: 'error',
   });
+
+  if (image && response.ok) {
+    if (!response.headers.get('content-type')?.startsWith('image/webp')) {
+      throw new Error('Invalid Calendar image');
+    }
+
+    const chunks = [];
+    let size = 0;
+
+    for await (const chunk of response.body) {
+      size += chunk.length;
+
+      if (size > 5 * 1024 * 1024) {
+        throw new Error('Calendar image too large');
+      }
+
+      chunks.push(chunk);
+    }
+
+    return Buffer.concat(chunks);
+  }
+
   const value = await response
     .json()
     .catch(() => ({ error: 'Calendar service response unavailable' }));
+
   if (!response.ok) {
     const error = new Error(value.error || 'Calendar service unavailable');
     error.status = response.status;
     throw error;
   }
+
   return value;
 }

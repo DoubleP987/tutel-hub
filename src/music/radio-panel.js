@@ -43,6 +43,7 @@ export const radioCategories = {
   music: 'เพลง',
   local: 'ท้องถิ่น',
 };
+
 function lastStation(guildId) {
   try {
     return JSON.parse(setting(`music_radio_last:${guildId}`) || 'null');
@@ -50,13 +51,16 @@ function lastStation(guildId) {
     return null;
   }
 }
+
 async function rowsFor(session) {
   let remote = [];
+
   try {
     remote = await getRadioDirectory();
   } catch {
     /* Curated stations still work. */
   }
+
   const rows = [
     ...RADIO_STATIONS,
     ...remote
@@ -70,7 +74,10 @@ async function rowsFor(session) {
   ];
   const seen = new Set();
   return rows.filter((station) => {
-    if (seen.has(station.url)) return false;
+    if (seen.has(station.url)) {
+      return false;
+    }
+
     seen.add(station.url);
     const area = session.area;
     const matchesArea =
@@ -88,6 +95,7 @@ async function rowsFor(session) {
     );
   });
 }
+
 function select(id, options, placeholder) {
   return new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -96,6 +104,7 @@ function select(id, options, placeholder) {
       .addOptions(options),
   );
 }
+
 function button(session, action, label, disabled = false) {
   return new ButtonBuilder()
     .setCustomId(`music:radio:${session.id}:${action}`)
@@ -103,13 +112,15 @@ function button(session, action, label, disabled = false) {
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(disabled);
 }
+
 async function body(session) {
   session.rows = await rowsFor(session);
   const pages = Math.max(1, Math.ceil(session.rows.length / 20));
   session.page = Math.min(Math.max(0, session.page), pages - 1);
   const page = session.rows.slice(session.page * 20, session.page * 20 + 20);
   const components = [];
-  if (page.length)
+
+  if (page.length) {
     components.push(
       select(
         `music:radio:${session.id}:station`,
@@ -125,6 +136,8 @@ async function body(session) {
         'เลือกสถานีเพื่อเล่น',
       ),
     );
+  }
+
   components.push(
     select(
       `music:radio:${session.id}:area`,
@@ -155,19 +168,32 @@ async function body(session) {
       button(session, 'clear', 'ล้างคำค้น', !session.query),
     ),
   );
-  if (lastStation(session.guildId))
+
+  if (lastStation(session.guildId)) {
     components.push(
       new ActionRowBuilder().addComponents(button(session, 'last', 'เล่นสถานีล่าสุด')),
     );
+  }
+
   return {
     content: `${t('เลือกสถานีวิทยุ · เพลงเดิมยังเล่นระหว่างเลือก')}\n${t(radioAreas[session.area])} · ${t(radioCategories[session.category])} · ${session.page + 1}/${pages} · ${session.rows.length} ${t('สถานี')}${session.query ? '\n' + session.query : ''}\n${t('ตรวจเสียงก่อนสลับ · สถานีอาจไม่พร้อมหรือเงียบในบางช่วง')}`,
     components,
   };
 }
+
 export async function openRadioPanel(interaction, messageId) {
   const now = Date.now();
-  for (const [id, entry] of sessions) if (entry.expires <= now) sessions.delete(id);
-  if (sessions.size >= 100) sessions.delete(sessions.keys().next().value);
+
+  for (const [id, entry] of sessions) {
+    if (entry.expires <= now) {
+      sessions.delete(id);
+    }
+  }
+
+  if (sessions.size >= 100) {
+    sessions.delete(sessions.keys().next().value);
+  }
+
   const session = {
     id: randomUUID(),
     guildId: interaction.guildId,
@@ -184,10 +210,15 @@ export async function openRadioPanel(interaction, messageId) {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   await interaction.editReply(await body(session));
 }
+
 export async function handleRadioPanel(interaction, voiceChannelFor) {
-  if (!interaction.customId?.startsWith('music:radio:')) return false;
+  if (!interaction.customId?.startsWith('music:radio:')) {
+    return false;
+  }
+
   const [, , id, action] = interaction.customId.split(':');
   const session = sessions.get(id);
+
   if (
     !session ||
     session.expires <= Date.now() ||
@@ -200,6 +231,7 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
     });
     return true;
   }
+
   if (action === 'search') {
     await interaction.showModal(
       new ModalBuilder()
@@ -218,8 +250,10 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
     );
     return true;
   }
+
   if (['station', 'last'].includes(action)) {
     const record = JSON.parse(setting(`music_panel:${session.guildId}`) || 'null');
+
     if (record?.messageId !== session.messageId) {
       await interaction.reply({
         content: t('แผงนี้ไม่ได้ใช้งานแล้ว ให้ใช้แผงเพลงล่าสุด'),
@@ -227,6 +261,7 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
       });
       return true;
     }
+
     if (session.busy) {
       await interaction.reply({
         content: t('กำลังตรวจสถานี รอสักครู่'),
@@ -234,16 +269,22 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
       });
       return true;
     }
+
     const station =
       action === 'last'
         ? lastStation(session.guildId)
         : session.rows[Number(interaction.values[0])];
     const voice = await voiceChannelFor(interaction);
-    if (!voice || !station) return true;
+
+    if (!voice || !station) {
+      return true;
+    }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     session.busy = true;
     const requestedVersion = musicRequestVersion(session.guildId);
     let health;
+
     try {
       health = await probeRadio(station, { refresh: true });
     } catch {
@@ -251,6 +292,7 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
       await interaction.editReply(t('ตรวจสถานีไม่สำเร็จ ลองใหม่อีกครั้ง'));
       return true;
     }
+
     if (health.status !== 'online') {
       await interaction.editReply(
         `${station.name}: ${t(radioHealthLabels[health.status])}\n${t('เพลงเดิมยังเล่นต่อ เลือกสถานีอื่นได้')}`,
@@ -258,6 +300,7 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
       session.busy = false;
       return true;
     }
+
     try {
       await playRadio(session.guildId, voice, station, {
         requestedVersion,
@@ -282,8 +325,10 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
     } finally {
       session.busy = false;
     }
+
     return true;
   }
+
   if (action === 'query') {
     session.query = interaction.fields.getTextInputValue('query').trim();
     session.page = 0;
@@ -291,25 +336,36 @@ export async function handleRadioPanel(interaction, voiceChannelFor) {
     await interaction.editReply(await body(session));
   } else {
     await interaction.deferUpdate();
+
     if (action === 'area') {
       session.area = Object.hasOwn(radioAreas, interaction.values[0])
         ? interaction.values[0]
         : 'all';
       session.page = 0;
     }
+
     if (action === 'category') {
       session.category = Object.hasOwn(radioCategories, interaction.values[0])
         ? interaction.values[0]
         : 'all';
       session.page = 0;
     }
+
     if (action === 'clear') {
       session.query = '';
       session.page = 0;
     }
-    if (action === 'prev') session.page--;
-    if (action === 'next') session.page++;
+
+    if (action === 'prev') {
+      session.page--;
+    }
+
+    if (action === 'next') {
+      session.page++;
+    }
+
     await interaction.editReply(await body(session));
   }
+
   return true;
 }

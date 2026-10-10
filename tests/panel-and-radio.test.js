@@ -14,27 +14,36 @@ test('Calendar requires a configured channel and enabled notifications', () => {
 });
 test('Radio catalog contains music, news, education and local stations', () => {
   assert(RADIO_STATIONS.length >= 20);
-  for (const category of ['music', 'news', 'talk', 'local'])
+
+  for (const category of ['music', 'news', 'talk', 'local']) {
     assert(RADIO_STATIONS.some((station) => radioCategory(station) === category));
+  }
+
   assert.equal(stationFrequency({ name: 'FM 100.5 MHz MCOT news' }), '100.5');
   assert.equal(stationFrequency({ name: 'NBT AM 891' }), '');
 });
 test('Panel logs redact environment credentials and interaction tokens', () => {
   process.env.TEST_SECRET = 'synthetic-sensitive-value';
+
   try {
     const result = redactLog(
       'synthetic-sensitive-value /interactions/123/private-token/callback ' +
         'mongodb+srv://' +
         'user:pass@example.test password=hidden',
     );
-    for (const value of ['synthetic-sensitive-value', 'private-token', 'user:pass', 'hidden'])
+
+    for (const value of ['synthetic-sensitive-value', 'private-token', 'user:pass', 'hidden']) {
       assert(!result.includes(value));
+    }
   } finally {
     delete process.env.TEST_SECRET;
   }
 });
 test('Panel log history and text lengths are bounded', () => {
-  for (let i = 0; i < 550; i++) appendLog('info', 'x'.repeat(2500));
+  for (let i = 0; i < 550; i++) {
+    appendLog('info', 'x'.repeat(2500));
+  }
+
   const result = botLogs();
   assert.equal(result.entries.length, 200);
   assert(result.entries.every((entry) => entry.text.length <= 2000));

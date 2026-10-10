@@ -11,6 +11,80 @@
   --red: #dd6972;
   --green: #63c99a;
 }
+#feedback-unread[hidden] {
+  display: none;
+}
+.feedback-inbox-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: 20px;
+}
+.feedback-inbox-toolbar label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+.feedback-inbox-toolbar select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+}
+.feedback-card {
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.feedback-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+}
+.feedback-unread {
+  border-inline-start: 3px solid var(--green);
+}
+.feedback-detail {
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+}
+.feedback-message {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+.feedback-inbox-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.feedback-inbox-images img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.feedback-inbox-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-block: 20px;
+}
+@media (max-width: 600px) {
+  .feedback-inbox-toolbar label {
+    flex: 1 0 100%;
+  }
+  .feedback-inbox-toolbar button {
+    min-height: 44px;
+  }
+  .feedback-inbox-images {
+    grid-template-columns: 1fr;
+  }
+}
 * {
   box-sizing: border-box;
 }

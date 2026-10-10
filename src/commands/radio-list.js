@@ -26,8 +26,13 @@ import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 
 const sessions = new Map();
 const lifetime = 3 * 60 * 1000;
+
 function cleanSessions() {
-  for (const [id, session] of sessions) if (session.expires <= Date.now()) sessions.delete(id);
+  for (const [id, session] of sessions) {
+    if (session.expires <= Date.now()) {
+      sessions.delete(id);
+    }
+  }
 }
 
 export async function showRadioList(interaction) {
@@ -36,18 +41,24 @@ export async function showRadioList(interaction) {
   const category = interaction.options.getString('category');
   const page = interaction.options.getInteger('page') || 1;
   let dynamic = [];
+
   try {
     dynamic = await getRadioDirectory();
   } catch (error) {
     console.warn('[radio] directory:', error.message);
   }
+
   const seen = new Set(RADIO_STATIONS.map((station) => station.url));
   const stations = [
     ...RADIO_STATIONS,
     ...dynamic
       .filter((station) => {
         const url = station.url_resolved || station.url;
-        if (!url || seen.has(url)) return false;
+
+        if (!url || seen.has(url)) {
+          return false;
+        }
+
         seen.add(url);
         return true;
       })
@@ -67,10 +78,17 @@ export async function showRadioList(interaction) {
       (!category || radioCategory(station) === category),
   );
   const pages = Math.max(1, Math.ceil(filtered.length / 10));
-  if (!filtered.length || page > pages)
+
+  if (!filtered.length || page > pages) {
     return interaction.editReply(t('ไม่พบสถานีในหน้าหรือหมวดนี้'));
+  }
+
   cleanSessions();
-  if (sessions.size >= 100) sessions.delete(sessions.keys().next().value);
+
+  if (sessions.size >= 100) {
+    sessions.delete(sessions.keys().next().value);
+  }
+
   const id = randomUUID();
   const session = {
     id,
@@ -99,12 +117,14 @@ async function radioListBody(session, refresh = false) {
     (station, index) =>
       `${t(radioHealthLabels[statuses[index].status])} · **${station.name.replace(/[*`\n]/g, '').slice(0, 85)}**${station.frequency ? ` (${station.frequency} FM)` : ''}`,
   );
+
   const button = (action, label, disabled = false) =>
     new ButtonBuilder()
       .setCustomId(`radio:list:${id}:${action}`)
       .setLabel(t(label))
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled);
+
   return {
     content:
       t('📻 สถานีวิทยุ · หน้า {0}/{1}\n', page, pages) +
@@ -193,10 +213,14 @@ function filterStations(session) {
 }
 
 export async function handleRadioListButton(interaction) {
-  if (!interaction.customId?.startsWith('radio:list:')) return false;
+  if (!interaction.customId?.startsWith('radio:list:')) {
+    return false;
+  }
+
   cleanSessions();
   const [, , id, action] = interaction.customId.split(':');
   const session = sessions.get(id);
+
   if (
     !session ||
     session.owner !== interaction.user.id ||
@@ -209,6 +233,7 @@ export async function handleRadioListButton(interaction) {
     });
     return true;
   }
+
   if (action === 'search') {
     await interaction.showModal(
       new ModalBuilder()
@@ -227,6 +252,7 @@ export async function handleRadioListButton(interaction) {
     );
     return true;
   }
+
   if (action === 'play' || action === 'last') {
     if (session.busy) {
       await interaction.reply({
@@ -235,19 +261,29 @@ export async function handleRadioListButton(interaction) {
       });
       return true;
     }
+
     let station;
+
     if (action === 'last') {
       try {
         station = JSON.parse(setting(`music_radio_last:${session.guildId}`) || 'null');
       } catch {}
     } else {
       const index = Number(interaction.values[0]);
-      if (Number.isInteger(index) && index >= (session.page - 1) * 10 && index < session.page * 10)
+
+      if (
+        Number.isInteger(index) &&
+        index >= (session.page - 1) * 10 &&
+        index < session.page * 10
+      ) {
         station = session.stations[index];
+      }
     }
+
     const voice = interaction.member.voice?.channel;
     const { getPlayer } = await import('../music/player.js');
     const connected = getPlayer(session.guildId)?.connection?.joinConfig.channelId;
+
     if (!station || !voice || (connected && connected !== voice.id)) {
       await interaction.reply({
         content: t('เลือกสถานีจากหน้าปัจจุบันและเข้าห้องเสียงเดียวกับบอทก่อน'),
@@ -255,17 +291,21 @@ export async function handleRadioListButton(interaction) {
       });
       return true;
     }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     session.busy = true;
     const requestedVersion = musicRequestVersion(session.guildId);
+
     try {
       const health = await probeRadio(station, { refresh: true });
+
       if (health.status !== 'online') {
         await interaction.editReply(
           `${station.name}: ${t(radioHealthLabels[health.status])}\n${t('เพลงเดิมยังเล่นต่อ เลือกสถานีอื่นได้')}`,
         );
         return true;
       }
+
       await playRadio(session.guildId, voice, station, {
         requestedVersion,
         valid: () =>
@@ -289,29 +329,53 @@ export async function handleRadioListButton(interaction) {
     } finally {
       session.busy = false;
     }
+
     return true;
   }
+
   if (!['prev', 'next', 'refresh', 'area', 'category', 'query', 'clear'].includes(action)) {
     await interaction.deferUpdate();
     return true;
   }
-  if (action === 'query') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  else await interaction.deferUpdate();
-  if (session.busy) return true;
+
+  if (action === 'query') {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  } else {
+    await interaction.deferUpdate();
+  }
+
+  if (session.busy) {
+    return true;
+  }
+
   session.busy = true;
   const previous = session.page;
+
   try {
-    if (action === 'area')
+    if (action === 'area') {
       session.area = Object.hasOwn(radioAreas, interaction.values[0])
         ? interaction.values[0]
         : 'all';
-    if (action === 'category')
+    }
+
+    if (action === 'category') {
       session.category = Object.hasOwn(radioCategories, interaction.values[0])
         ? interaction.values[0]
         : 'all';
-    if (action === 'query') session.query = interaction.fields.getTextInputValue('query').trim();
-    if (action === 'clear') session.query = '';
-    if (['area', 'category', 'query', 'clear'].includes(action)) filterStations(session);
+    }
+
+    if (action === 'query') {
+      session.query = interaction.fields.getTextInputValue('query').trim();
+    }
+
+    if (action === 'clear') {
+      session.query = '';
+    }
+
+    if (['area', 'category', 'query', 'clear'].includes(action)) {
+      filterStations(session);
+    }
+
     const pages = Math.max(1, Math.ceil(session.stations.length / 10));
     session.page = Math.max(
       1,
@@ -330,5 +394,6 @@ export async function handleRadioListButton(interaction) {
   } finally {
     session.busy = false;
   }
+
   return true;
 }

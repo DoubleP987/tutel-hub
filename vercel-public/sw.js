@@ -1,19 +1,21 @@
-const CACHE = 'tutel-v19',
-  ASSETS = [
-    '/app.css',
-    '/preferences.js',
-    '/calendar-view.js',
-    '/icon.png',
-    '/app-icon.png',
-    '/manifest.webmanifest',
-    '/',
-    '/calendar.js',
-    '/api/calendar',
-  ];
+const CACHE = 'tutel-v19';
+const ASSETS = [
+  '/app.css',
+  '/preferences.js',
+  '/calendar-view.js',
+  '/icon.png',
+  '/app-icon.png',
+  '/manifest.webmanifest',
+  '/',
+  '/calendar.js',
+  '/api/calendar',
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
   self.skipWaiting();
 });
+
 self.addEventListener('activate', (event) =>
   event.waitUntil(
     caches
@@ -26,14 +28,18 @@ self.addEventListener('activate', (event) =>
       .then(() => self.clients.claim()),
   ),
 );
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
   if (
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     !ASSETS.includes(url.pathname)
-  )
+  ) {
     return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -41,6 +47,7 @@ self.addEventListener('fetch', (event) => {
           const copy = response.clone();
           event.waitUntil(caches.open(CACHE).then((c) => c.put(url.pathname, copy)));
         }
+
         return response;
       })
       .catch(async () => {

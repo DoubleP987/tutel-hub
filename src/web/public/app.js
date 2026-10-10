@@ -7,8 +7,11 @@ const state = {
   selectedDay: null,
   mode: 'calendar',
 };
-const $ = (s) => document.querySelector(s),
-  $$ = (s) => Array.from(document.querySelectorAll(s));
+
+const $ = (s) => document.querySelector(s);
+
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
 const monthTitle = new Intl.DateTimeFormat('th-TH', {
   timeZone: 'Asia/Bangkok',
   month: 'long',
@@ -25,34 +28,49 @@ const timeFmt = new Intl.DateTimeFormat('th-TH', {
   minute: '2-digit',
   hourCycle: 'h23',
 });
+
 function esc(s) {
   return String(s ?? '').replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 }
+
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
+
   if (options.body && typeof options.body !== 'string') {
     headers['Content-Type'] = 'application/json';
     options.body = JSON.stringify(options.body);
   }
-  if (options.method && options.method !== 'GET') headers['x-csrf-token'] = state.csrf;
+
+  if (options.method && options.method !== 'GET') {
+    headers['x-csrf-token'] = state.csrf;
+  }
+
   const r = await fetch(path, { ...options, headers });
+
   if (r.status === 401) {
     location.href = '/login';
     throw new Error('กรุณาเข้าสู่ระบบใหม่');
   }
+
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+
+  if (!r.ok) {
+    throw new Error(data.error || 'เกิดข้อผิดพลาด');
+  }
+
   return data;
 }
+
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2600);
 }
+
 function dayKey(d) {
   return (
     d.getFullYear() +
@@ -62,45 +80,65 @@ function dayKey(d) {
     String(d.getDate()).padStart(2, '0')
   );
 }
+
 function fromIso(iso) {
   return new Date(iso);
 }
+
 function startOfWeek(d) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
   return x;
 }
+
 async function init() {
   try {
     const s = await api('/api/session');
     state.user = s.user;
     state.csrf = s.csrf;
     const savedPrefs = await api('/api/preferences');
+
     if (savedPrefs.theme) {
       TutelPrefs.set(savedPrefs);
     }
+
     $('#role-badge').textContent = s.user.role === 'admin' ? 'ADMIN' : 'VIEW ONLY';
     $$('.admin-only').forEach((x) => x.classList.toggle('hidden', s.user.role !== 'admin'));
-    if (s.user.mustChange) await forcePasswordChange();
+
+    if (s.user.role === 'admin') {
+      void window.TutelFeedback?.count(api);
+    }
+
+    if (s.user.mustChange) {
+      await forcePasswordChange();
+    }
+
     wire();
     await loadGuilds();
     await loadEvents();
   } catch (e) {
-    if (e.message !== 'กรุณาเข้าสู่ระบบใหม่') toast(e.message);
+    if (e.message !== 'กรุณาเข้าสู่ระบบใหม่') {
+      toast(e.message);
+    }
   }
 }
+
 async function forcePasswordChange() {
   while (true) {
     const current = prompt('บัญชีเริ่มต้นต้องเปลี่ยนรหัสผ่านก่อนใช้งาน\\nกรอกรหัสผ่านปัจจุบัน');
+
     if (current === null) {
       location.href = '/login';
       return;
     }
+
     const next = prompt('ตั้งรหัสผ่านใหม่อย่างน้อย 10 ตัวอักษร');
+
     if (next === null) {
       location.href = '/login';
       return;
     }
+
     try {
       const result = await api('/api/password', {
         method: 'POST',
@@ -114,6 +152,7 @@ async function forcePasswordChange() {
     }
   }
 }
+
 function wire() {
   setInterval(() => {
     if (
@@ -121,16 +160,21 @@ function wire() {
       state.mode === 'control' &&
       !document.hidden &&
       !document.activeElement?.closest('#music-list')
-    )
+    ) {
       void loadBot({ quiet: true });
+    }
   }, 5000);
   void loadPublicSync();
   setInterval(() => {
-    if (state.user?.role === 'admin' && !document.hidden) void loadPublicSync();
+    if (state.user?.role === 'admin' && !document.hidden) {
+      void loadPublicSync();
+    }
   }, 60000);
+
   $('#sync-public-calendar').onclick = async () => {
     const button = $('#sync-public-calendar');
     button.disabled = true;
+
     try {
       const result = await api('/api/calendar-sync', { method: 'POST' });
       toast(result.pending ? 'รอเชื่อมการซิงก์ปฏิทิน' : 'ส่งข้อมูลปฏิทินแล้ว');
@@ -141,47 +185,64 @@ function wire() {
       button.disabled = false;
     }
   };
+
   $$('.nav-item[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
+
   $('#new-event').onclick = () => openEvent();
+
   $('#close-dialog').onclick = $('#cancel-dialog').onclick = () => $('#event-dialog').close();
   $('#event-form').onsubmit = saveEventForm;
   $('#delete-event').onclick = deleteCurrentEvent;
   $('#all-day-toggle').onchange = syncAllDay;
+
   field($('#event-form'), 'date').onchange = () => {
     const f = $('#event-form');
-    if (!field(f, 'endDate').value || field(f, 'endDate').value < field(f, 'date').value)
+
+    if (!field(f, 'endDate').value || field(f, 'endDate').value < field(f, 'date').value) {
       field(f, 'endDate').value = field(f, 'date').value;
+    }
   };
+
   field($('#event-form'), 'color').oninput = syncEventColor;
   $$('[data-event-color]').forEach((b) => {
     b.style.backgroundColor = b.dataset.eventColor;
+
     b.onclick = () => {
       field($('#event-form'), 'color').value = b.dataset.eventColor;
       syncEventColor();
     };
   });
+
   $('#close-details').onclick = () => $('#details-dialog').close();
+
   $('#logout').onclick = async () => {
     await api('/api/logout', { method: 'POST' });
     location.href = '/login';
   };
+
   $('#settings-form').onsubmit = saveSettings;
+
   $('#guild-select').onchange = () => loadChannels();
+
   $('#bot-toggle').onclick = toggleBot;
   $('#channel-select').onchange = updateChannelPin;
   $('#settings-form').addEventListener('input', previewNotification);
+
   $('#reset-notification-color').onclick = () => {
     field($('#settings-form'), 'notificationColor').value = '#4285f4';
     previewNotification();
   };
+
   $('#reset-notification-template').onclick = () => {
     field($('#settings-form'), 'notificationTemplate').value =
       '📅 {title}\n{schedule} · {date}\n{description}';
     previewNotification();
   };
+
   $('#test-channel').onclick = async () => {
     const b = $('#test-channel');
     b.disabled = true;
+
     try {
       await api('/api/settings/discord/test', {
         method: 'POST',
@@ -195,18 +256,32 @@ function wire() {
     }
   };
 }
+
 function showPage(name) {
   state.mode = name;
   $$('.page').forEach((p) => p.classList.add('hidden'));
   $('#' + name + '-page').classList.remove('hidden');
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
-  if (name === 'calendar-admin') window.TutelCalendarAdmin?.open(api, toast);
-  if (name === 'control') loadBot();
-  if (name === 'settings')
+
+  if (name === 'calendar-admin') {
+    window.TutelCalendarAdmin?.open(api, toast);
+  }
+
+  if (name === 'feedback') {
+    window.TutelFeedback?.open(api, toast);
+  }
+
+  if (name === 'control') {
+    loadBot();
+  }
+
+  if (name === 'settings') {
     loadSettings().catch((e) => {
       $('#settings-message').textContent = e.message;
     });
+  }
 }
+
 async function loadEvents() {
   const request = (state.eventRequest = (state.eventRequest || 0) + 1);
   const month = (state.selectedDay || bkkInput(new Date()).slice(0, 10)).slice(0, 7);
@@ -222,13 +297,19 @@ async function loadEvents() {
       '&to=' +
       encodeURIComponent(to.toISOString()),
   );
-  if (request !== state.eventRequest) return;
+
+  if (request !== state.eventRequest) {
+    return;
+  }
+
   state.events = events;
   renderCalendar();
 }
+
 let workspace;
+
 function renderCalendar() {
-  if (!workspace)
+  if (!workspace) {
     workspace = new TutelCalendar($('#calendar-workspace'), {
       day: state.selectedDay || bkkInput(new Date()).slice(0, 10),
       onNavigate: (day) => {
@@ -245,16 +326,22 @@ function renderCalendar() {
             }
           : null,
       onOpen: (event) => {
-        if (state.user.role === 'admin' && !event.systemHoliday) editEvent(event.id);
-        else showDetails(event);
+        if (state.user.role === 'admin' && !event.systemHoliday) {
+          editEvent(event.id);
+        } else {
+          showDetails(event);
+        }
       },
     });
+  }
+
   workspace.update({
     events: state.events,
     day: state.selectedDay || bkkInput(new Date()).slice(0, 10),
   });
   selectDay(state.selectedDay || bkkInput(new Date()).slice(0, 10));
 }
+
 function selectDay(day) {
   state.selectedDay = day;
   $('#selected-title').textContent =
@@ -265,10 +352,11 @@ function selectDay(day) {
   $$('.day').forEach((x) => x.classList.toggle('selected', x.dataset.day === day));
   renderEventList();
 }
+
 function renderEventList() {
-  const list = $('#event-list'),
-    day = state.selectedDay || dayKey(new Date()),
-    items = state.events.filter((e) => TutelPrefs.visible(e) && occursOn(e, day));
+  const list = $('#event-list');
+  const day = state.selectedDay || dayKey(new Date());
+  const items = state.events.filter((e) => TutelPrefs.visible(e) && occursOn(e, day));
   list.innerHTML = items.length
     ? items
         .map(
@@ -289,12 +377,19 @@ function renderEventList() {
     : '<div class="muted">ไม่มีรายการในวันนี้</div>';
   $$('.event-card[data-index]').forEach((x) => {
     x.style.borderLeftColor = items[Number(x.dataset.index)].color || '#4285f4';
+
     const act = () => {
       const e = items[Number(x.dataset.index)];
-      if (state.user.role === 'admin' && !e.systemHoliday) editEvent(e.id);
-      else showDetails(e);
+
+      if (state.user.role === 'admin' && !e.systemHoliday) {
+        editEvent(e.id);
+      } else {
+        showDetails(e);
+      }
     };
+
     x.onclick = act;
+
     x.onkeydown = (e) => {
       if (['Enter', ' '].includes(e.key)) {
         e.preventDefault();
@@ -303,6 +398,7 @@ function renderEventList() {
     };
   });
 }
+
 function openEvent(date, minute = null) {
   const f = $('#event-form');
   f.reset();
@@ -321,6 +417,7 @@ function openEvent(date, minute = null) {
   field(f, 'startsAt').value = day + 'T09:00';
   field(f, 'endsAt').value = day + 'T10:00';
   field(f, 'guildId').value = $('#guild-select').value || state.configs?.[0]?.guild_id || '';
+
   if (minute !== null) {
     field(f, 'allDay').checked = false;
     field(f, 'startsAt').value =
@@ -333,10 +430,12 @@ function openEvent(date, minute = null) {
       new Date(new Date(field(f, 'startsAt').value + ':00+07:00').getTime() + 3600000),
     );
   }
+
   syncAllDay();
   $('#event-dialog').showModal();
   field(f, 'title').focus();
 }
+
 function bkkInput(iso) {
   const p = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Bangkok',
@@ -350,9 +449,14 @@ function bkkInput(iso) {
   const v = Object.fromEntries(p.map((x) => [x.type, x.value]));
   return v.year + '-' + v.month + '-' + v.day + 'T' + v.hour + ':' + v.minute;
 }
+
 async function editEvent(id) {
   const e = state.events.find((x) => x.id === id);
-  if (!e) return;
+
+  if (!e) {
+    return;
+  }
+
   const f = $('#event-form');
   f.reset();
   field(f, 'id').value = e.id;
@@ -375,11 +479,12 @@ async function editEvent(id) {
   $('#delete-event').classList.remove('hidden');
   $('#event-dialog').showModal();
 }
+
 async function saveEventForm(e) {
   e.preventDefault();
-  const f = e.currentTarget,
-    allDay = field(f, 'allDay').checked,
-    standard = allDay || field(f, 'reminder').value === 'standard';
+  const f = e.currentTarget;
+  const allDay = field(f, 'allDay').checked;
+  const standard = allDay || field(f, 'reminder').value === 'standard';
   const body = {
     color: field(f, 'color').value,
     endDate: field(f, 'endDate').value,
@@ -395,6 +500,7 @@ async function saveEventForm(e) {
     holiday: field(f, 'holiday').checked,
     allDay,
   };
+
   try {
     const id = field(f, 'id').value;
     await api('/api/events' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
@@ -405,9 +511,14 @@ async function saveEventForm(e) {
     $('#event-error').textContent = err.message;
   }
 }
+
 async function deleteCurrentEvent() {
   const id = field($('#event-form'), 'id').value;
-  if (!id || !confirm('ลบกิจกรรมนี้?')) return;
+
+  if (!id || !confirm('ลบกิจกรรมนี้?')) {
+    return;
+  }
+
   try {
     await api('/api/events/' + id, { method: 'DELETE' });
     $('#event-dialog').close();
@@ -417,12 +528,17 @@ async function deleteCurrentEvent() {
     $('#event-error').textContent = e.message;
   }
 }
+
 async function loadGuilds() {
-  if (state.user.role !== 'admin') return;
+  if (state.user.role !== 'admin') {
+    return;
+  }
+
   try {
     const d = await api('/api/guilds');
     state.guilds = d.guilds;
     state.configs = d.configs;
+
     for (const select of [$('#guild-select'), $('#event-guild')]) {
       const previous = select.value;
       select.innerHTML =
@@ -434,6 +550,7 @@ async function loadGuilds() {
           .join('');
       select.value = previous;
     }
+
     $('#public-calendar-url').value = d.publicCalendarUrl;
     $('#netlify-status').textContent = d.netlify?.configured
       ? (d.netlify.provider || 'Netlify') +
@@ -447,25 +564,36 @@ async function loadGuilds() {
     $('#settings-message').textContent = e.message;
   }
 }
+
 async function loadSettings() {
   await loadGuilds();
-  if (!$('#guild-select').value)
+
+  if (!$('#guild-select').value) {
     $('#guild-select').value = state.configs?.[0]?.guild_id || state.guilds[0]?.id || '';
+  }
+
   await loadChannels();
 }
+
 async function loadChannels() {
-  const id = $('#guild-select').value,
-    sel = $('#channel-select');
+  const id = $('#guild-select').value;
+  const sel = $('#channel-select');
   sel.disabled = true;
   sel.innerHTML = '<option value="">กำลังโหลด...</option>';
   $('#settings-message').textContent = '';
+
   try {
     if (!id) {
       sel.innerHTML = '<option value="">เลือก server ก่อน</option>';
       return;
     }
+
     const d = await api('/api/guilds/' + encodeURIComponent(id) + '/channels');
-    if ($('#guild-select').value !== id) return;
+
+    if ($('#guild-select').value !== id) {
+      return;
+    }
+
     const channels = d.channels || [];
     sel.innerHTML =
       '<option value="">' +
@@ -475,14 +603,18 @@ async function loadChannels() {
         .map((c) => '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>')
         .join('');
     const cfg = state.configs?.find((c) => c.guild_id === id);
+
     if (cfg) {
       sel.value = cfg.channel_id || '';
       field($('#settings-form'), 'defaultReminder').value = String(cfg.default_reminder);
     }
+
     populateReminderOptions(cfg?.options);
     updateChannelPin();
-    if (!channels.length)
+
+    if (!channels.length) {
       $('#settings-message').textContent = 'ให้สิทธิ์ View Channels และ Send Messages แก่บอท';
+    }
   } catch (e) {
     sel.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
     $('#settings-message').textContent = e.message;
@@ -490,9 +622,11 @@ async function loadChannels() {
     sel.disabled = false;
   }
 }
+
 async function saveSettings(e) {
   e.preventDefault();
   const f = e.currentTarget;
+
   try {
     await api('/api/settings/discord', {
       method: 'POST',
@@ -514,14 +648,21 @@ async function saveSettings(e) {
     field(f, 'secretPin').value = '';
   }
 }
+
 let botStatusLoading = false;
 let hostSwitchPending = false;
+
 async function loadBot({ quiet = false } = {}) {
-  if (botStatusLoading) return;
+  if (botStatusLoading) {
+    return;
+  }
+
   botStatusLoading = true;
+
   try {
     const cluster = await api('/api/cluster');
     $('#cluster-control').classList.toggle('hidden', !cluster.enabled);
+
     if (cluster.enabled) {
       const active =
         cluster.botEnabled && cluster.expiresAt && new Date(cluster.expiresAt) > new Date()
@@ -541,13 +682,18 @@ async function loadBot({ quiet = false } = {}) {
           String(button.dataset.clusterTarget === cluster.target),
         );
         button.disabled = hostSwitchPending;
+
         button.onclick = async () => {
-          if (hostSwitchPending || button.dataset.clusterTarget === cluster.target) return;
+          if (hostSwitchPending || button.dataset.clusterTarget === cluster.target) {
+            return;
+          }
+
           hostSwitchPending = true;
           $$('[data-cluster-target]').forEach((item) => {
             item.disabled = true;
           });
           $('#cluster-status').textContent = 'กำลังบันทึกโหมดการทำงาน…';
+
           try {
             await api('/api/cluster', {
               method: 'POST',
@@ -568,6 +714,7 @@ async function loadBot({ quiet = false } = {}) {
         };
       });
     }
+
     const d = await api('/api/bot');
     const s = $('#bot-status');
     s.innerHTML =
@@ -652,6 +799,7 @@ async function loadBot({ quiet = false } = {}) {
     $$('[data-music-source]').forEach((select) => {
       select.onchange = async () => {
         select.disabled = true;
+
         try {
           await api('/api/control/music/source', {
             method: 'PUT',
@@ -668,11 +816,15 @@ async function loadBot({ quiet = false } = {}) {
     });
   } catch (e) {
     $('#music-status-updated').textContent = 'อัปเดตสถานะไม่สำเร็จ: ' + e.message;
-    if (!quiet) toast(e.message);
+
+    if (!quiet) {
+      toast(e.message);
+    }
   } finally {
     botStatusLoading = false;
   }
 }
+
 async function musicAction(guildId, action) {
   try {
     await api('/api/control/music', { method: 'POST', body: { guildId, action } });
@@ -682,8 +834,10 @@ async function musicAction(guildId, action) {
     toast(e.message);
   }
 }
+
 async function toggleBot() {
   const enabled = $('#bot-toggle').textContent.includes('เปิด');
+
   try {
     await api('/api/bot/toggle', { method: 'POST', body: { enabled } });
     toast(enabled ? 'เปิดบอทแล้ว' : 'ปิดบอทแล้ว');
@@ -696,21 +850,24 @@ async function toggleBot() {
 function field(form, name) {
   return form.elements.namedItem(name);
 }
+
 function occursOn(event, day) {
-  const start = new Date(day + 'T00:00:00+07:00').getTime(),
-    end = start + 86400000;
+  const start = new Date(day + 'T00:00:00+07:00').getTime();
+  const end = start + 86400000;
   return (
     new Date(event.occurrence_at).getTime() < end &&
     new Date(event.occurrence_end).getTime() > start
   );
 }
+
 function changeMonth(offset) {
   state.month = new Date(state.month.getFullYear(), state.month.getMonth() + offset, 1);
   loadEvents().catch((e) => toast(e.message));
 }
+
 function syncAllDay() {
-  const f = $('#event-form'),
-    on = field(f, 'allDay').checked;
+  const f = $('#event-form');
+  const on = field(f, 'allDay').checked;
   $('#time-fields').classList.toggle('hidden', on);
   $('#date-field').classList.toggle('hidden', !on);
   $('#end-date-field').classList.toggle('hidden', !on);
@@ -718,8 +875,12 @@ function syncAllDay() {
   field(f, 'date').required = on;
   field(f, 'startsAt').required = !on;
   field(f, 'endsAt').required = !on;
-  if (on) field(f, 'reminder').value = 'standard';
+
+  if (on) {
+    field(f, 'reminder').value = 'standard';
+  }
 }
+
 function showDetails(e) {
   $('#detail-title').textContent = e.title;
   $('#detail-when').textContent =
@@ -744,9 +905,10 @@ const reminderDefaults = {
   dayTime: '07:00',
   showDetails: true,
 };
+
 function populateReminderOptions(value) {
-  const options = { ...reminderDefaults, ...value },
-    f = $('#settings-form');
+  const options = { ...reminderDefaults, ...value };
+  const f = $('#settings-form');
   $('#notify-categories').innerHTML = TutelPrefs.categories
     .map(
       ([id, label]) =>
@@ -759,21 +921,27 @@ function populateReminderOptions(value) {
         '</label>',
     )
     .join('');
+
   for (const [name, key] of [
     ['notifyEnabled', 'enabled'],
     ['notifyNonHolidays', 'notifyNonHolidays'],
     ['dayEnabled', 'dayEnabled'],
     ['showDetails', 'showDetails'],
-  ])
+  ]) {
     field(f, name).checked = options[key];
+  }
+
   for (const [name, key] of [
     ['notificationColor', 'color'],
     ['notificationTemplate', 'template'],
     ['dayTime', 'dayTime'],
-  ])
+  ]) {
     field(f, name).value = options[key];
+  }
+
   previewNotification();
 }
+
 function readReminderOptions() {
   const f = $('#settings-form');
   return {
@@ -789,17 +957,22 @@ function readReminderOptions() {
     showDetails: field(f, 'showDetails').checked,
   };
 }
+
 function previewNotification() {
   const f = $('#settings-form');
-  if (!field(f, 'notificationColor')) return;
-  const p = $('#notification-preview'),
-    sample = {
-      title: 'ปฏิทินวันนี้ · 2 รายการ',
-      date: 'วันศุกร์ที่ 2 ตุลาคม 2569',
-      schedule: 'วันนี้',
-      description: '',
-      category: 'วันหยุดราชการ',
-    };
+
+  if (!field(f, 'notificationColor')) {
+    return;
+  }
+
+  const p = $('#notification-preview');
+  const sample = {
+    title: 'ปฏิทินวันนี้ · 2 รายการ',
+    date: 'วันศุกร์ที่ 2 ตุลาคม 2569',
+    schedule: 'วันนี้',
+    description: '',
+    category: 'วันหยุดราชการ',
+  };
   p.style.borderLeftColor = field(f, 'notificationColor').value;
   p.textContent =
     field(f, 'notificationTemplate').value.replace(
@@ -809,13 +982,15 @@ function previewNotification() {
     '\n\n• ทั้งวัน · วันสำคัญ\n\n• 11:30–12:30 · ประชุมทีม' +
     (field(f, 'showDetails').checked ? '\n  รายละเอียดกิจกรรมของคุณ' : '');
 }
+
 function updateChannelPin() {
-  const f = $('#settings-form'),
-    cfg = state.configs?.find((c) => c.guild_id === $('#guild-select').value),
-    changed = cfg?.channel_id !== $('#channel-select').value;
+  const f = $('#settings-form');
+  const cfg = state.configs?.find((c) => c.guild_id === $('#guild-select').value);
+  const changed = cfg?.channel_id !== $('#channel-select').value;
   $('#channel-pin-label').classList.toggle('hidden', !changed);
   field(f, 'secretPin').required = changed;
 }
+
 window.addEventListener('tutel:display', (event) => {
   if (state.user) {
     renderCalendar();
@@ -831,10 +1006,14 @@ function syncEventColor() {
     b.setAttribute('aria-pressed', String(b.dataset.eventColor === color)),
   );
 }
+
 init();
 
 async function loadPublicSync() {
-  if (state.user?.role !== 'admin') return;
+  if (state.user?.role !== 'admin') {
+    return;
+  }
+
   try {
     const status = await api('/api/calendar-sync');
     $('#netlify-status').textContent = status.configured

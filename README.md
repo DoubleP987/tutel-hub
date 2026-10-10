@@ -1,5 +1,7 @@
 # Tutel Hub
 
+[Source readability / แนวทางจัดโค้ด](docs/CODE-STYLE.md)
+
 [Developer handbook](docs/DEVELOPMENT.md) · [คู่มือผู้พัฒนา](docs/DEVELOPMENT.th.md) · [Contributing / ขั้นตอนส่งงาน](CONTRIBUTING.md)
 
 ## Separate Calendar repository / repo ปฏิทินแยก
@@ -267,3 +269,7 @@ Tutel’s public promotional website describes the Discord music and live-radio 
 
 - [English guide](docs/BOT-IDENTITIES.md)
 - [คู่มือภาษาไทย](docs/BOT-IDENTITIES.th.md)
+
+## Calendar Feedback inbox
+
+The main panel has an admin-only inbox for Calendar Feedback and private image attachments. See [Feedback integration](docs/FEEDBACK.md).

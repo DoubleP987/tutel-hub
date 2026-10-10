@@ -7,10 +7,12 @@ import {
   privateMenuExpired,
   PRIVATE_MENU_TTL_MS,
 } from '../src/bot/private-replies.js';
+
 const removed = [];
 test('Private menu has a hard three-minute limit; editing does not extend it', async (context) => {
   context.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   removed.length = 0;
+
   try {
     const menu = interaction('timed-menu');
     await menu.reply({ flags: 64, components: [{}] });
@@ -44,6 +46,7 @@ test('Private menu has a hard three-minute limit; editing does not extend it', a
     context.mock.timers.reset();
   }
 });
+
 function interaction(id, user = 'user', channel = 'channel') {
   const value = {
     user: { id: user },
@@ -66,8 +69,10 @@ function interaction(id, user = 'user', channel = 'channel') {
   managePrivateReplies(value);
   return value;
 }
+
 test('Private responses replace only the same user/channel; public replies survive', async () => {
   removed.length = 0;
+
   try {
     const first = interaction('first');
     await first.reply({ flags: 64 });
@@ -85,6 +90,7 @@ test('Private responses replace only the same user/channel; public replies survi
 });
 test('An ephemeral follow-up deletes its own message, not the public original', async () => {
   removed.length = 0;
+
   try {
     const original = interaction('public-original');
     await original.reply({ content: 'public' });
@@ -97,6 +103,7 @@ test('An ephemeral follow-up deletes its own message, not the public original', 
 });
 test('An older request completing late cannot delete the newer private response', async () => {
   removed.length = 0;
+
   try {
     const older = interaction('older');
     const newer = interaction('newer');
@@ -111,6 +118,7 @@ test('An older request completing late cannot delete the newer private response'
 test('Music and radio default-private replies preserve content and keep only the latest response', async () => {
   const sent = [];
   const deleted = [];
+
   function command(id) {
     const value = {
       user: { id: 'private-user' },
@@ -128,6 +136,7 @@ test('Music and radio default-private replies preserve content and keep only the
     managePrivateReplies(value, { privateByDefault: true });
     return value;
   }
+
   try {
     await command('radio').reply('Multiple stations found');
     await command('random').deferReply();

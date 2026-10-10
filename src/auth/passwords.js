@@ -4,9 +4,11 @@ function decode(value) {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   return Buffer.from(normalized, 'base64');
 }
+
 function encode(value) {
   return Buffer.from(value).toString('base64url');
 }
+
 export function hashPassword(password) {
   const salt = randomBytes(16);
   const derived = scryptSync(String(password), salt, 64, {
@@ -17,10 +19,15 @@ export function hashPassword(password) {
   });
   return 'scrypt$32768$8$1$' + encode(salt) + '$' + encode(derived);
 }
+
 export function verifyPassword(password, packed) {
   try {
     const [algo, n, r, p, saltText, hashText] = packed.split('$');
-    if (algo !== 'scrypt') return false;
+
+    if (algo !== 'scrypt') {
+      return false;
+    }
+
     const expected = decode(hashText);
     const actual = scryptSync(String(password), decode(saltText), expected.length, {
       N: Number(n),

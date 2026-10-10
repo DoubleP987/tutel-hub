@@ -11,6 +11,7 @@ import { canRunBot } from '../../cluster/state.js';
 import { setting, setSetting } from '../../database/settings.js';
 
 let managedGuilds = new Set();
+
 export function groupCalendarGuild(guildId) {
   return managedGuilds.has(guildId);
 }
@@ -22,12 +23,20 @@ function embed(job, budget = 3600) {
   );
   let text = '';
   let shown = 0;
+
   for (const line of lines) {
-    if (text.length + line.length + 100 > budget) break;
+    if (text.length + line.length + 100 > budget) {
+      break;
+    }
+
     text += (text ? '\n' : '') + line;
     shown++;
   }
-  if (shown < lines.length) text += `\nอีก ${lines.length - shown} รายการ · เปิดดูทั้งหมดในปฏิทิน`;
+
+  if (shown < lines.length) {
+    text += `\nอีก ${lines.length - shown} รายการ · เปิดดูทั้งหมดในปฏิทิน`;
+  }
+
   return new EmbedBuilder()
     .setTitle(
       `${payload.groupName} · ${payload.kind === 'before' ? 'กิจกรรมพรุ่งนี้' : payload.kind === 'event' ? 'กิจกรรมใกล้ถึง' : 'กิจกรรมวันนี้'}`,
@@ -38,13 +47,22 @@ function embed(job, budget = 3600) {
 }
 
 export function startGroupCalendarWorker(getClient) {
-  if (!calendarConfigured()) return () => {};
-  let stopped = false,
-    running = false;
+  if (!calendarConfigured()) {
+    return () => {};
+  }
+
+  let stopped = false;
+  let running = false;
+
   async function tick() {
     const client = getClient();
-    if (stopped || running || !client?.isReady() || !canRunBot()) return;
+
+    if (stopped || running || !client?.isReady() || !canRunBot()) {
+      return;
+    }
+
     running = true;
+
     try {
       const bindings = await calendarRequest('/bindings');
       managedGuilds = new Set(bindings.map((b) => b.guild_id));
@@ -53,31 +71,51 @@ export function startGroupCalendarWorker(getClient) {
         body: { guildIds: [...client.guilds.cache.keys()] },
       });
       const batches = new Map();
+
       for (const job of jobs) {
         const key = `${job.guild_id}:${job.channel_id}:${job.payload.kind}:${job.payload.date}`;
-        if (!batches.has(key)) batches.set(key, []);
+
+        if (!batches.has(key)) {
+          batches.set(key, []);
+        }
+
         batches.get(key).push(job);
       }
+
       for (const batch of batches.values()) {
-        if (stopped || !canRunBot()) break;
+        if (stopped || !canRunBot()) {
+          break;
+        }
+
         const fresh = [];
+
         for (const job of batch) {
           const previous = setting(`calendar_job:${job.id}`);
+
           if (previous) {
             await calendarRequest(`/jobs/${job.id}/ack`, {
               method: 'POST',
               body: { claimToken: job.claimToken, messageId: previous },
             });
-          } else fresh.push(job);
+          } else {
+            fresh.push(job);
+          }
         }
-        if (!fresh.length) continue;
+
+        if (!fresh.length) {
+          continue;
+        }
+
         let channel;
+
         try {
           channel = await client.channels.fetch(fresh[0].channel_id);
-          if (!channel?.isTextBased() || channel.guildId !== fresh[0].guild_id)
+
+          if (!channel?.isTextBased() || channel.guildId !== fresh[0].guild_id) {
             throw new Error('Calendar channel unavailable');
+          }
         } catch (error) {
-          for (const job of fresh)
+          for (const job of fresh) {
             await calendarRequest(`/jobs/${job.id}/ack`, {
               method: 'POST',
               body: {
@@ -85,6 +123,8 @@ export function startGroupCalendarWorker(getClient) {
                 error: 'Channel unavailable; check bot permissions and binding',
               },
             }).catch(() => {});
+          }
+
           console.warn('[calendar groups] channel unavailable:', error.message);
           continue;
         }
@@ -92,8 +132,12 @@ export function startGroupCalendarWorker(getClient) {
         for (let offset = 0; offset < fresh.length; offset += 5) {
           const packet = fresh.slice(offset, offset + 5);
           const started = [];
+
           for (const job of packet) {
-            if (stopped || !canRunBot()) break;
+            if (stopped || !canRunBot()) {
+              break;
+            }
+
             try {
               await calendarRequest(`/jobs/${job.id}/start`, {
                 method: 'POST',
@@ -104,8 +148,14 @@ export function startGroupCalendarWorker(getClient) {
               console.warn('[calendar groups] claim unavailable:', error.message);
             }
           }
-          if (!started.length) continue;
-          if (stopped || !canRunBot()) continue; // Started claims become uncertain; a second host must not resend blindly.
+
+          if (!started.length) {
+            continue;
+          }
+
+          if (stopped || !canRunBot()) {
+            continue;
+          } // Started claims become uncertain; a second host must not resend blindly.
           try {
             const links = new ActionRowBuilder().addComponents(
               started
@@ -135,6 +185,7 @@ export function startGroupCalendarWorker(getClient) {
               nonce,
               enforceNonce: true,
             });
+
             for (const job of started) {
               await setSetting(`calendar_job:${job.id}`, message.id);
               await calendarRequest(`/jobs/${job.id}/ack`, {
@@ -143,7 +194,7 @@ export function startGroupCalendarWorker(getClient) {
               });
             }
           } catch (error) {
-            for (const job of started)
+            for (const job of started) {
               await calendarRequest(`/jobs/${job.id}/ack`, {
                 method: 'POST',
                 body: {
@@ -152,6 +203,8 @@ export function startGroupCalendarWorker(getClient) {
                   error: 'Delivery needs verification; do not retry blindly',
                 },
               }).catch(() => {});
+            }
+
             console.warn('[calendar groups] delivery requires verification:', error.message);
           }
         }
@@ -162,6 +215,7 @@ export function startGroupCalendarWorker(getClient) {
       running = false;
     }
   }
+
   const timer = setInterval(() => void tick(), 15000);
   timer.unref();
   void tick();

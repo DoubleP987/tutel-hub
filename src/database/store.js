@@ -14,28 +14,51 @@ const tables = new Set([
   'calendar_deliveries',
   'calendar_latest',
 ]);
+
 const clean = (row) => {
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
+
   const { _id, ...value } = row;
   return value;
 };
+
 function identifier(value) {
-  if (!/^[a-z_][a-z_0-9]*$/i.test(value)) throw new Error('Invalid database field');
+  if (!/^[a-z_][a-z_0-9]*$/i.test(value)) {
+    throw new Error('Invalid database field');
+  }
+
   return `"${value}"`;
 }
+
 function tableName(name) {
-  if (!tables.has(name)) throw new Error('Unknown database collection');
+  if (!tables.has(name)) {
+    throw new Error('Unknown database collection');
+  }
+
   return identifier(name);
 }
+
 function predicate(filter = {}, values = []) {
   const parts = Object.entries(filter).map(([key, value]) => {
-    if (key === '$or') return '(' + value.map((item) => predicate(item, values)).join(' OR ') + ')';
+    if (key === '$or') {
+      return '(' + value.map((item) => predicate(item, values)).join(' OR ') + ')';
+    }
+
     const field = identifier(key);
-    if (value === null) return `${field} IS NULL`;
+
+    if (value === null) {
+      return `${field} IS NULL`;
+    }
+
     if (value && typeof value === 'object') {
       return Object.entries(value)
         .map(([operator, operand]) => {
-          if (operand === null && operator === '$ne') return `${field} IS NOT NULL`;
+          if (operand === null && operator === '$ne') {
+            return `${field} IS NOT NULL`;
+          }
+
           const operators = {
             $ne: '<>',
             $gt: '>',
@@ -44,12 +67,17 @@ function predicate(filter = {}, values = []) {
             $lte: '<=',
             $like: 'LIKE',
           };
-          if (!operators[operator]) throw new Error('Unsupported database predicate');
+
+          if (!operators[operator]) {
+            throw new Error('Unsupported database predicate');
+          }
+
           values.push(operand);
           return `${field} ${operators[operator]} ?`;
         })
         .join(' AND ');
     }
+
     values.push(value);
     return `${field}=?`;
   });
@@ -66,12 +94,15 @@ class SqliteStore {
   async findMany(table, filter = {}, options = {}) {
     const values = [];
     let query = `SELECT * FROM ${tableName(table)} WHERE ${predicate(filter, values)}`;
-    if (options.sort)
+
+    if (options.sort) {
       query +=
         ' ORDER BY ' +
         Object.entries(options.sort)
           .map(([key, order]) => `${identifier(key)} ${order < 0 ? 'DESC' : 'ASC'}`)
           .join(',');
+    }
+
     return this.connection.prepare(query).all(...values);
   }
   async findOne(table, filter) {
@@ -173,6 +204,7 @@ export class MongoStore {
   }
   async insert(table, document) {
     const value = { ...document };
+
     if ((table === 'users' || table === 'events') && value.id === undefined) {
       const counter = await this.database
         .collection('counters')
@@ -183,6 +215,7 @@ export class MongoStore {
         );
       value.id = counter.value;
     }
+
     if (
       ['users', 'events', 'calendar_deliveries', 'reminder_log'].includes(table) &&
       !value.created_at &&
@@ -191,8 +224,15 @@ export class MongoStore {
       value[table.includes('deliveries') || table === 'reminder_log' ? 'sent_at' : 'created_at'] =
         new Date().toISOString();
     }
-    if (table === 'calendar_deliveries') value.active ??= 1;
-    if (table === 'guild_config') value.timezone ??= 'Asia/Bangkok';
+
+    if (table === 'calendar_deliveries') {
+      value.active ??= 1;
+    }
+
+    if (table === 'guild_config') {
+      value.timezone ??= 'Asia/Bangkok';
+    }
+
     await this.collection(table).insertOne(value);
     return clean(value);
   }
@@ -202,11 +242,16 @@ export class MongoStore {
   async remove(table, filter) {
     if (table === 'events' || table === 'users') {
       const rows = await this.findMany(table, filter);
+
       for (const row of rows) {
-        if (table === 'events') await this.remove('reminder_log', { event_id: row.id });
-        else await this.remove('sessions', { user_id: row.id });
+        if (table === 'events') {
+          await this.remove('reminder_log', { event_id: row.id });
+        } else {
+          await this.remove('sessions', { user_id: row.id });
+        }
       }
     }
+
     return (await this.collection(table).deleteMany(filter)).deletedCount;
   }
   async upsert(table, key, changes) {
@@ -221,9 +266,14 @@ export class MongoStore {
 }
 
 export async function createDataStore() {
-  if ((process.env.DATABASE_PROVIDER || 'sqlite') !== 'mongodb')
+  if ((process.env.DATABASE_PROVIDER || 'sqlite') !== 'mongodb') {
     return new SqliteStore(process.env.DATABASE_PATH || './data/tutel.sqlite');
-  if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required for the MongoDB provider');
+  }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI is required for the MongoDB provider');
+  }
+
   const client = new MongoClient(process.env.MONGODB_URI, {
     maxPoolSize: 5,
     minPoolSize: 0,
@@ -248,9 +298,13 @@ export async function createDataStore() {
     ],
     reminder_log: [{ event_id: 1, occurrence_at: 1, offset_minutes: 1 }],
   };
-  for (const [table, indexes] of Object.entries(unique))
-    for (const keys of indexes)
+
+  for (const [table, indexes] of Object.entries(unique)) {
+    for (const keys of indexes) {
       await database.collection(table).createIndex(keys, { unique: true });
+    }
+  }
+
   await database.collection('events').createIndex({ starts_at: 1 });
   await database.collection('events').createIndex({ guild_id: 1 });
   await database.collection('calendar_deliveries').createIndex({ channel_id: 1, active: 1 });

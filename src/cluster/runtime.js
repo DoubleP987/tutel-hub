@@ -9,18 +9,26 @@ const primary = process.env.CLUSTER_PRIMARY_NODE || 'homeserver';
 const nodes = ['homeserver', 'oracle'];
 const localLifetime = 6000n * 1000000n;
 const serverLifetime = 12000;
-let timer,
-  watchdog,
-  busy = false,
-  owned = false,
-  closing = false;
+let timer;
+let watchdog;
+let busy = false;
+let owned = false;
+let closing = false;
 const clock = new BigInt64Array(new SharedArrayBuffer(8));
+
 function collection(name) {
-  if (data.kind !== 'mongodb') throw new Error('Automatic failover requires MongoDB');
+  if (data.kind !== 'mongodb') {
+    throw new Error('Automatic failover requires MongoDB');
+  }
+
   return data.database.collection(name);
 }
+
 async function initialize() {
-  if (!nodes.includes(nodeId)) throw new Error('CLUSTER_NODE_ID must be homeserver or oracle');
+  if (!nodes.includes(nodeId)) {
+    throw new Error('CLUSTER_NODE_ID must be homeserver or oracle');
+  }
+
   await collection('cluster_leases').updateOne(
     { _id: 'bot' },
     { $setOnInsert: { enabled: true, target: 'auto', owner: null, expiresAt: new Date(0) } },
@@ -28,8 +36,12 @@ async function initialize() {
   );
   await collection('cluster_nodes').createIndex({ expiresAt: 1 });
 }
+
 export async function clusterStatus() {
-  if (!clusterEnabled()) return { enabled: false, node: nodeId };
+  if (!clusterEnabled()) {
+    return { enabled: false, node: nodeId };
+  }
+
   const [lease, status] = await Promise.all([
     collection('cluster_leases').findOne({ _id: 'bot' }),
     collection('cluster_nodes').find().project({ _id: 0 }).toArray(),
@@ -45,20 +57,29 @@ export async function clusterStatus() {
     failoverSeconds: 12,
   };
 }
+
 export async function setClusterTarget(target, enabled = true) {
-  if (!['auto', ...nodes].includes(target)) throw new Error('เลือก auto, homeserver หรือ oracle');
+  if (!['auto', ...nodes].includes(target)) {
+    throw new Error('เลือก auto, homeserver หรือ oracle');
+  }
+
   await collection('cluster_leases').updateOne(
     { _id: 'bot' },
     { $set: { target, enabled: Boolean(enabled) }, $currentDate: { changedAt: true } },
   );
   return clusterStatus();
 }
+
 export async function shutdownLocalNode() {
   const next = nodeId === 'homeserver' ? 'oracle' : 'homeserver';
   return setClusterTarget(next, true);
 }
+
 async function yieldLease() {
-  if (!owned) return;
+  if (!owned) {
+    return;
+  }
+
   setLeaseDeadline(0n);
   // Release is acknowledged only after Discord and voice sockets are closed.
   await stopBot();
@@ -71,9 +92,14 @@ async function yieldLease() {
   setLeaseDeadline(0n);
   console.log('[cluster] released Discord ownership');
 }
+
 async function tick() {
-  if (busy || closing) return;
+  if (busy || closing) {
+    return;
+  }
+
   busy = true;
+
   try {
     const heartbeat = await collection('cluster_nodes').findOneAndUpdate(
       { _id: nodeId },
@@ -99,10 +125,12 @@ async function tick() {
       control.enabled &&
       (control.target === nodeId ||
         (control.target === 'auto' && (nodeId === primary || !primaryAlive)));
+
     if (!eligible) {
       await yieldLease();
       return;
     }
+
     const started = process.hrtime.bigint();
     const lease = await collection('cluster_leases').findOneAndUpdate(
       {
@@ -114,19 +142,27 @@ async function tick() {
       [{ $set: { owner: nodeId, expiresAt: { $add: ['$$NOW', serverLifetime] } } }],
       { returnDocument: 'after' },
     );
+
     if (!lease) {
-      if (owned) await yieldLease();
+      if (owned) {
+        await yieldLease();
+      }
+
       return;
     }
+
     const deadline = started + localLifetime;
+
     if (process.hrtime.bigint() >= deadline) {
       await yieldLease();
       return;
     }
+
     owned = true;
     setLeaseDeadline(deadline);
     Atomics.store(clock, 0, deadline);
     await refreshSettings();
+
     if (!botStatus().enabled && canRunBot()) {
       // Login must not block subsequent lease renewal ticks.
       void startBot().catch((error) =>
@@ -140,8 +176,12 @@ async function tick() {
     busy = false;
   }
 }
+
 export async function startCluster() {
-  if (!clusterEnabled()) return;
+  if (!clusterEnabled()) {
+    return;
+  }
+
   await initialize();
   watchdog = new Worker(new URL('./watchdog.js', import.meta.url), {
     execArgv: [],
@@ -151,8 +191,12 @@ export async function startCluster() {
   timer = setInterval(() => void tick(), 2000);
   await tick();
 }
+
 export async function stopCluster() {
-  if (!clusterEnabled()) return;
+  if (!clusterEnabled()) {
+    return;
+  }
+
   closing = true;
   clearInterval(timer);
   await yieldLease();

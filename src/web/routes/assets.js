@@ -6,10 +6,12 @@ export function registerAssetsRoutes(app, publicPath) {
     'preferences.js',
     'bot-logs.js',
     'calendar-admin.js',
+    'feedback-inbox.js',
     'manifest.webmanifest',
     'sw.js',
     'icon.png',
     'app-icon.png',
-  ])
+  ]) {
     app.get('/' + file, (req, res) => res.sendFile(resolve(publicPath, file)));
+  }
 }

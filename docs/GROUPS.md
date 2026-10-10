@@ -2,7 +2,7 @@
 
 ## Current Calendar boundary - 10 October 2026
 
-Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new grouped Discord worker cutover remains pending; the privileged panel bridge is implemented. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
 
 Local revision: 10 October 2026. Source implemented; not deployed or runtime-tested in this revision. Existing production behavior is described separately in DEPLOYMENT.md. This guide supersedes earlier single-calendar assumptions.
 

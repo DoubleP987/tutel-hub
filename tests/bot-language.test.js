@@ -51,8 +51,10 @@ try {
   console.log('Language, command payloads, private help, dates, profile and user content: PASS');
 } finally { await data.close(); }
 `;
+
 function run(language, body = check) {
   const directory = mkdtempSync(join(tmpdir(), 'tutel-language-'));
+
   try {
     return spawnSync(process.execPath, ['--input-type=module', '-e', body], {
       cwd: directory,
@@ -72,12 +74,14 @@ function run(language, body = check) {
     rmSync(directory, { recursive: true, force: true });
   }
 }
+
 for (const language of ['th', 'en', '']) {
   test(`Bot language ${language || 'default Thai'}`, () => {
     const result = run(language);
     assert.equal(result.status, 0, result.stdout + result.stderr);
   });
 }
+
 test('Invalid language is rejected', () => {
   const result = run('fr', `await import('${source}config/bot.js');`);
   assert.notEqual(result.status, 0);

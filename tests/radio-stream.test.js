@@ -10,9 +10,11 @@ function fixture() {
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
   child.killed = false;
+
   child.kill = () => {
     child.killed = true;
   };
+
   let args;
   const context = {
     console: { log() {}, error() {}, warn() {} },
@@ -56,8 +58,13 @@ test('Radio decoder crashes and spawn errors are recorded as failures', () => {
   for (const errorType of ['signal', 'spawn']) {
     const fixtureState = fixture();
     const stream = fixtureState.context.createRadioResource({ url: 'https://station.test/live' });
-    if (errorType === 'signal') fixtureState.child.emit('close', null, 'SIGSEGV');
-    else fixtureState.child.emit('error', new Error('ENOENT'));
+
+    if (errorType === 'signal') {
+      fixtureState.child.emit('close', null, 'SIGSEGV');
+    } else {
+      fixtureState.child.emit('error', new Error('ENOENT'));
+    }
+
     assert.equal(stream.failed, true);
   }
 });

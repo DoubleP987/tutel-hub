@@ -8,3 +8,14 @@ backups/
 package-lock.json
 src/integrations/calendar/legacy/holy-days.json
 **/calendar.json
+feedback-uploads/
+secrets/
+coverage/
+*.sqlite*
+*.db*
+*.tar.gz
+*.zip
+*.pem
+*.key
+*.p12
+*.pfx

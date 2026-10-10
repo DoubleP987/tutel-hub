@@ -46,6 +46,7 @@ import { genreMenuRows } from './genre-menu.js';
 import { setRandomGenre } from './settings.js';
 
 let client = null;
+
 function musicSettingsBody(interaction, messageId) {
   const enabled = getSmoothMode(interaction.guildId);
   return {
@@ -91,6 +92,7 @@ function musicSettingsBody(interaction, messageId) {
     ],
   };
 }
+
 let refreshTimer = null;
 const locks = new Map();
 const timers = new Map();
@@ -98,12 +100,15 @@ const pending = new Map();
 const fingerprints = new Map();
 const busy = new Set();
 const cooldowns = new Map();
+
 const key = (guildId) => `music_panel:${guildId}`;
+
 const text = (value, max = 160) =>
   String(value || '')
     .replace(/\s+/g, ' ')
     .replace(/([\\`*_<>|])/g, '\\$1')
     .slice(0, max);
+
 const clock = (seconds) =>
   `${Math.floor(Math.max(0, seconds) / 60)}:${String(Math.floor(Math.max(0, seconds) % 60)).padStart(2, '0')}`;
 
@@ -114,17 +119,21 @@ function storedPanel(guildId) {
     return null;
   }
 }
+
 function serialize(guildId, operation) {
   const previous = locks.get(guildId) || Promise.resolve();
   const next = previous.catch(() => {}).then(operation);
   locks.set(guildId, next);
   void next
     .finally(() => {
-      if (locks.get(guildId) === next) locks.delete(guildId);
+      if (locks.get(guildId) === next) {
+        locks.delete(guildId);
+      }
     })
     .catch(() => {});
   return next;
 }
+
 function safeUrl(value) {
   try {
     const url = new URL(value);
@@ -133,9 +142,11 @@ function safeUrl(value) {
     return null;
   }
 }
+
 function snapshotTrack(state, fallback) {
   const track = state?.current;
-  if (track)
+
+  if (track) {
     return {
       title: track.title,
       url: track.url,
@@ -144,17 +155,29 @@ function snapshotTrack(state, fallback) {
       thumbnail: track.thumbnail,
       requestedBy: track.requestedBy,
     };
-  if (state?.radio)
+  }
+
+  if (state?.radio) {
     return { title: t('วิทยุสด · {0}', state.radio.name), url: state.radio.url, duration: 0 };
+  }
+
   return fallback || null;
 }
+
 function playbackSnapshot(state, fallback) {
   // A visible loading title is not evidence that the track ever produced audio.
-  if (state?.loadingNext) return fallback || null;
+  if (state?.loadingNext) {
+    return fallback || null;
+  }
+
   return snapshotTrack(state, fallback);
 }
+
 export async function recordMusicAction(interaction, description) {
-  if (!interaction.guildId) return;
+  if (!interaction.guildId) {
+    return;
+  }
+
   const actor =
     interaction.member?.displayName || interaction.user.globalName || interaction.user.username;
   await serialize(interaction.guildId, async () => {
@@ -169,6 +192,7 @@ export async function recordMusicAction(interaction, description) {
   });
   musicChanged(interaction.guildId);
 }
+
 function panelBody(guildId, record) {
   const state = getPlayer(guildId);
   const track = state?.current;
@@ -252,26 +276,37 @@ function panelBody(guildId, record) {
     .setFooter({
       text: t('Tutel · by Double_P · ปุ่มควบคุมใช้ในห้องเสียงเดียวกับบอท'),
     });
+
   try {
     const action = JSON.parse(setting(`music_action:${guildId}`) || 'null');
-    if (action)
+
+    if (action) {
       embed.addFields({
         name: t('การกระทำล่าสุด'),
         value: `${text(action.actor, 80)} · ${text(action.description, 300)}\n<t:${Math.floor(action.at / 1000)}:R>`,
       });
+    }
   } catch {
     /* Ignore malformed legacy metadata. */
   }
-  if (last?.requestedBy)
+
+  if (last?.requestedBy) {
     embed.addFields({ name: t('เพิ่มโดย'), value: text(last.requestedBy, 80) });
+  }
+
   const image = safeUrl(last?.thumbnail);
-  if (image) embed.setThumbnail(image);
+
+  if (image) {
+    embed.setThumbnail(image);
+  }
+
   const button = (action, label, style = ButtonStyle.Secondary, disabled = false) =>
     new ButtonBuilder()
       .setCustomId(`music:panel:${action}`)
       .setLabel(label)
       .setStyle(style)
       .setDisabled(disabled);
+
   return {
     embeds: [embed],
     allowedMentions: { parse: [] },
@@ -313,15 +348,25 @@ function panelBody(guildId, record) {
     ],
   };
 }
+
 async function refresh(guildId) {
-  if (!client?.isReady()) return;
+  if (!client?.isReady()) {
+    return;
+  }
+
   if (!getPlayer(guildId)?.connection && !pending.has(guildId)) {
     await archivePanel(guildId);
     return;
   }
+
   const record = storedPanel(guildId);
-  if (!record?.messageId || !client.guilds.cache.has(guildId)) return;
+
+  if (!record?.messageId || !client.guilds.cache.has(guildId)) {
+    return;
+  }
+
   const state = getPlayer(guildId);
+
   if (
     record.lastTrack &&
     !state?.current &&
@@ -334,7 +379,9 @@ async function refresh(guildId) {
     await archivePanel(guildId);
     return;
   }
+
   const last = playbackSnapshot(getPlayer(guildId), record.lastTrack);
+
   if (last && JSON.stringify(last) !== JSON.stringify(record.lastTrack)) {
     record.lastTrack = last;
     record.history = [
@@ -345,9 +392,14 @@ async function refresh(guildId) {
     ].slice(-10);
     await setSetting(key(guildId), JSON.stringify(record));
   }
+
   const body = panelBody(guildId, record);
   const fingerprint = JSON.stringify(body);
-  if (fingerprints.get(guildId) === fingerprint) return;
+
+  if (fingerprints.get(guildId) === fingerprint) {
+    return;
+  }
+
   try {
     const channel = await client.channels.fetch(record.channelId);
     const message = await channel.messages.fetch(record.messageId);
@@ -359,14 +411,18 @@ async function refresh(guildId) {
       record.messageId = null;
       await setSetting(key(guildId), JSON.stringify(record));
       fingerprints.delete(guildId);
-    } else throw error;
+    } else {
+      throw error;
+    }
   }
 }
+
 async function scheduleRefresh(guildId, lastTrack = null) {
-  if (lastTrack)
+  if (lastTrack) {
     await serialize(guildId, async () => {
       const record = storedPanel(guildId);
       const saved = snapshotTrack({ current: lastTrack }, null);
+
       if (record && JSON.stringify(record.lastTrack) !== JSON.stringify(saved)) {
         record.lastTrack = saved;
         record.history = [
@@ -378,7 +434,12 @@ async function scheduleRefresh(guildId, lastTrack = null) {
         await setSetting(key(guildId), JSON.stringify(record));
       }
     });
-  if (!client || timers.has(guildId)) return;
+  }
+
+  if (!client || timers.has(guildId)) {
+    return;
+  }
+
   const timer = setTimeout(() => {
     timers.delete(guildId);
     void serialize(guildId, () => refresh(guildId)).catch((error) =>
@@ -388,17 +449,27 @@ async function scheduleRefresh(guildId, lastTrack = null) {
   timer.unref();
   timers.set(guildId, timer);
 }
+
 export function musicPanelPending(guildId, value = null) {
-  if (value) pending.set(guildId, value);
-  else pending.delete(guildId);
+  if (value) {
+    pending.set(guildId, value);
+  } else {
+    pending.delete(guildId);
+  }
+
   musicChanged(guildId);
 }
+
 export async function ensureMusicPanel(interaction) {
   return serialize(interaction.guildId, async () => {
     const guildId = interaction.guildId;
     const old = storedPanel(guildId);
     const channel = interaction.channel;
-    if (!channel?.isSendable?.()) throw new Error(t('ช่องนี้ส่งแผงควบคุมไม่ได้'));
+
+    if (!channel?.isSendable?.()) {
+      throw new Error(t('ช่องนี้ส่งแผงควบคุมไม่ได้'));
+    }
+
     if (old?.messageId && !old.archived) {
       try {
         const previousChannel = await client.channels.fetch(old.channelId);
@@ -408,9 +479,12 @@ export async function ensureMusicPanel(interaction) {
         fingerprints.set(guildId, JSON.stringify(body));
         return;
       } catch (error) {
-        if (![10008, 10003].includes(error.code)) throw error;
+        if (![10008, 10003].includes(error.code)) {
+          throw error;
+        }
       }
     }
+
     const record = {
       channelId: interaction.channelId,
       messageId: null,
@@ -428,14 +502,17 @@ export async function ensureMusicPanel(interaction) {
     fingerprints.set(guildId, JSON.stringify(body));
   });
 }
+
 export async function removeMusicPanel(guildId) {
   return serialize(guildId, () => archivePanel(guildId));
 }
+
 async function archivePanel(guildId) {
   clearTimeout(timers.get(guildId));
   timers.delete(guildId);
   pending.delete(guildId);
   const record = storedPanel(guildId);
+
   if (record?.messageId && client) {
     try {
       const channel = await client.channels.fetch(record.channelId);
@@ -458,20 +535,26 @@ async function archivePanel(guildId) {
         );
       await message.edit({ embeds: [embed], components: [], allowedMentions: { parse: [] } });
     } catch (error) {
-      if (![10008, 10003].includes(error.code)) throw error;
+      if (![10008, 10003].includes(error.code)) {
+        throw error;
+      }
     }
   }
+
   if (record) {
     record.archived = true;
     await setSetting(key(guildId), JSON.stringify(record));
   }
+
   fingerprints.delete(guildId);
 }
+
 function onMusicLeave(guildId) {
   void removeMusicPanel(guildId).catch((error) =>
     console.error('[music panel] remove:', error.code || error.name),
   );
 }
+
 export async function showMusicPanel(interaction) {
   try {
     await ensureMusicPanel(interaction);
@@ -487,6 +570,7 @@ export async function showMusicPanel(interaction) {
       .catch(() => {});
   }
 }
+
 export async function initializeMusicPanels(discordClient) {
   client = discordClient;
   fingerprints.clear();
@@ -500,10 +584,14 @@ export async function initializeMusicPanels(discordClient) {
   refreshTimer = setInterval(async () => {
     for (const guildId of client?.guilds.cache.keys() || []) {
       const state = getPlayer(guildId);
-      if (state?.current && state.player.state.status === 'playing') await scheduleRefresh(guildId);
+
+      if (state?.current && state.player.state.status === 'playing') {
+        await scheduleRefresh(guildId);
+      }
     }
   }, 15000);
   refreshTimer.unref();
+
   for (const row of await data.findMany('app_settings', {
     key: { $like: 'music_panel:%' },
   })) {
@@ -513,15 +601,23 @@ export async function initializeMusicPanels(discordClient) {
     );
   }
 }
+
 export async function stopMusicPanels() {
   clearInterval(refreshTimer);
   musicEvents.off('change', scheduleRefresh);
   musicEvents.off('cancel', musicPanelPending);
   musicEvents.off('leave', onMusicLeave);
-  for (const timer of timers.values()) clearTimeout(timer);
+
+  for (const timer of timers.values()) {
+    clearTimeout(timer);
+  }
+
   timers.clear();
-  for (const guildId of client?.guilds.cache.keys() || [])
+
+  for (const guildId of client?.guilds.cache.keys() || []) {
     await removeMusicPanel(guildId).catch(() => {});
+  }
+
   client = null;
   pending.clear();
   busy.clear();
@@ -529,13 +625,17 @@ export async function stopMusicPanels() {
 }
 
 async function privateReply(interaction, content) {
-  if (interaction.deferred || interaction.replied)
+  if (interaction.deferred || interaction.replied) {
     return interaction.editReply({ content, components: [] });
+  }
+
   return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 }
+
 async function voiceChannelFor(interaction) {
   const id = interaction.guild.voiceStates.cache.get(interaction.user.id)?.channelId;
   const current = getPlayer(interaction.guildId)?.connection?.joinConfig.channelId;
+
   if (!id || (current && current !== id)) {
     await privateReply(
       interaction,
@@ -543,8 +643,10 @@ async function voiceChannelFor(interaction) {
     );
     return null;
   }
+
   return interaction.guild.channels.cache.get(id) || interaction.guild.channels.fetch(id);
 }
+
 function queueBody(interaction, page) {
   const queue = getPlayer(interaction.guildId)?.queue || [];
   const pages = Math.max(1, Math.ceil(queue.length / 10));
@@ -574,16 +676,26 @@ function queueBody(interaction, page) {
     ],
   };
 }
+
 export async function handleMusicPanelInteraction(interaction) {
-  if (!interaction.customId?.startsWith('music:')) return false;
+  if (!interaction.customId?.startsWith('music:')) {
+    return false;
+  }
+
   if (!interaction.inGuild()) {
     await privateReply(interaction, t('ใช้แผงเพลงในเซิร์ฟเวอร์เท่านั้น'));
     return true;
   }
+
   const parts = interaction.customId.split(':');
-  if (await handleRadioPanel(interaction, voiceChannelFor)) return true;
+
+  if (await handleRadioPanel(interaction, voiceChannelFor)) {
+    return true;
+  }
+
   if (parts[1] === 'loop-setting') {
     const record = storedPanel(interaction.guildId);
+
     if (
       parts[2] !== interaction.user.id ||
       !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ||
@@ -592,6 +704,7 @@ export async function handleMusicPanelInteraction(interaction) {
       await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์และใช้เมนูของคุณเอง'));
       return true;
     }
+
     await interaction.deferUpdate();
     const mode = interaction.values[0];
     await saveLoopMode(interaction.guildId, mode);
@@ -600,6 +713,7 @@ export async function handleMusicPanelInteraction(interaction) {
     await interaction.editReply(musicSettingsBody(interaction, record.messageId));
     return true;
   }
+
   if (parts[1] === 'smooth') {
     if (
       parts[2] !== interaction.user.id ||
@@ -608,11 +722,14 @@ export async function handleMusicPanelInteraction(interaction) {
       await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง'));
       return true;
     }
+
     const record = storedPanel(interaction.guildId);
+
     if (!record || record.messageId !== parts[3] || !['enable', 'disable'].includes(parts[4])) {
       await privateReply(interaction, t('แผงนี้ไม่ได้ใช้งานแล้ว ให้ใช้แผงเพลงล่าสุด'));
       return true;
     }
+
     await interaction.deferUpdate();
     const enabled = await setSmoothMode(interaction.guildId, parts[4] === 'enable');
     applySmoothMode(interaction.guildId, enabled);
@@ -620,14 +737,17 @@ export async function handleMusicPanelInteraction(interaction) {
     await interaction.editReply(musicSettingsBody(interaction, record.messageId));
     return true;
   }
+
   if (parts[1] === 'queue') {
     if (parts[2] !== interaction.user.id) {
       await privateReply(interaction, t('ปุ่มนี้เป็นของผู้เปิดคิว'));
       return true;
     }
+
     await interaction.update(queueBody(interaction, Number(parts[3]) || 0));
     return true;
   }
+
   if (parts[1] === 'source') {
     if (
       parts[2] !== interaction.user.id ||
@@ -636,6 +756,7 @@ export async function handleMusicPanelInteraction(interaction) {
       await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง'));
       return true;
     }
+
     await interaction.deferUpdate();
     const source = await setMusicSource(interaction.guildId, interaction.values[0]);
     await recordMusicAction(interaction, t('เปลี่ยนแหล่งเพลงเป็น {0}', musicSourceLabel(source)));
@@ -651,29 +772,42 @@ export async function handleMusicPanelInteraction(interaction) {
     );
     return true;
   }
+
   const record = storedPanel(interaction.guildId);
+
   if (parts[1] === 'genre' && parts[2] !== interaction.user.id) {
     await privateReply(interaction, t('เมนูนี้เป็นของผู้เปิด'));
     return true;
   }
+
   const origin =
     parts[1] === 'genre'
       ? parts[3]
       : interaction.isModalSubmit()
         ? parts[2]
         : interaction.message?.id;
+
   if (!record?.messageId || origin !== record.messageId) {
     await privateReply(interaction, t('แผงนี้ไม่ได้ใช้งานแล้ว ให้ใช้แผงเพลงล่าสุด'));
     return true;
   }
+
   const action = parts[1] === 'genre' ? 'genre-select' : parts[1] === 'add' ? 'submit' : parts[2];
+
   if (action === 'radio' && !getPlayer(interaction.guildId)?.radio) {
-    if (!(await voiceChannelFor(interaction))) return true;
+    if (!(await voiceChannelFor(interaction))) {
+      return true;
+    }
+
     await openRadioPanel(interaction, record.messageId);
     return true;
   }
+
   if (action === 'genre' || action === 'random') {
-    if (!(await voiceChannelFor(interaction))) return true;
+    if (!(await voiceChannelFor(interaction))) {
+      return true;
+    }
+
     const randomState = getPlayer(interaction.guildId);
     await interaction.reply({
       content: t('เลือกแนวสุ่มเพลง · เพลงปัจจุบันเล่นต่อ เพลงถัดไปใช้แนวที่เลือก'),
@@ -685,6 +819,7 @@ export async function handleMusicPanelInteraction(interaction) {
     });
     return true;
   }
+
   if (action === 'queue') {
     await interaction.reply({
       ...queueBody(interaction, 0),
@@ -692,19 +827,26 @@ export async function handleMusicPanelInteraction(interaction) {
     });
     return true;
   }
+
   if (action === 'settings') {
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
       await privateReply(interaction, t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนแหล่งเพลง'));
       return true;
     }
+
     await interaction.reply({
       ...musicSettingsBody(interaction, record.messageId),
       flags: MessageFlags.Ephemeral,
     });
     return true;
   }
+
   const voice = await voiceChannelFor(interaction);
-  if (!voice) return true;
+
+  if (!voice) {
+    return true;
+  }
+
   if (action === 'add') {
     const modal = new ModalBuilder()
       .setCustomId(`music:add:${record.messageId}`)
@@ -722,25 +864,38 @@ export async function handleMusicPanelInteraction(interaction) {
     await interaction.showModal(modal);
     return true;
   }
+
   const guildId = interaction.guildId;
   const urgent = action === 'stop' || action === 'leave';
+
   if (!urgent && (busy.has(guildId) || (cooldowns.get(guildId) || 0) > Date.now())) {
     await privateReply(interaction, t('กำลังทำคำสั่งก่อนหน้า รอสักครู่แล้วกดใหม่ครับ'));
     return true;
   }
+
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const ownsBusy = !busy.has(guildId);
-  if (ownsBusy) busy.add(guildId);
+
+  if (ownsBusy) {
+    busy.add(guildId);
+  }
+
   cooldowns.set(guildId, Date.now() + 1200);
+
   try {
     const state = getPlayer(guildId);
     let result;
+
     if (action === 'genre-select' && parts[4] === 'off') {
       disableRandomMode(guildId);
       result = t('ปิดสุ่มแล้ว เพลงปัจจุบันและเพลงในคิวจะเล่นต่อ');
     } else if (action === 'genre-select') {
       const genre = parts[4] === 'all' ? 'all' : interaction.values?.[0];
-      if (!randomGenres.some((item) => item.value === genre)) throw new Error('Invalid genre');
+
+      if (!randomGenres.some((item) => item.value === genre)) {
+        throw new Error('Invalid genre');
+      }
+
       await setRandomGenre(guildId, genre);
       const updated = await enableRandomMode(guildId, voice);
       result = updated.randomMode
@@ -773,9 +928,9 @@ export async function handleMusicPanelInteraction(interaction) {
             : enabled
               ? t('เปิดวนเพลงแล้ว · ปุ่มข้ามยังไปเพลงถัดไปได้')
               : t('ปิดวนเพลงแล้ว');
-    } else if (action === 'skip')
+    } else if (action === 'skip') {
       result = skip(guildId) ? t('กำลังข้ามเพลง…') : t('ไม่มีเพลงให้ข้าม');
-    else if (action === 'stop') {
+    } else if (action === 'stop') {
       stop(guildId);
       result = t('หยุดเพลง ล้างคิวและปิดสุ่มแล้ว · จำค่า Loop ไว้');
     } else if (action === 'leave') {
@@ -789,13 +944,20 @@ export async function handleMusicPanelInteraction(interaction) {
         const updated = await enableRandomMode(guildId, voice);
         result = updated.randomMode ? t('เปิดสุ่มต่อเนื่องแล้ว') : t('โหมดสุ่มถูกหยุดแล้ว');
       }
-    } else result = t('ไม่รู้จักปุ่มนี้');
+    } else {
+      result = t('ไม่รู้จักปุ่มนี้');
+    }
+
     await recordMusicAction(interaction, result);
     await privateReply(interaction, result);
   } finally {
-    if (ownsBusy) busy.delete(guildId);
+    if (ownsBusy) {
+      busy.delete(guildId);
+    }
+
     musicPanelPending(guildId);
     musicChanged(guildId);
   }
+
   return true;
 }

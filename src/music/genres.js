@@ -295,6 +295,7 @@ export const randomGenres = options.map(([value, label, queries]) => ({
   minDuration: value === 'meme' ? 30 : 90,
   searches: queries?.map((query, i) => [`${value}-${i}`, `${query} official audio`]),
 }));
+
 export function randomGenre(value) {
   return randomGenres.find((item) => item.value === value) || randomGenres[0];
 }

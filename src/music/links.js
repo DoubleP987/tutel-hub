@@ -2,13 +2,16 @@ import { hydrateTrack } from './metadata.js';
 // Parse supported providers without making a network request.
 export function musicLink(value) {
   let url;
+
   try {
     url = new URL(value);
   } catch {
     return { playlist: false, mixed: false };
   }
+
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
   const youtube = ['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'].includes(host);
+
   if (youtube) {
     const id =
       host === 'youtu.be'
@@ -26,6 +29,7 @@ export function musicLink(value) {
       id: video,
     };
   }
+
   if (host === 'soundcloud.com' || host === 'm.soundcloud.com') {
     return {
       provider: 'soundcloud',
@@ -34,25 +38,37 @@ export function musicLink(value) {
       playlistUrl: url.href,
     };
   }
+
   return { playlist: false, mixed: false };
 }
+
 export async function resolveMusicLink(value, { signal } = {}) {
   let target;
+
   try {
     target = new URL(value);
   } catch {
     return musicLink(value);
   }
-  if (target.hostname !== 'on.soundcloud.com') return musicLink(value);
+
+  if (target.hostname !== 'on.soundcloud.com') {
+    return musicLink(value);
+  }
+
   for (let i = 0; i < 4; i++) {
     if (
       !['on.soundcloud.com', 'soundcloud.com', 'www.soundcloud.com', 'm.soundcloud.com'].includes(
         target.hostname,
       ) ||
       target.protocol !== 'https:'
-    )
+    ) {
       break;
-    if (target.hostname !== 'on.soundcloud.com') return musicLink(target.href);
+    }
+
+    if (target.hostname !== 'on.soundcloud.com') {
+      return musicLink(target.href);
+    }
+
     const response = await fetch(target.href, {
       method: 'HEAD',
       redirect: 'manual',
@@ -61,21 +77,32 @@ export async function resolveMusicLink(value, { signal } = {}) {
         : AbortSignal.timeout(4000),
     });
     const location = response.headers.get('location');
-    if (!location) break;
+
+    if (!location) {
+      break;
+    }
+
     target = new URL(location, target);
   }
+
   return musicLink(value);
 }
 
 const titles = new Map();
+
 export async function youtubeTrack(link, { signal } = {}) {
   const cached = titles.get(link.id);
-  if (cached && cached.until > Date.now()) return hydrateTrack({ ...cached.track }, { signal });
+
+  if (cached && cached.until > Date.now()) {
+    return hydrateTrack({ ...cached.track }, { signal });
+  }
+
   const track = {
     title: `YouTube · ${link.id}`,
     url: link.singleUrl,
     duration: 0,
   };
+
   try {
     const timeout = AbortSignal.timeout(4000);
     const response = await fetch(
@@ -84,6 +111,7 @@ export async function youtubeTrack(link, { signal } = {}) {
         signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       },
     );
+
     if (response.ok) {
       const metadata = await response.json();
       track.title = String(metadata.title || track.title).slice(0, 500);
@@ -93,8 +121,13 @@ export async function youtubeTrack(link, { signal } = {}) {
   } catch {
     /* Media extraction still happens once, when playback starts. */
   }
+
   signal?.throwIfAborted();
-  if (titles.size >= 128) titles.delete(titles.keys().next().value);
+
+  if (titles.size >= 128) {
+    titles.delete(titles.keys().next().value);
+  }
+
   titles.set(link.id, { until: Date.now() + 300000, track });
   return hydrateTrack({ ...track }, { signal });
 }

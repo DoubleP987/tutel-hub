@@ -2,10 +2,13 @@ import 'dotenv/config';
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+
 const source = resolve(process.env.DATABASE_PATH || './data/tutel.sqlite');
+
 if (process.env.DATABASE_PROVIDER === 'mongodb') {
   const { createDataStore } = await import('../src/database/store.js');
   const data = await createDataStore();
+
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const destination = resolve(process.argv[2] || './backups/tutel-' + stamp + '.json');
@@ -21,7 +24,11 @@ if (process.env.DATABASE_PROVIDER === 'mongodb') {
       'calendar_latest',
     ];
     const collections = {};
-    for (const table of tables) collections[table] = await data.findMany(table);
+
+    for (const table of tables) {
+      collections[table] = await data.findMany(table);
+    }
+
     writeFileSync(
       destination,
       JSON.stringify({
@@ -36,14 +43,24 @@ if (process.env.DATABASE_PROVIDER === 'mongodb') {
   } finally {
     await data.close();
   }
+
   process.exit(0);
 }
-if (!existsSync(source)) throw new Error('Database does not exist: ' + source);
+
+if (!existsSync(source)) {
+  throw new Error('Database does not exist: ' + source);
+}
+
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const output = resolve(process.argv[2] || './backups/tutel-' + stamp + '.sqlite');
-if (existsSync(output)) throw new Error('Backup destination already exists.');
+
+if (existsSync(output)) {
+  throw new Error('Backup destination already exists.');
+}
+
 mkdirSync(dirname(output), { recursive: true });
 const database = new DatabaseSync(source);
+
 try {
   database.exec('PRAGMA busy_timeout=5000;');
   database.exec("VACUUM INTO '" + output.replaceAll("'", "''") + "'");

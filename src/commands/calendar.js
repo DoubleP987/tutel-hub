@@ -27,25 +27,35 @@ import { guildCalendarEnabled } from '../bot/calendar-commands.js';
 
 export const calendarHandlers = {
   async calendar(interaction) {
-    if (!guildOnly(interaction)) return;
-    const sub = interaction.options.getSubcommand(),
-      guildId = interaction.guildId;
+    if (!guildOnly(interaction)) {
+      return;
+    }
+
+    const sub = interaction.options.getSubcommand();
+    const guildId = interaction.guildId;
+
     if (calendarConfigured()) {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
       if (sub === 'connect') {
-        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
           return interaction.editReply({ content: 'เฉพาะผู้ที่มีสิทธิ์จัดการเซิร์ฟเวอร์ Discord' });
+        }
+
         const permissions = interaction.channel?.permissionsFor?.(interaction.client.user);
+
         if (
           !permissions?.has([
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.EmbedLinks,
           ])
-        )
+        ) {
           return interaction.editReply({
             content: 'บอทต้องมีสิทธิ์ดูช่อง ส่งข้อความ และ Embed Links',
           });
+        }
+
         const result = await calendarRequest('/connect-grants', {
           method: 'POST',
           body: { discordUserId: interaction.user.id, guildId, channelId: interaction.channelId },
@@ -62,13 +72,17 @@ export const calendarHandlers = {
           ],
         });
       }
+
       const bindings = (await calendarRequest('/bindings')).filter(
         (b) => b.guild_id === guildId && b.channel_id === interaction.channelId,
       );
-      if (!bindings.length)
+
+      if (!bindings.length) {
         return interaction.editReply({
           content: 'ช่องนี้ยังไม่เชื่อมกลุ่ม ให้ผู้ดูแลใช้ /calendar connect',
         });
+      }
+
       return interaction.editReply({
         content: 'ดูและจัดการปฏิทินของกลุ่มผ่านเว็บ',
         components: [
@@ -88,17 +102,24 @@ export const calendarHandlers = {
         ],
       });
     }
-    if (!guildCalendarEnabled(guildId))
+
+    if (!guildCalendarEnabled(guildId)) {
       return interaction.reply({
         content: t('เซิร์ฟเวอร์นี้ยังไม่เปิดใช้ปฏิทิน ให้ผู้ดูแลเปิดใน control panel ก่อน'),
         ephemeral: true,
       });
+    }
+
     if (sub === 'setup') {
       const pinError = checkCalendarSetupPin(
         interaction.options.getString('pin'),
         'discord:' + interaction.user.id,
       );
-      if (pinError) return interaction.reply({ content: pinError, ephemeral: true });
+
+      if (pinError) {
+        return interaction.reply({ content: pinError, ephemeral: true });
+      }
+
       const channel = interaction.options.getChannel('channel');
       const existing = (await listGuildConfigs()).find((x) => x.guild_id === guildId);
       await saveGuildConfig(
@@ -112,10 +133,11 @@ export const calendarHandlers = {
         ephemeral: true,
       });
     }
+
     if (sub === 'add') {
       try {
-        const starts = interaction.options.getString('starts', true),
-          duration = interaction.options.getInteger('duration') ?? 60;
+        const starts = interaction.options.getString('starts', true);
+        const duration = interaction.options.getInteger('duration') ?? 60;
         const start = localDateTimeToIso(starts);
         const end = new Date(new Date(start).getTime() + duration * 60000);
         const endLocal = new Intl.DateTimeFormat('en-CA', {
@@ -156,12 +178,17 @@ export const calendarHandlers = {
         return interaction.reply({ content: error.message, ephemeral: true });
       }
     }
+
     if (sub === 'list') {
-      const from = new Date(calendarDay().startsAt),
-        to = new Date(Date.now() + 30 * 86400000);
+      const from = new Date(calendarDay().startsAt);
+      const to = new Date(Date.now() + 30 * 86400000);
       const all = await listExpandedEvents(from, to, guildId);
       const items = all.slice(0, 10);
-      if (!items.length) return interaction.reply(t('ไม่มีรายการใน 30 วันนี้'));
+
+      if (!items.length) {
+        return interaction.reply(t('ไม่มีรายการใน 30 วันนี้'));
+      }
+
       const date = new Intl.DateTimeFormat(botLocale, {
         timeZone: 'Asia/Bangkok',
         dateStyle: 'long',
@@ -200,6 +227,7 @@ export const calendarHandlers = {
         ],
       });
     }
+
     if (sub === 'delete') {
       try {
         await deleteEvent(interaction.options.getInteger('id', true), guildId);
@@ -208,20 +236,27 @@ export const calendarHandlers = {
         return interaction.reply({ content: error.message, ephemeral: true });
       }
     }
+
     if (sub === 'config') {
-      if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
         return interaction.reply({
           content: t('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์เพื่อเปลี่ยนเวลาแจ้งเตือน'),
           ephemeral: true,
         });
-      const configs = await listGuildConfigs(),
-        cfg = configs.find((x) => x.guild_id === guildId);
-      if (!cfg?.channel_id)
+      }
+
+      const configs = await listGuildConfigs();
+      const cfg = configs.find((x) => x.guild_id === guildId);
+
+      if (!cfg?.channel_id) {
         return interaction.reply({
           content: t('ตั้ง channel ก่อนด้วย /calendar setup'),
           ephemeral: true,
         });
+      }
+
       const time = interaction.options.getString('time', true);
+
       try {
         await saveReminderOptions(guildId, {
           ...reminderOptions(guildId),
@@ -233,13 +268,17 @@ export const calendarHandlers = {
         return interaction.reply({ content: error.message, ephemeral: true });
       }
     }
+
     if (sub === 'test') {
       const cfg = (await listGuildConfigs()).find((x) => x.guild_id === guildId);
-      if (!cfg?.channel_id)
+
+      if (!cfg?.channel_id) {
         return interaction.reply({
           content: t('ตั้ง channel ก่อนด้วย /calendar setup'),
           ephemeral: true,
         });
+      }
+
       await interaction.deferReply({ ephemeral: true });
       const day = calendarDay();
       const options = reminderOptions(guildId);

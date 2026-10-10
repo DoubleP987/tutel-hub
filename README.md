@@ -1,5 +1,7 @@
 # Tutel Hub
 
+[Developer handbook](docs/DEVELOPMENT.md) · [คู่มือผู้พัฒนา](docs/DEVELOPMENT.th.md) · [Contributing / ขั้นตอนส่งงาน](CONTRIBUTING.md)
+
 ## Separate Calendar repository / repo ปฏิทินแยก
 
 Music/radio/private panel remain here. Calendar web, OAuth, groups, invitations and general dates are maintained in [tutel-calendar](https://github.com/DoubleP987/tutel-calendar), with independent .env, database and process. The original Discord reminder adapter remains during migration; no second Calendar bot process has started. [Current status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).

@@ -1,5 +1,5 @@
-import { setting, setSetting } from '../../calendar/db.js';
-import { categories } from '../../calendar/categories.js';
+import { setting, setSetting } from '../../database/settings.js';
+import { categories } from '../../integrations/calendar/legacy/categories.js';
 import { auth, csrf } from '../middleware/security.js';
 
 export function registerPreferencesRoutes(app) {

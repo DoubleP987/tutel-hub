@@ -17,8 +17,8 @@ if (
 }
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 if (guildOnly) {
-  const { listGuildConfigs } = await import('./calendar/events.js');
-  const { reminderOptions } = await import('./calendar/options.js');
+  const { listGuildConfigs } = await import('./integrations/calendar/legacy/events.js');
+  const { reminderOptions } = await import('./integrations/calendar/legacy/options.js');
   const { calendarEnabled } = await import('./commands/calendar-visibility.js');
   const config = (await listGuildConfigs()).find((item) => item.guild_id === GUILD_ID);
   const body = commands.filter(

@@ -141,7 +141,7 @@ function wire() {
       button.disabled = false;
     }
   };
-  $$('.nav-item').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
+  $$('.nav-item[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
   $('#new-event').onclick = () => openEvent();
   $('#close-dialog').onclick = $('#cancel-dialog').onclick = () => $('#event-dialog').close();
   $('#event-form').onsubmit = saveEventForm;
@@ -200,6 +200,7 @@ function showPage(name) {
   $$('.page').forEach((p) => p.classList.add('hidden'));
   $('#' + name + '-page').classList.remove('hidden');
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
+  if (name === 'calendar-admin') window.TutelCalendarAdmin?.open(api, toast);
   if (name === 'control') loadBot();
   if (name === 'settings')
     loadSettings().catch((e) => {

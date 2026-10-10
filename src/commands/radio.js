@@ -1,5 +1,5 @@
 import { musicRequestVersion } from '../music/events.js';
-import { setSetting } from '../calendar/db.js';
+import { setSetting } from '../database/settings.js';
 import { showRadioList } from './radio-list.js';
 import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 import { t } from '../i18n/bot.js';

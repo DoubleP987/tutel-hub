@@ -1,5 +1,9 @@
-import { requestCalendarSync } from '../../calendar/publish.js';
-import { listExpandedEvents, saveEvent, deleteEvent } from '../../calendar/service.js';
+import { requestCalendarSync } from '../../integrations/calendar/legacy/publish.js';
+import {
+  listExpandedEvents,
+  saveEvent,
+  deleteEvent,
+} from '../../integrations/calendar/legacy/service.js';
 import { auth, admin, csrf } from '../middleware/security.js';
 
 export function registerEventsRoutes(app) {

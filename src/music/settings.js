@@ -1,5 +1,5 @@
 import { t } from '../i18n/bot.js';
-import { setting, setSetting } from '../calendar/db.js';
+import { setting, setSetting } from '../database/settings.js';
 import { musicChanged } from './events.js';
 import { randomGenres } from './genres.js';
 

@@ -1,5 +1,15 @@
 > **ฉบับปัจจุบัน 4 ตุลาคม 2569:** อ่าน [การทำงานปัจจุบัน](CURRENT-OPERATIONS.md) ก่อน PDF มีส่วนอัปเดตท้ายเล่มพร้อม bookmark ใช้แทนพฤติกรรมแบบเครื่องเดียว เวลาเตือน Loop และคำสั่งในบทพื้นฐานที่เปลี่ยนแล้ว
 
+## Current Calendar boundary - 10 October 2026
+
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+
+## อัปเดตระบบกลุ่ม — 10 ตุลาคม 2026
+
+เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว ส่วน worker Discord และ control panel bridge ยังไม่เปิดแทนของเดิม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 **Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
 
 # TUTEL HUB
@@ -84,7 +94,7 @@ vercel-public deploy อิสระได้ netlify-public เก็บ fronte
 
 ## Facade รักษาประตูเดิม
 
-calendar/service.js กับ db.js export ชื่อเดิมแต่ implementation แยกแล้ว commands/handlers.js รวมกลุ่ม วิธีนี้ลดการเปลี่ยน interface ทุกไฟล์ facade ควรบาง ไม่เป็น monolith ใหม่
+service เดิมอยู่ที่ src/integrations/calendar/legacy/service.js ส่วน calendar/db.js ถูกนำออกแล้วและเรียก database/ กับ auth/ โดยตรง commands/handlers.js รวมกลุ่ม วิธีนี้ลดการเปลี่ยน interface ทุกไฟล์ facade ควรบาง ไม่เป็น monolith ใหม่
 
 โมดูลแบ่งตามงาน ไม่ใช่จำนวนบรรทัด browser ยัง classic script เพราะเปลี่ยนเป็น module จะกระทบลำดับโหลดและ deploy ควรแยกงาน CSS รักษาลำดับ override ไม่สลับอัตโนมัติ สำเนา shared asset สร้างจากต้นฉบับเดียว ภาคผนวกช่วยหาว่าจะเพิ่มฟังก์ชันควรเริ่มตรงไหน
 
@@ -666,91 +676,91 @@ copy6asset ต้นฉบับสู่ provider แยก
 
 จุดอ่าน: getDiscordClient, botStatus, startBot, stopBot
 
-## src/calendar/api-sync.js
+## src/integrations/calendar/legacy/api-sync.js
 
 hash data เปลี่ยน revision และ POST ยืนยันตัว
 
 จุดอ่าน: syncCalendarApi
 
-## src/calendar/categories.js
+## src/integrations/calendar/legacy/categories.js
 
 นิยามหมวดและจำแนกชื่อวันระบบ
 
 จุดอ่าน: eventCategories
 
-## src/calendar/db.js
+## src/database/connection.js (store), src/database/settings.js (settings), src/auth/ (accounts/sessions)
 
 export เดิมสำหรับ DB/auth/setting
 
-## src/calendar/events.js
+## src/integrations/calendar/legacy/events.js
 
 ตรวจบันทึก custom รวม holiday และ config guild
 
 จุดอ่าน: listExpandedEvents, saveEvent, deleteEvent, saveGuildConfig, listGuildConfigs
 
-## src/calendar/holidays.js
+## src/integrations/calendar/legacy/holidays.js
 
 รวม library วันสำคัญคงที่/คำนวณและจันทรคติ
 
 จุดอ่าน: thaiImportantDays
 
-## src/calendar/holy-days.json
+## src/integrations/calendar/legacy/holy-days.json
 
 ข้อมูลวันพระล่วงหน้า มีช่วงปีต้องดูแล
 
-## src/calendar/notifications.js
+## src/integrations/calendar/legacy/notifications.js
 
 ส่ง embed บันทึก delivery และปุ่มล่าสุด/private
 
 จุดอ่าน: calendarUrl, removeOldCalendarButtons, sendCalendarNotification, handleCalendarButton
 
-## src/calendar/options.js
+## src/integrations/calendar/legacy/options.js
 
 normalize หมวดเวลา/template/สี และกรอง
 
 จุดอ่าน: normalizeOptions, reminderOptions, saveReminderOptions, shouldNotify, notificationText
 
-## src/calendar/public/archive.js
+## src/integrations/calendar/legacy/public/archive.js
 
 สร้าง ZIP allowlist CRC32 สำหรับ Netlify เดิม
 
 จุดอ่าน: publicZip, crc32
 
-## src/calendar/public/snapshot.js
+## src/integrations/calendar/legacy/public/snapshot.js
 
 คัด field public ขยายสี่ปี export JSON
 
 จุดอ่าน: publicEvent, buildSnapshot, exportSnapshot
 
-## src/calendar/publish.js
+## src/integrations/calendar/legacy/publish.js
 
 ประกอบ export provider debounce retry
 
 จุดอ่าน: publishSnapshot, publicSyncStatus, requestCalendarSync, syncCalendarNow, startCalendarPublisher, syncPrefix, tick
 
-## src/calendar/recurrence.js
+## src/integrations/calendar/legacy/recurrence.js
 
 แปลงเวลาไทยและขยาย occurrence ยึดวันเดิม
 
 จุดอ่าน: localDateTimeToIso, addLocal, fromLocal, eventOccurrences, formatThai, dateParts
 
-## src/calendar/reminders.js
+## src/integrations/calendar/legacy/reminders.js
 
 สร้างเวลาและ tick20 วิไม่ซ้อน
 
 จุดอ่าน: reminderSchedules, runReminderTick, startReminderScheduler, tick
 
-## src/calendar/service.js
+## src/integrations/calendar/legacy/service.js
 
 export เดิมสำหรับ event recurrence reminder
 
-## src/calendar/setup-pin.js
+## src/integrations/calendar/legacy/setup-pin.js
 
 hash เทียบ PIN จำกัดผิดตาม caller
 
 จุดอ่าน: checkCalendarSetupPin, hash
 
-## src/calendar/vercel-publish.js
+## src/integrations/calendar/legacy/vercel-publish.js
 
 adapter deploy เดิม ไม่ใช่ path deploy ตัวรับปัจจุบัน
 

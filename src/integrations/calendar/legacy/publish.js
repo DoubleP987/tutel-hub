@@ -4,8 +4,8 @@ import { publishVercel } from './vercel-publish.js';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { setting, setSetting } from './db.js';
-import { canRunBot } from '../cluster/state.js';
+import { setting, setSetting } from '../../../database/settings.js';
+import { canRunBot } from '../../../cluster/state.js';
 import { exportSnapshot } from './public/snapshot.js';
 import { publicZip } from './public/archive.js';
 

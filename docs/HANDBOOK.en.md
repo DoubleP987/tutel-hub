@@ -1,5 +1,15 @@
 > **Current edition, 4 October 2026:** Read [current operation](CURRENT-OPERATIONS.md) first. The matching PDF includes a bookmarked current-operation supplement at the end; it supersedes older single-host, reminder, Loop and command descriptions in the baseline chapters.
 
+## Current Calendar boundary - 10 October 2026
+
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 **Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
 
 # TUTEL HUB
@@ -84,7 +94,7 @@ vercel-public is an independently deployable public app. netlify-public retains 
 
 ## Stable facades
 
-calendar/service.js and calendar/db.js preserve existing exported names while implementations move into focused modules. commands/handlers.js combines handler groups. A facade reduces interface churn and makes a refactor less disruptive. Keep it thin: it should not become a new monolith.
+The original calendar service entry point is now src/integrations/calendar/legacy/service.js. The calendar database facade was removed; imports now use database/ and auth/ directly. commands/handlers.js combines handler groups. A facade reduces interface churn and makes a refactor less disruptive. Keep it thin: it should not become a new monolith.
 
 A module is defined by a coherent job, not an arbitrary line limit. The browser still uses classic scripts; converting everything to browser modules would alter loading and deployment and belongs in a separate change. The appended CSS override order is preserved rather than reordered blindly. Shared copies are generated deliberately, not independently edited. The file appendix explains where to make each kind of future change.
 
@@ -668,91 +678,91 @@ Owns the singleton Discord client, startup promise, interaction dispatch and sto
 
 Declared functions: getDiscordClient, botStatus, startBot, stopBot
 
-## src/calendar/api-sync.js
+## src/integrations/calendar/legacy/api-sync.js
 
 Hashes changed data, persists revision state and POSTs authenticated snapshots.
 
 Declared functions: syncCalendarApi
 
-## src/calendar/categories.js
+## src/integrations/calendar/legacy/categories.js
 
 Defines category vocabulary and title-based system classification.
 
 Declared functions: eventCategories
 
-## src/calendar/db.js
+## src/database/connection.js (store), src/database/settings.js (settings), src/auth/ (accounts/sessions)
 
 Compatibility exports for database/auth/settings callers.
 
-## src/calendar/events.js
+## src/integrations/calendar/legacy/events.js
 
 Validates and persists custom events; merges generated holidays and guild config.
 
 Declared functions: listExpandedEvents, saveEvent, deleteEvent, saveGuildConfig, listGuildConfigs
 
-## src/calendar/holidays.js
+## src/integrations/calendar/legacy/holidays.js
 
 Combines holiday library, fixed/derived important dates and lunar data.
 
 Declared functions: thaiImportantDays
 
-## src/calendar/holy-days.json
+## src/integrations/calendar/legacy/holy-days.json
 
 Finite precomputed lunar/holy-day dataset; maintain its year coverage.
 
-## src/calendar/notifications.js
+## src/integrations/calendar/legacy/notifications.js
 
 Sends embeds, records deliveries and manages latest/private buttons.
 
 Declared functions: calendarUrl, removeOldCalendarButtons, sendCalendarNotification, handleCalendarButton
 
-## src/calendar/options.js
+## src/integrations/calendar/legacy/options.js
 
 Normalizes notification categories/times/colors/templates and filters events.
 
 Declared functions: normalizeOptions, reminderOptions, saveReminderOptions, shouldNotify, notificationText
 
-## src/calendar/public/archive.js
+## src/integrations/calendar/legacy/public/archive.js
 
 Builds allowlisted stored ZIP entries and CRC32 for legacy Netlify.
 
 Declared functions: publicZip, crc32
 
-## src/calendar/public/snapshot.js
+## src/integrations/calendar/legacy/public/snapshot.js
 
 Defines public field projection, four-year expansion and atomic JSON export.
 
 Declared functions: publicEvent, buildSnapshot, exportSnapshot
 
-## src/calendar/publish.js
+## src/integrations/calendar/legacy/publish.js
 
 Orchestrates snapshot export, provider selection, debounce and retries.
 
 Declared functions: publishSnapshot, publicSyncStatus, requestCalendarSync, syncCalendarNow, startCalendarPublisher, syncPrefix, tick
 
-## src/calendar/recurrence.js
+## src/integrations/calendar/legacy/recurrence.js
 
 Converts Thai local time and expands anchored recurring occurrences.
 
 Declared functions: localDateTimeToIso, addLocal, fromLocal, eventOccurrences, formatThai, dateParts
 
-## src/calendar/reminders.js
+## src/integrations/calendar/legacy/reminders.js
 
 Builds due schedules and runs nonoverlapping twenty-second ticks.
 
 Declared functions: reminderSchedules, runReminderTick, startReminderScheduler, tick
 
-## src/calendar/service.js
+## src/integrations/calendar/legacy/service.js
 
 Compatibility exports for events, recurrence and reminders.
 
-## src/calendar/setup-pin.js
+## src/integrations/calendar/legacy/setup-pin.js
 
 Hashes PIN comparison and throttles failed attempts per caller key.
 
 Declared functions: checkCalendarSetupPin, hash
 
-## src/calendar/vercel-publish.js
+## src/integrations/calendar/legacy/vercel-publish.js
 
 Legacy deployment adapter; not the current API data receiver deployment path.
 

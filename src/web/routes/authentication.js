@@ -1,10 +1,6 @@
-import {
-  createSession,
-  deleteSession,
-  userByName,
-  verifyPassword,
-  changePassword,
-} from '../../calendar/db.js';
+import { createSession, deleteSession } from '../../auth/sessions.js';
+import { userByName, changePassword } from '../../auth/accounts.js';
+import { verifyPassword } from '../../auth/passwords.js';
 import {
   cookies,
   clearCookie,

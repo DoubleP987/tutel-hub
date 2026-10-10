@@ -1,13 +1,24 @@
-import { publicSyncStatus } from '../../calendar/publish.js';
-import { checkCalendarSetupPin } from '../../calendar/setup-pin.js';
-import { setting, setSetting } from '../../calendar/db.js';
-import { listExpandedEvents, saveGuildConfig, listGuildConfigs } from '../../calendar/service.js';
+import { publicSyncStatus } from '../../integrations/calendar/legacy/publish.js';
+import { checkCalendarSetupPin } from '../../integrations/calendar/legacy/setup-pin.js';
+import { setting, setSetting } from '../../database/settings.js';
+import {
+  listExpandedEvents,
+  saveGuildConfig,
+  listGuildConfigs,
+} from '../../integrations/calendar/legacy/service.js';
 import { getDiscordClient } from '../../bot/runtime.js';
 import { canSendReminders, sendableChannels } from '../channels.js';
-import { sendDailyCalendarSummary } from '../../calendar/notifications.js';
-import { calendarDay, dailySummaryEvents } from '../../calendar/daily-summary.js';
-import { reminderOptions, saveReminderOptions, normalizeOptions } from '../../calendar/options.js';
-import { categories } from '../../calendar/categories.js';
+import { sendDailyCalendarSummary } from '../../integrations/calendar/legacy/notifications.js';
+import {
+  calendarDay,
+  dailySummaryEvents,
+} from '../../integrations/calendar/legacy/daily-summary.js';
+import {
+  reminderOptions,
+  saveReminderOptions,
+  normalizeOptions,
+} from '../../integrations/calendar/legacy/options.js';
+import { categories } from '../../integrations/calendar/legacy/categories.js';
 import { auth, admin, csrf } from '../middleware/security.js';
 import { forwardActiveBot } from '../../cluster/jobs.js';
 

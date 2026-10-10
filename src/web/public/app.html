@@ -27,7 +27,13 @@
     <div class="layout">
       <aside class="sidebar">
         <div class="side-title">เมนู</div>
-        <button class="nav-item active" data-page="calendar">▦ <span>ปฏิทิน</span></button
+        <a class="nav-item" href="https://calendar.toomtoom.online/" target="_blank" rel="noopener"
+          >▦ <span>ปฏิทินใหม่</span></a
+        >
+        <button class="nav-item active" data-page="calendar">
+          ▦ <span>ปฏิทินเดิม (เก็บไว้)</span></button
+        ><button class="nav-item admin-only" data-page="calendar-admin">
+          ▦ <span>จัดการทุกกลุ่ม</span></button
         ><button class="nav-item admin-only" data-page="control">◉ <span>ควบคุมบอท</span></button
         ><button class="nav-item admin-only" data-page="logs">☷ <span>Log บอท</span></button
         ><button class="nav-item admin-only" data-page="settings">
@@ -63,6 +69,18 @@
               </p>
             </aside>
           </div>
+        </section>
+        <section id="calendar-admin-page" class="page hidden">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">CALENDAR ADMINISTRATION</p>
+              <h1>ปฏิทินและกลุ่มทั้งหมด</h1>
+              <p class="muted">สมาชิก กิจกรรม คำเชิญ และการแจ้งเตือน Discord</p>
+            </div>
+          </div>
+          <div id="calendar-admin-summary" class="calendar-admin-grid"></div>
+          <div id="calendar-admin-tabs" class="calendar-admin-actions"></div>
+          <div id="calendar-admin-content"></div>
         </section>
         <section id="control-page" class="page hidden">
           <div class="page-heading">
@@ -380,5 +398,6 @@
     <div id="toast" class="toast"></div>
     <script src="/app.js" defer></script>
     <script src="/bot-logs.js" defer></script>
+    <script src="/calendar-admin.js" defer></script>
   </body>
 </html>

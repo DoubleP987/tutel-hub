@@ -1,4 +1,4 @@
-import { t } from '../i18n/bot.js';
+import { t } from '../../../i18n/bot.js';
 export const categories = [
   { id: 'public', label: t('วันหยุดราชการ') },
   { id: 'substitute', label: t('วันหยุดชดเชย') },

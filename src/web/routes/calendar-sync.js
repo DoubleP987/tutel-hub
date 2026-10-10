@@ -1,4 +1,4 @@
-import { publicSyncStatus, syncCalendarNow } from '../../calendar/publish.js';
+import { publicSyncStatus, syncCalendarNow } from '../../integrations/calendar/legacy/publish.js';
 import { auth, admin, csrf } from '../middleware/security.js';
 
 export function registerCalendarSyncRoutes(app) {

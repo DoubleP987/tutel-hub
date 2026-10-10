@@ -1,5 +1,5 @@
-import { t } from '../i18n/bot.js';
-import { setting, setSetting } from './db.js';
+import { t } from '../../../i18n/bot.js';
+import { setting, setSetting } from '../../../database/settings.js';
 import { categories, eventCategories } from './categories.js';
 export const defaults = {
   enabled: true,

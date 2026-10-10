@@ -1,17 +1,22 @@
 import 'dotenv/config';
 import './bot/logs.js';
-import { initializeAccounts, setting } from './calendar/db.js';
-import { startReminderScheduler } from './calendar/service.js';
+import { initializeAccounts } from './auth/accounts.js';
+import { setting } from './database/settings.js';
+import { startGroupCalendarWorker } from './integrations/calendar/worker.js';
+import { calendarConfigured } from './integrations/calendar/client.js';
+import { startReminderScheduler } from './integrations/calendar/legacy/service.js';
 import { startControlServer } from './web/server.js';
 import { getDiscordClient, startBot, stopBot } from './bot/runtime.js';
-import { startCalendarPublisher } from './calendar/publish.js';
+import { startCalendarPublisher } from './integrations/calendar/legacy/publish.js';
 import { clusterEnabled } from './cluster/state.js';
 import { startCluster, stopCluster } from './cluster/runtime.js';
 import { data } from './database/connection.js';
 import { startCommandRelay, stopCommandRelay } from './cluster/jobs.js';
 
 await initializeAccounts();
-const stopScheduler = startReminderScheduler(getDiscordClient);
+const stopScheduler = calendarConfigured()
+  ? startGroupCalendarWorker(getDiscordClient)
+  : startReminderScheduler(getDiscordClient);
 const stopPublisher = startCalendarPublisher();
 const server = await startControlServer();
 if (clusterEnabled()) {

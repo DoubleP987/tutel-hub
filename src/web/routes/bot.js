@@ -1,4 +1,4 @@
-import { setting, setSetting } from '../../calendar/db.js';
+import { setting, setSetting } from '../../database/settings.js';
 import { botLogs, logInstance } from '../../bot/logs.js';
 import { getDiscordClient, startBot, stopBot, botStatus } from '../../bot/runtime.js';
 import {

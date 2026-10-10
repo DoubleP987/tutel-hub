@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { setting, setSetting } from './db.js';
+import { setting, setSetting } from '../../../database/settings.js';
 export async function syncCalendarApi(directory, { request = fetch, force = false } = {}) {
   const endpoint = process.env.CALENDAR_SYNC_URL?.trim(),
     secret = process.env.CALENDAR_SYNC_SECRET?.trim();

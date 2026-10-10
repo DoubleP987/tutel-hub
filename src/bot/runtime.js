@@ -15,7 +15,7 @@ import { startCalendarCommands, stopCalendarCommands } from './calendar-commands
 import { handleMusicAutocomplete } from '../commands/music-autocomplete.js';
 import { destroyPlayer, getPlayer, watchEmptyVoice } from '../music/player.js';
 import { handleMusicRequestButton } from '../music/requests.js';
-import { handleCalendarButton } from '../calendar/notifications.js';
+import { handleCalendarButton } from '../integrations/calendar/legacy/notifications.js';
 import {
   initializeMusicPanels,
   stopMusicPanels,

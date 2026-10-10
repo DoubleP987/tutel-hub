@@ -1,5 +1,15 @@
 # Current operation / การทำงานปัจจุบัน
 
+## Current Calendar boundary - 10 October 2026
+
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 Updated 4 October 2026. This reference supersedes conflicting baseline handbook descriptions; the same sections appear in the current-operation PDF supplement.
 
 ## Architecture, storage and publication / โครงสร้าง ฐานข้อมูล และการเผยแพร่

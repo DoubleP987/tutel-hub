@@ -1,27 +1,36 @@
 # Architecture and maintenance
 
+## Current Calendar boundary - 10 October 2026
+
+Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new worker/panel bridge cutover remains pending. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
+
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 Tutel Hub has two runtimes. The active node owns Discord, audio, calendar scheduling and outbound synchronization. SQLite supports standalone installations; MongoDB Atlas shares persistent data between homeserver and Oracle. A database lease elects one active bot. Authentication and the private panel run locally on each node. `vercel-public/`
 owns the public frontend and the authenticated snapshot receiver/read API.
 
 ## Source ownership
 
-| Area                  | Responsibility                                            |
-| --------------------- | --------------------------------------------------------- |
-| `src/index.js`        | Composition and shutdown                                  |
-| `src/auth/`           | Passwords, accounts, sessions                             |
-| `src/database/`       | Connection, schema, settings                              |
-| `src/bot/`            | Discord lifecycle                                         |
-| `src/commands/`       | Definitions and separate music/radio/calendar handlers    |
-| `src/music/`          | Per-guild state, streaming, station directory             |
-| `src/calendar/`       | Events, recurrence, reminders, notifications, publication |
-| `src/web/routes/`     | Focused Express route families                            |
-| `src/web/middleware/` | Shared authentication/authorization/CSRF                  |
-| `src/web/public/`     | Admin frontend and canonical shared browser assets        |
-| `vercel-public/`      | Standalone Vercel public frontend/API                     |
-| `netlify-public/`     | Legacy static provider frontend                           |
+| Area                                | Responsibility                                            |
+| ----------------------------------- | --------------------------------------------------------- |
+| `src/index.js`                      | Composition and shutdown                                  |
+| `src/auth/`                         | Passwords, accounts, sessions                             |
+| `src/database/`                     | Connection, schema, settings                              |
+| `src/bot/`                          | Discord lifecycle                                         |
+| `src/commands/`                     | Definitions and separate music/radio/calendar handlers    |
+| `src/music/`                        | Per-guild state, streaming, station directory             |
+| `src/integrations/calendar/legacy/` | Events, recurrence, reminders, notifications, publication |
+| `src/web/routes/`                   | Focused Express route families                            |
+| `src/web/middleware/`               | Shared authentication/authorization/CSRF                  |
+| `src/web/public/`                   | Admin frontend and canonical shared browser assets        |
+| `vercel-public/`                    | Standalone Vercel public frontend/API                     |
+| `netlify-public/`                   | Legacy static provider frontend                           |
 
-`calendar/db.js`, `calendar/service.js` and `commands/handlers.js` are thin
-compatibility facades. Existing imports retain their public interfaces.
+The former calendar database facade has been removed. Accounts, sessions and settings import their actual modules. `src/integrations/calendar/legacy/service.js` and `commands/handlers.js` remain thin compatibility entry points for the original calendar and command groups.
 
 ## Shared browser assets
 

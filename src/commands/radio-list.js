@@ -20,7 +20,7 @@ import {
 } from '../music/radio-directory.js';
 import { playRadio } from '../music/player.js';
 import { showMusicPanel } from '../music/panel.js';
-import { setting, setSetting } from '../calendar/db.js';
+import { setting, setSetting } from '../database/settings.js';
 import { radioAreas, radioCategories } from '../music/radio-panel.js';
 import { probeRadio, radioHealthLabels } from '../music/radio-health.js';
 

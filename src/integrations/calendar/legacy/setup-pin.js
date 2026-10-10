@@ -1,4 +1,4 @@
-import { t } from '../i18n/bot.js';
+import { t } from '../../../i18n/bot.js';
 import { createHash, timingSafeEqual } from 'node:crypto';
 const attempts = new Map();
 export function checkCalendarSetupPin(value, key) {

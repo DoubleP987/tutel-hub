@@ -6,5 +6,5 @@ backups/
 .env
 .env.*
 package-lock.json
-src/calendar/holy-days.json
+src/integrations/calendar/legacy/holy-days.json
 **/calendar.json

@@ -1,5 +1,11 @@
 # Public calendar API / การส่งข้อมูลปฏิทิน
 
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 ## Current architecture
 
 The configured database is authoritative: shared MongoDB Atlas in the two-node deployment, or SQLite in standalone mode. The active node publishes outbound snapshots. Vercel stores a sanitized public snapshot

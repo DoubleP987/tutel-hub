@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { setting, setSetting } from './db.js';
+import { setting, setSetting } from '../../../database/settings.js';
 const files = [
   'index.html',
   'calendar.js',

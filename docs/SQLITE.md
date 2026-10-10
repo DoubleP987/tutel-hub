@@ -1,5 +1,11 @@
 # SQLite setup and backups / การตั้งค่าและสำรอง SQLite
 
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 ## English
 
 SQLite is an embedded database: Node.js opens a local file directly. MySQL is a separate database server that requires installation, user credentials and a connection. For one lightweight homeserver, SQLite keeps setup simple. It supports multiple readers and serialized writes; it is not a shared network filesystem database or a replicated multi-server service.

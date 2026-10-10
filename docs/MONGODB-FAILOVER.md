@@ -1,5 +1,11 @@
 # MongoDB and two-node failover / MongoDB และระบบเครื่องสำรอง
 
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 ## Architecture / โครงสร้าง
 
 Both nodes connect outbound over TLS to the same MongoDB Atlas database. There is no MongoDB server process on the Oracle micro VM. The normal driver pool is capped at five connections per process. Each node exposes its local control panel; homeserver can relay authorized bot requests to the active Oracle node using encrypted MongoDB jobs. Oracle does not need a reachable public inbound address for this relay or public calendar synchronization.

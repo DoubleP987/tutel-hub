@@ -1,5 +1,5 @@
-import { t } from '../i18n/bot.js';
-import { botLocale } from '../config/bot.js';
+import { t } from '../../../i18n/bot.js';
+import { botLocale } from '../../../config/bot.js';
 import { randomBytes } from 'node:crypto';
 import {
   ActionRowBuilder,
@@ -8,10 +8,11 @@ import {
   MessageFlags,
   EmbedBuilder,
 } from 'discord.js';
-import { data, setting } from './db.js';
+import { data } from '../../../database/connection.js';
+import { setting } from '../../../database/settings.js';
 import { reminderOptions, notificationText } from './options.js';
 import { buildDailySummary } from './daily-summary.js';
-import { requireBotLease } from '../cluster/state.js';
+import { requireBotLease } from '../../../cluster/state.js';
 
 export function calendarUrl(eventKey, occurrenceAt) {
   const url = new URL(

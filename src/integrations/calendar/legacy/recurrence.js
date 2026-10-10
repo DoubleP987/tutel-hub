@@ -1,5 +1,5 @@
-import { t } from '../i18n/bot.js';
-import { botLocale } from '../config/bot.js';
+import { t } from '../../../i18n/bot.js';
+import { botLocale } from '../../../config/bot.js';
 const TZ = 'Asia/Bangkok';
 export const dateParts = (date) => {
   const p = Object.fromEntries(

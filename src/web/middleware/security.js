@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { getSession } from '../../calendar/db.js';
+import { getSession } from '../../auth/sessions.js';
 
 export function cookies(req) {
   return Object.fromEntries(

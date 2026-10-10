@@ -1,5 +1,11 @@
 # ตั้งภาษาบอทและคำสั่ง /help
 
+## อัปเดตระบบกลุ่ม — 10 ตุลาคม 2026
+
+เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว ส่วน worker Discord และ control panel bridge ยังไม่เปิดแทนของเดิม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 **Current behavior / การทำงานล่าสุด:** [Music controls, metadata, Loop and menu expiration](MUSIC-CONTROLS.md). This guide takes precedence over older behavior examples below. / ใช้คู่มือนี้แทนตัวอย่างพฤติกรรมรุ่นเก่าด้านล่าง
 
 ## ตั้งค่าในโค้ด

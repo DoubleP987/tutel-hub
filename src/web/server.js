@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerCalendarAdmin } from './routes/calendar-admin.js';
 import { registerPagesRoutes } from './routes/pages.js';
 import { registerAuthenticationRoutes } from './routes/authentication.js';
 import { registerEventsRoutes } from './routes/events.js';
@@ -36,7 +37,7 @@ app.use(
     },
   }),
 );
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '256kb' }));
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
@@ -52,6 +53,7 @@ registerDiscordRoutes(app);
 registerBotRoutes(app);
 registerHealthRoutes(app);
 registerClusterRoutes(app);
+registerCalendarAdmin(app);
 
 export function publicEvent(e) {
   const {

@@ -1,6 +1,7 @@
+import { calendarConfigured } from '../integrations/calendar/client.js';
 import { commands } from '../commands/definitions.js';
-import { listGuildConfigs } from '../calendar/events.js';
-import { reminderOptions } from '../calendar/options.js';
+import { listGuildConfigs } from '../integrations/calendar/legacy/events.js';
+import { reminderOptions } from '../integrations/calendar/legacy/options.js';
 import { calendarEnabled } from '../commands/calendar-visibility.js';
 import { canRunBot } from '../cluster/state.js';
 
@@ -19,7 +20,7 @@ export async function syncCalendarCommands(client) {
     const definition = commands.find((command) => command.name === 'calendar');
     for (const guild of client.guilds.cache.values()) {
       const config = configs.find((item) => item.guild_id === guild.id);
-      const enabled = calendarEnabled(config, reminderOptions(guild.id));
+      const enabled = calendarConfigured() || calendarEnabled(config, reminderOptions(guild.id));
       if (enabled) enabledGuilds.add(guild.id);
       else enabledGuilds.delete(guild.id);
       const signature = JSON.stringify([enabled, enabled ? definition : null]);

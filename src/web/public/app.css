@@ -2501,3 +2501,72 @@ dialog h3 {
   align-items: center;
   flex-shrink: 0;
 }
+
+.calendar-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.calendar-admin-grid > .status-card {
+  display: grid;
+  gap: 12px;
+}
+.calendar-admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.calendar-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.calendar-admin-row > strong {
+  flex: 1;
+  min-width: 160px;
+}
+.calendar-admin-row > p {
+  flex-basis: 100%;
+}
+.calendar-admin-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+.calendar-admin-form label {
+  display: grid;
+  gap: 6px;
+}
+.calendar-admin-form label:has(input[type='checkbox']) {
+  display: flex;
+  align-items: center;
+}
+.calendar-admin-form input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+#calendar-admin-summary strong {
+  font-size: 1.8rem;
+}
+#calendar-admin-summary span {
+  display: block;
+}
+@media (max-width: 650px) {
+  .calendar-admin-row {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .calendar-admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .calendar-admin-actions button {
+    flex: 1;
+  }
+  .calendar-admin-form {
+    padding: 12px;
+  }
+}

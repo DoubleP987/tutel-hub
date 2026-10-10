@@ -5,6 +5,7 @@ export function registerAssetsRoutes(app, publicPath) {
     'calendar-view.js',
     'preferences.js',
     'bot-logs.js',
+    'calendar-admin.js',
     'manifest.webmanifest',
     'sw.js',
     'icon.png',

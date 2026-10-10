@@ -1,6 +1,6 @@
-import { t } from '../i18n/bot.js';
+import { t } from '../../../i18n/bot.js';
 import { createHash } from 'node:crypto';
-import { data } from './db.js';
+import { data } from '../../../database/connection.js';
 import { thaiImportantDays } from './holidays.js';
 import { eventCategories } from './categories.js';
 import {

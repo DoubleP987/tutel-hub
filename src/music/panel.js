@@ -11,7 +11,8 @@ import {
   StringSelectMenuBuilder,
   PermissionFlagsBits,
 } from 'discord.js';
-import { data, setting, setSetting } from '../calendar/db.js';
+import { data } from '../database/connection.js';
+import { setting, setSetting } from '../database/settings.js';
 import { musicEvents, musicChanged, musicRequestVersion } from './events.js';
 import {
   getPlayer,

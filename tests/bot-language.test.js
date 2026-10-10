@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const source = new URL('../src/', import.meta.url).href;
+const source = new URL('../src', import.meta.url).href;
 const check = `
 import assert from 'node:assert/strict';
 import { botLanguage, botConfig } from '${source}config/bot.js';

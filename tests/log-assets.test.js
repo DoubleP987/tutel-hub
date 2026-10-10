@@ -6,7 +6,7 @@ import { registerAssetsRoutes } from '../src/web/routes/assets.js';
 
 test('The control panel log script is available over HTTP', async () => {
   const app = express();
-  registerAssetsRoutes(app, fileURLToPath(new URL('../src/web/public/', import.meta.url)));
+  registerAssetsRoutes(app, fileURLToPath(new URL('../src/web/public', import.meta.url)));
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   try {

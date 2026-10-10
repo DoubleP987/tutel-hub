@@ -49,6 +49,9 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName('calendar')
+    .addSubcommand((sub) =>
+      sub.setName('connect').setDescription('เชื่อมช่องนี้กับกลุ่ม Tutel Calendar'),
+    )
     .setDescription(t('ปฏิทินและการแจ้งเตือน Tutel'))
     .addSubcommand((sub) =>
       sub

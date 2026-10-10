@@ -1,9 +1,25 @@
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
-import { getSession } from '../../calendar/db.js';
+import { getSession } from '../../auth/sessions.js';
 import { cookies } from '../middleware/security.js';
 
 export function registerPagesRoutes(app, publicPath) {
+  app.get('/calendar-new', (req, res) => {
+    const target = process.env.CALENDAR_APP_URL || 'http://127.0.0.1:3100';
+    try {
+      const url = new URL(target);
+      const local = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
+      if (
+        url.username ||
+        url.password ||
+        (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
+      )
+        throw new Error('Invalid calendar URL');
+      res.redirect(302, url.href);
+    } catch {
+      res.status(503).send('Calendar application URL is not configured.');
+    }
+  });
   app.get('/login', (req, res) => {
     let token = cookies(req).tutel_pre;
     if (!token) {

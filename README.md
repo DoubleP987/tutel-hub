@@ -1,5 +1,13 @@
 # Tutel Hub
 
+## Separate Calendar repository / repo ปฏิทินแยก
+
+Music/radio/private panel remain here. Calendar web, OAuth, groups, invitations and general dates are maintained in [tutel-calendar](https://github.com/DoubleP987/tutel-calendar), with independent .env, database and process. The original Discord reminder adapter remains during migration; no second Calendar bot process has started. [Current status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
 ## Latest music update / อัปเดตเมนูเพลงล่าสุด
 
 [Current music controls and duration lookup / เมนูสุ่ม วิทยุ Loop และข้อมูลเวลาเพลง](docs/MUSIC-CONTROLS.md)
@@ -193,7 +201,7 @@ Docker is optional: `docker compose up -d --build`. The included configuration p
 src/bot/             Discord connection/runtime
 src/music/           Track lookup, streams, queues and radio
 src/commands/        Slash command definitions/handlers
-src/calendar/        SQLite, Thai dates, reminders and public publishing
+src/integrations/calendar/legacy/        SQLite, Thai dates, reminders and public publishing
 src/web/             Private web server and admin assets
 netlify-public/      Separate public calendar assets (generated JSON ignored)
 scripts/             Database backup helper

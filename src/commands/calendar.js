@@ -1,6 +1,7 @@
+import { calendarConfigured, calendarRequest } from '../integrations/calendar/client.js';
 import { botLocale } from '../config/bot.js';
 import { t } from '../i18n/bot.js';
-import { checkCalendarSetupPin } from '../calendar/setup-pin.js';
+import { checkCalendarSetupPin } from '../integrations/calendar/legacy/setup-pin.js';
 import {
   localDateTimeToIso,
   listExpandedEvents,
@@ -9,12 +10,19 @@ import {
   saveGuildConfig,
   listGuildConfigs,
   formatThai,
-} from '../calendar/service.js';
+} from '../integrations/calendar/legacy/service.js';
 import { guildOnly } from './shared.js';
-import { calendarDay, dailySummaryEvents } from '../calendar/daily-summary.js';
-import { sendDailyCalendarSummary } from '../calendar/notifications.js';
-import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
-import { reminderOptions, saveReminderOptions } from '../calendar/options.js';
+import { calendarDay, dailySummaryEvents } from '../integrations/calendar/legacy/daily-summary.js';
+import { sendDailyCalendarSummary } from '../integrations/calendar/legacy/notifications.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} from 'discord.js';
+import { reminderOptions, saveReminderOptions } from '../integrations/calendar/legacy/options.js';
 import { guildCalendarEnabled } from '../bot/calendar-commands.js';
 
 export const calendarHandlers = {
@@ -22,6 +30,64 @@ export const calendarHandlers = {
     if (!guildOnly(interaction)) return;
     const sub = interaction.options.getSubcommand(),
       guildId = interaction.guildId;
+    if (calendarConfigured()) {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      if (sub === 'connect') {
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild))
+          return interaction.editReply({ content: 'เฉพาะผู้ที่มีสิทธิ์จัดการเซิร์ฟเวอร์ Discord' });
+        const permissions = interaction.channel?.permissionsFor?.(interaction.client.user);
+        if (
+          !permissions?.has([
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks,
+          ])
+        )
+          return interaction.editReply({
+            content: 'บอทต้องมีสิทธิ์ดูช่อง ส่งข้อความ และ Embed Links',
+          });
+        const result = await calendarRequest('/connect-grants', {
+          method: 'POST',
+          body: { discordUserId: interaction.user.id, guildId, channelId: interaction.channelId },
+        });
+        return interaction.editReply({
+          content: 'เปิดลิงก์นี้และเลือกกลุ่มที่คุณจัดการ · ลิงก์ใช้ได้ 10 นาที',
+          components: [
+            new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel('เชื่อมกลุ่มปฏิทิน')
+                .setURL(result.url),
+            ),
+          ],
+        });
+      }
+      const bindings = (await calendarRequest('/bindings')).filter(
+        (b) => b.guild_id === guildId && b.channel_id === interaction.channelId,
+      );
+      if (!bindings.length)
+        return interaction.editReply({
+          content: 'ช่องนี้ยังไม่เชื่อมกลุ่ม ให้ผู้ดูแลใช้ /calendar connect',
+        });
+      return interaction.editReply({
+        content: 'ดูและจัดการปฏิทินของกลุ่มผ่านเว็บ',
+        components: [
+          new ActionRowBuilder().addComponents(
+            bindings.slice(0, 5).map((b) =>
+              new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel('ปฏิทิน ' + b.slug)
+                .setURL(
+                  new URL(
+                    '/g/' + b.slug,
+                    process.env.CALENDAR_WEB_URL || process.env.CALENDAR_SERVICE_URL,
+                  ).href,
+                ),
+            ),
+          ),
+        ],
+      });
+    }
     if (!guildCalendarEnabled(guildId))
       return interaction.reply({
         content: t('เซิร์ฟเวอร์นี้ยังไม่เปิดใช้ปฏิทิน ให้ผู้ดูแลเปิดใน control panel ก่อน'),

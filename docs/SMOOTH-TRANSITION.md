@@ -1,5 +1,11 @@
 # Smooth music transitions / การเปลี่ยนเพลงแบบต่อเนื่อง
 
+## Group integration update — 10 October 2026
+
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+
+> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+
 Updated 4 October 2026. This applies to music playback; live radio keeps its existing streaming pipeline.
 
 ## Enable it

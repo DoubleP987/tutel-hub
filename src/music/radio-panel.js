@@ -10,7 +10,7 @@ import {
   TextInputStyle,
   MessageFlags,
 } from 'discord.js';
-import { setting, setSetting } from '../calendar/db.js';
+import { setting, setSetting } from '../database/settings.js';
 import { t } from '../i18n/bot.js';
 import {
   RADIO_STATIONS,

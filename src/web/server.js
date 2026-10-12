@@ -45,10 +45,25 @@ app.use((req, res, next) => {
 const publicPath = resolve(here, 'public');
 registerPagesRoutes(app, publicPath);
 registerAuthenticationRoutes(app);
-registerEventsRoutes(app);
+
+if (process.env.LEGACY_CALENDAR_ENABLED === '1') {
+  registerEventsRoutes(app);
+}
+
 registerPreferencesRoutes(app);
 registerAssetsRoutes(app, publicPath);
-registerCalendarSyncRoutes(app);
+
+if (process.env.LEGACY_CALENDAR_ENABLED === '1') {
+  registerCalendarSyncRoutes(app);
+}
+
+app.use('/api/settings/discord', (req, res, next) => {
+  if (process.env.LEGACY_CALENDAR_ENABLED !== '1') {
+    return res.status(410).json({ error: 'ระบบปฏิทินเดิมปิดแล้ว ให้ตั้งช่องผ่านปฏิทินกลุ่ม' });
+  }
+
+  next();
+});
 registerDiscordRoutes(app);
 registerBotRoutes(app);
 registerHealthRoutes(app);

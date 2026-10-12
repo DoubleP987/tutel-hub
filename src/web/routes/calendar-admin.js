@@ -16,6 +16,8 @@ const readPaths = [
   /^\/feedback\/images\/[a-zA-Z0-9-]+$/,
 ];
 const writePaths = [
+  /^\/users\/[a-zA-Z0-9-]+(?:\/logout)?$/,
+  /^\/groups\/[a-zA-Z0-9-]+\/members$/,
   /^\/groups\/[a-zA-Z0-9-]+$/,
   /^\/groups\/[a-zA-Z0-9-]+\/members\/[a-zA-Z0-9-]+$/,
   /^\/groups\/[a-zA-Z0-9-]+\/transfer$/,
@@ -79,7 +81,9 @@ export function registerCalendarAdmin(app) {
           previous.guild_id === String(req.body.guildId) &&
           previous.channel_id === String(req.body.channelId);
 
-        if (!sameDestination) {
+        const transport = (await calendarRequest('/overview', { kind: 'control' }))
+          .discordTransport;
+        if (!sameDestination && transport !== 'standalone' && req.body.enabled !== false) {
           const channel = await getCalendarDiscordClient()?.channels.fetch(
             String(req.body.channelId || ''),
           );
@@ -112,14 +116,22 @@ export function registerCalendarAdmin(app) {
       }
 
       const query = queryParams.size ? '?' + queryParams.toString() : '';
-      res.json(
-        await calendarRequest(path + query, {
-          kind: 'control',
-          method: req.method,
-          body: req.method === 'GET' ? undefined : req.body,
-          actor: req.auth.user.id || req.auth.user.username || 'admin',
-        }),
-      );
+      const result = await calendarRequest(path + query, {
+        kind: 'control',
+        method: req.method,
+        body: req.method === 'GET' ? undefined : req.body,
+        actor: req.auth.user.id || req.auth.user.username || 'admin',
+      });
+      if (req.method === 'GET' && path === '/overview' && result.discordTransport === 'shared') {
+        const client = getCalendarDiscordClient();
+        const guilds = client?.isReady() ? [...client.guilds.cache.values()] : null;
+        result.botGuilds = guilds?.length ?? null;
+        result.discordMembers =
+          guilds && guilds.every((guild) => Number.isFinite(guild.memberCount))
+            ? guilds.reduce((sum, guild) => sum + guild.memberCount, 0)
+            : null;
+      }
+      res.json(result);
     } catch (error) {
       res
         .status(error.status >= 400 && error.status < 500 ? error.status : 503)

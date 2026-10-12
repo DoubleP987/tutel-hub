@@ -63,3 +63,7 @@ cache และ poll ให้ดู lastSync/error และ revision ไม่
 
 [Architecture](ARCHITECTURE.md) · [English PDF](manuals/Tutel-Hub-Handbook-EN.pdf)
 · [PDF ภาษาไทย](manuals/Tutel-Hub-Handbook-TH.pdf)
+
+## 12 October group administration release
+
+New protected APIs cover owner assistant/announcement permissions, durable announcement delivery, current-device Push status, privileged user/session/member management, suspended-group permanent deletion, `/internal/v1/bot/runtime-info` and URL-based `/internal/v1/bot/connect-link`. See the Calendar repository docs ANNOUNCEMENTS-AND-ADMIN.md, DISCORD-CALENDAR-BOT.md and ROLLBACK.md for exact authorization and recovery rules. Main Panel exposes these through its authenticated admin proxy; service keys never reach the browser.

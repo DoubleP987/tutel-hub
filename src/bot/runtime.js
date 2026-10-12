@@ -176,7 +176,7 @@ export async function startBot() {
             !(await handleMusicRequestButton(interaction)) &&
             !(await handleMusicPanelInteraction(interaction))
           ) {
-            if (!separateCalendarBot()) {
+            if (!separateCalendarBot() && process.env.LEGACY_CALENDAR_ENABLED === '1') {
               await handleCalendarButton(interaction);
             }
           }

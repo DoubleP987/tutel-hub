@@ -2,7 +2,7 @@
 
 ## อัปเดตระบบกลุ่ม — 10 ตุลาคม 2026
 
-เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว ส่วน worker Discord และ control panel bridge ยังไม่เปิดแทนของเดิม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
+เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว worker Discord และ Panel รุ่นใหม่เปิดบน homeserver แล้ว ระบบเตือนเก่าหยุดแล้ว ให้เชื่อมช่องด้วย /calendar connect พร้อมลิงก์กลุ่ม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
 
 > Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
 

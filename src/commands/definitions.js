@@ -50,90 +50,19 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName('calendar')
-    .addSubcommand((sub) =>
-      sub.setName('connect').setDescription('เชื่อมช่องนี้กับกลุ่ม Tutel Calendar'),
-    )
     .setDescription(t('ปฏิทินและการแจ้งเตือน Tutel'))
     .addSubcommand((sub) =>
       sub
-        .setName('setup')
-        .setDescription(t('ตั้ง channel สำหรับแจ้งเตือน'))
-        .addChannelOption((o) =>
-          o
-            .setName('channel')
-            .setDescription(t('channel ที่ให้บอทส่งการเตือน'))
-            .addChannelTypes(ChannelType.GuildText)
+        .setName('connect')
+        .setDescription('เชื่อมช่องนี้กับปฏิทินด้วยลิงก์')
+        .addStringOption((option) =>
+          option
+            .setName('calendar')
+            .setDescription('ลิงก์ปฏิทิน เช่น https://calendar.toomtoom.online/g/cs-skru')
             .setRequired(true),
-        )
-        .addStringOption((o) =>
-          o.setName('pin').setDescription(t('PIN สำหรับตั้ง channel แจ้งเตือน')).setRequired(true),
         ),
     )
-    .addSubcommand((sub) =>
-      sub
-        .setName('add')
-        .setDescription(t('เพิ่มกิจกรรมลงปฏิทิน'))
-        .addStringOption((o) =>
-          o.setName('title').setDescription(t('ชื่อกิจกรรม')).setRequired(true),
-        )
-        .addStringOption((o) =>
-          o
-            .setName('starts')
-            .setDescription(t('เวลาไทย รูปแบบ YYYY-MM-DD HH:mm'))
-            .setRequired(true),
-        )
-        .addIntegerOption((o) =>
-          o
-            .setName('duration')
-            .setDescription(t('ระยะเวลาเป็นนาที (เริ่มต้น 60)'))
-            .setMinValue(1)
-            .setMaxValue(10080),
-        )
-        .addStringOption((o) =>
-          o
-            .setName('repeat')
-            .setDescription(t('รูปแบบทำซ้ำ'))
-            .addChoices(
-              { name: t('ไม่ทำซ้ำ'), value: 'none' },
-              { name: t('ทุกวัน'), value: 'daily' },
-              { name: t('ทุกสัปดาห์'), value: 'weekly' },
-              { name: t('ทุกเดือน'), value: 'monthly' },
-              { name: t('ทุกปี'), value: 'yearly' },
-            ),
-        )
-        .addStringOption((o) =>
-          o.setName('description').setDescription(t('รายละเอียดกิจกรรม')).setMaxLength(500),
-        ),
-    )
-    .addSubcommand((sub) => sub.setName('list').setDescription(t('ดูรายการที่จะถึงใน 30 วัน')))
-    .addSubcommand((sub) =>
-      sub
-        .setName('delete')
-        .setDescription(t('ลบกิจกรรมด้วย ID'))
-        .addIntegerOption((o) =>
-          o
-            .setName('id')
-            .setDescription(t('ID จากคำสั่ง /calendar list'))
-            .setRequired(true)
-            .setMinValue(1),
-        ),
-    )
-    .addSubcommand((sub) =>
-      sub
-        .setName('config')
-        .setDescription(t('ตั้งเวลาส่งสรุปกิจกรรมรายวันของเซิร์ฟเวอร์'))
-        .addStringOption((o) =>
-          o
-            .setName('time')
-            .setDescription(t('เวลาไทย HH:mm เช่น 07:00'))
-            .setRequired(true)
-            .setMinLength(5)
-            .setMaxLength(5),
-        ),
-    )
-    .addSubcommand((sub) =>
-      sub.setName('test').setDescription(t('ส่งข้อความทดสอบไปยัง channel ที่ตั้งไว้')),
-    ),
+    .addSubcommand((sub) => sub.setName('view').setDescription('เปิดปฏิทินที่เชื่อมช่องนี้')),
   new SlashCommandBuilder()
     .setName('play')
     .setDescription(t('ค้นหาเพลงหรือใส่ URL'))

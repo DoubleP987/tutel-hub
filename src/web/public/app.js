@@ -5,7 +5,7 @@ const state = {
   events: [],
   guilds: [],
   selectedDay: null,
-  mode: 'calendar',
+  mode: 'calendar-admin',
 };
 
 const $ = (s) => document.querySelector(s);
@@ -114,8 +114,12 @@ async function init() {
     }
 
     wire();
-    await loadGuilds();
-    await loadEvents();
+
+    if (state.user.role === 'admin') {
+      showPage('calendar-admin');
+    } else {
+      location.href = 'https://calendar.toomtoom.online/';
+    }
   } catch (e) {
     if (e.message !== 'กรุณาเข้าสู่ระบบใหม่') {
       toast(e.message);
@@ -164,97 +168,16 @@ function wire() {
       void loadBot({ quiet: true });
     }
   }, 5000);
-  void loadPublicSync();
-  setInterval(() => {
-    if (state.user?.role === 'admin' && !document.hidden) {
-      void loadPublicSync();
-    }
-  }, 60000);
-
-  $('#sync-public-calendar').onclick = async () => {
-    const button = $('#sync-public-calendar');
-    button.disabled = true;
-
-    try {
-      const result = await api('/api/calendar-sync', { method: 'POST' });
-      toast(result.pending ? 'รอเชื่อมการซิงก์ปฏิทิน' : 'ส่งข้อมูลปฏิทินแล้ว');
-      await loadPublicSync();
-    } catch (error) {
-      toast(error.message);
-    } finally {
-      button.disabled = false;
-    }
-  };
-
-  $$('.nav-item[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
-
-  $('#new-event').onclick = () => openEvent();
-
-  $('#close-dialog').onclick = $('#cancel-dialog').onclick = () => $('#event-dialog').close();
-  $('#event-form').onsubmit = saveEventForm;
-  $('#delete-event').onclick = deleteCurrentEvent;
-  $('#all-day-toggle').onchange = syncAllDay;
-
-  field($('#event-form'), 'date').onchange = () => {
-    const f = $('#event-form');
-
-    if (!field(f, 'endDate').value || field(f, 'endDate').value < field(f, 'date').value) {
-      field(f, 'endDate').value = field(f, 'date').value;
-    }
-  };
-
-  field($('#event-form'), 'color').oninput = syncEventColor;
-  $$('[data-event-color]').forEach((b) => {
-    b.style.backgroundColor = b.dataset.eventColor;
-
-    b.onclick = () => {
-      field($('#event-form'), 'color').value = b.dataset.eventColor;
-      syncEventColor();
-    };
+  $$('.nav-item[data-page]').forEach((button) => {
+    button.onclick = () => showPage(button.dataset.page);
   });
-
-  $('#close-details').onclick = () => $('#details-dialog').close();
 
   $('#logout').onclick = async () => {
     await api('/api/logout', { method: 'POST' });
     location.href = '/login';
   };
 
-  $('#settings-form').onsubmit = saveSettings;
-
-  $('#guild-select').onchange = () => loadChannels();
-
   $('#bot-toggle').onclick = toggleBot;
-  $('#channel-select').onchange = updateChannelPin;
-  $('#settings-form').addEventListener('input', previewNotification);
-
-  $('#reset-notification-color').onclick = () => {
-    field($('#settings-form'), 'notificationColor').value = '#4285f4';
-    previewNotification();
-  };
-
-  $('#reset-notification-template').onclick = () => {
-    field($('#settings-form'), 'notificationTemplate').value =
-      '📅 {title}\n{schedule} · {date}\n{description}';
-    previewNotification();
-  };
-
-  $('#test-channel').onclick = async () => {
-    const b = $('#test-channel');
-    b.disabled = true;
-
-    try {
-      await api('/api/settings/discord/test', {
-        method: 'POST',
-        body: { guildId: $('#guild-select').value },
-      });
-      toast('ส่งทดสอบแล้ว ไปตรวจใน Discord');
-    } catch (e) {
-      $('#settings-message').textContent = e.message;
-    } finally {
-      b.disabled = false;
-    }
-  };
 }
 
 function showPage(name) {

@@ -167,11 +167,16 @@
     const actions = el('div', 'calendar-admin-actions');
     actions.append(
       button('ตั้งค่ากลุ่ม', editGroup),
+      button('เพิ่มสมาชิกจากบัญชีที่มี', addMember),
       button('เชิญสมาชิก', invite),
       button('นำเข้ารายชื่อ CSV', csv),
       button('เพิ่มช่อง Discord', () => bindingForm()),
       button('โอนเจ้าของ', transfer),
     );
+
+    if (group.suspended) {
+      actions.append(button('ลบปฏิทินถาวร', deleteGroup, 'danger'));
+    }
 
     if (website) {
       const a = el('a', 'primary', 'เปิดปฏิทินกลุ่ม');
@@ -198,7 +203,21 @@
       );
 
       if (member.role !== 'owner') {
-        row.append(button('แก้สิทธิ์', () => memberForm(member)));
+        row.append(
+          button('แก้สิทธิ์', () => memberForm(member)),
+          button(
+            'นำออกจากกลุ่ม',
+            async () => {
+              if (!confirm(`นำ ${member.name} ออกจาก ${group.name}? กิจกรรมที่สร้างจะยังอยู่`)) {
+                return;
+              }
+
+              await call(`/groups/${id}/members/${member.id}`, { method: 'DELETE' });
+              await detail(id);
+            },
+            'danger',
+          ),
+        );
       }
 
       body.append(row);
@@ -623,22 +642,144 @@
   async function users() {
     const body = root();
     const items = await call('/users');
-    body.replaceChildren(head('สมาชิกทุกกลุ่ม'));
+    body.replaceChildren(head('บัญชีผู้ใช้ทั้งหมด'));
+    const search = el('input');
+    search.type = 'search';
+    search.placeholder = 'ค้นชื่อ ชื่อบัญชีเดิม อีเมล หรือรหัสบัญชี';
+    search.setAttribute('aria-label', search.placeholder);
+    const list = el('div', 'calendar-admin-grid');
+    body.append(search, el('p', 'muted', `${items.length} บัญชี · แสดงสูงสุด 1,000 รายการ`), list);
 
-    for (const user of items) {
-      const row = el('article', 'status-card');
-      row.append(el('h3', '', user.name), el('p', 'muted', user.provider));
+    function render() {
+      list.replaceChildren();
+      const query = search.value.toLowerCase();
 
-      for (const group of user.groups) {
+      for (const user of items.filter((user) =>
+        [user.name, user.originalName, user.id, ...(user.emails || [])]
+          .join(' ')
+          .toLowerCase()
+          .includes(query),
+      )) {
+        const row = el('article', 'status-card');
         row.append(
-          button(`${group.name} · ${roles[group.role]}${group.blocked ? ' · ระงับ' : ''}`, () =>
-            detail(group.id),
+          el('h3', '', user.name),
+          el(
+            'p',
+            'muted',
+            `ชื่อเดิม ${user.originalName || user.name} · ${user.provider} · ${user.blocked ? 'ระงับบัญชี' : 'ใช้งานอยู่'}`,
           ),
+          el('p', 'muted', (user.emails || []).join(' · ')),
+          el('small', 'muted', user.id),
         );
-      }
+        const actions = el('div', 'calendar-admin-actions');
+        actions.append(
+          button('แก้ชื่อและสถานะ', () => userForm(user)),
+          button('ออกจากระบบทุกเครื่อง', async () => {
+            if (!confirm(`เพิกถอน session ทุกเครื่องของ ${user.name}?`)) {
+              return;
+            }
 
-      body.append(row);
+            const result = await call(`/users/${user.id}/logout`, { method: 'POST', body: {} });
+            notice(`เพิกถอน ${result.revoked} session แล้ว`);
+          }),
+        );
+        row.append(actions);
+
+        for (const group of user.groups) {
+          row.append(
+            button(
+              `${group.name} · ${roles[group.role]}${group.blocked ? ' · ระงับในกลุ่ม' : ''}`,
+              () => detail(group.id),
+            ),
+          );
+        }
+
+        if (!user.groups.length) {
+          row.append(el('p', 'muted', 'ยังไม่ได้เข้ากลุ่ม'));
+        }
+
+        list.append(row);
+      }
     }
+
+    search.oninput = render;
+    render();
+  }
+
+  function userForm(user) {
+    const node = form('จัดการบัญชี ' + user.name, async (f) => {
+      await call(`/users/${user.id}`, {
+        method: 'PUT',
+        body: { name: f.elements.name.value, blocked: f.elements.blocked.checked },
+      });
+      dialog.close();
+      await users();
+      notice('บันทึกบัญชีแล้ว');
+    });
+    node.append(
+      el(
+        'p',
+        'muted',
+        `ชื่อผู้ให้บริการ: ${user.originalName || user.name} · ${(user.emails || []).join(' · ')}`,
+      ),
+    );
+    input(node, 'ชื่อแสดงผล (เว้นว่างเพื่อใช้ชื่อผู้ให้บริการ)', 'name', user.custom_name || '');
+    input(node, 'ระงับทั้งบัญชีและออกจากระบบทุกเครื่อง', 'blocked', user.blocked, 'checkbox');
+    submit(node);
+  }
+
+  async function addMember() {
+    const accounts = await call('/users');
+    const id = currentGroup.group.id;
+    const existing = new Set(currentGroup.members.map((member) => member.id));
+    const node = form('เพิ่มบัญชีเข้ากลุ่ม', async (f) => {
+      await call(`/groups/${id}/members`, {
+        method: 'POST',
+        body: { userId: f.elements.userId.value, role: f.elements.role.value },
+      });
+      dialog.close();
+      await detail(id);
+    });
+    select(
+      node,
+      'บัญชีที่เข้าสู่ระบบแล้ว',
+      'userId',
+      accounts
+        .filter((user) => !user.blocked && !existing.has(user.id))
+        .map((user) => [user.id, `${user.name} · ${(user.emails || []).join(', ')}`]),
+      '',
+    );
+    select(
+      node,
+      'บทบาท',
+      'role',
+      ['member', 'editor', 'manager'].map((role) => [role, roles[role]]),
+      'member',
+    );
+    node.append(el('p', 'muted', 'เป็นการเพิ่มสมาชิกโดยผู้ดูแลส่วนกลาง ไม่มีการส่งอีเมลคำเชิญ'));
+    submit(node, 'เพิ่มสมาชิก');
+  }
+
+  function deleteGroup() {
+    const group = currentGroup.group;
+    const node = form('ลบปฏิทินถาวร', async (f) => {
+      await call(`/groups/${group.id}`, {
+        method: 'DELETE',
+        body: { name: f.elements.name.value, permanent: true },
+      });
+      dialog.close();
+      await window.TutelCalendarAdmin.open(request, notice);
+      notice('ลบกลุ่มแล้ว');
+    });
+    node.append(
+      el(
+        'p',
+        'muted',
+        `ลบ “${group.name}” พร้อมกิจกรรมเฉพาะกลุ่ม สมาชิก คำเชิญและช่องเชื่อมต่อ วันทั่วไปและบัญชีผู้ใช้ยังอยู่ ประวัติผู้ดูแลและไฟล์สำรองมีนโยบายเก็บแยก`,
+      ),
+    );
+    input(node, 'พิมพ์ชื่อปฏิทินเพื่อยืนยัน', 'name');
+    submit(node, 'ยืนยันลบถาวร');
   }
 
   async function jobs() {
@@ -730,11 +871,18 @@
         for (const [key, label] of [
           ['groups', 'กลุ่ม'],
           ['members', 'บัญชี'],
+          ['memberships', 'สมาชิกในกลุ่ม'],
+          ['botGuilds', 'เซิร์ฟเวอร์ที่บอทอยู่'],
+          ['discordMembers', 'สมาชิก Discord รวมแต่ละเซิร์ฟเวอร์'],
+          ['discordServers', 'เซิร์ฟเวอร์ที่เชื่อมปฏิทิน'],
           ['pending', 'รออนุมัติ'],
           ['failed', 'การส่งผิดพลาด'],
         ]) {
           const card = el('div', 'status-card');
-          card.append(el('strong', '', String(data[key])), el('span', 'muted', label));
+          card.append(
+            el('strong', '', data[key] == null ? '—' : String(data[key])),
+            el('span', 'muted', label),
+          );
           summary.append(card);
         }
 

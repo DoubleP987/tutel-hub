@@ -4,7 +4,7 @@
 
 Calendar has its own repository: https://github.com/DoubleP987/tutel-calendar. Its web/groups/invitations/mobile drawer/shared dates are deployed on homeserver. Original Discord reminders still run through the legacy integration; new grouped Discord worker cutover remains pending; the privileged panel bridge is implemented. OAuth is web authentication, not a second running bot. Calendar CURRENT-STATUS.md and USER-GUIDE explain the latest behavior. Historical learning examples below retain their original context.
 
-ฉบับ 10 ตุลาคม 2026 เว็บระบบกลุ่ม deploy แล้ว ส่วน worker Discord ยังไม่เปิดใช้งานแทนระบบเดิม คู่มือนี้ใช้แทนคำอธิบายเดิมที่ถือว่ามีปฏิทินเดียว รายละเอียดเชิงเทคนิคเพิ่มเติมอยู่ใน GROUPS.md
+ฉบับ 10 ตุลาคม 2026 เว็บระบบกลุ่ม deploy แล้ว worker Discord เปิดบน homeserver แล้วและหยุดระบบเตือนเดิม ให้เชื่อมแต่ละช่องด้วยลิงก์กลุ่ม คู่มือนี้ใช้แทนคำอธิบายเดิมที่ถือว่ามีปฏิทินเดียว รายละเอียดเชิงเทคนิคเพิ่มเติมอยู่ใน GROUPS.md
 
 ## สารบัญ
 
@@ -108,7 +108,7 @@ Session เป็นคุกกี้ HttpOnly และ Secure เมื่อ
 
 ต้องใช้ Node.js 24 ขึ้นไป ติดตั้ง dependency แต่ละโฟลเดอร์แยกกัน ใน .env ของเครื่องนี้สร้างกุญแจสุ่มสองชุดที่ตรงกันระหว่างโปรเจกต์ไว้แล้ว อย่าส่งหรือ commit .env ตัวอย่างไม่มีค่าจริง
 
-Bot ใช้ CALENDAR_SERVICE_URL และ CALENDAR_WEB_URL เป็น http://127.0.0.1:3100 สำหรับในเครื่อง และ CALENDAR_GROUPS_ENABLED=0 ไว้ก่อน เริ่มเว็บจาก D:/tutel-calendar ด้วย npm start โหมด demo ใช้เฉพาะ loopback โหมด OAuth จริงต้อง HTTPS และ ENABLE_DEMO=0 หากคนละเครื่องให้ใช้ URL HTTPS ที่ทั้งสองบอทเข้าถึง
+Bot ใช้ CALENDAR_SERVICE_URL และ CALENDAR_WEB_URL เป็น http://127.0.0.1:3100 สำหรับในเครื่อง และ CALENDAR_GROUPS_ENABLED=1 ไว้ก่อน เริ่มเว็บจาก D:/tutel-calendar ด้วย npm start โหมด demo ใช้เฉพาะ loopback โหมด OAuth จริงต้อง HTTPS และ ENABLE_DEMO=0 หากคนละเครื่องให้ใช้ URL HTTPS ที่ทั้งสองบอทเข้าถึง
 
 ก่อนเปิดระบบจริง ต้องสำรอง SQLite แบบ consistent หรือหยุดโปรเซสก่อน เพราะไฟล์ WAL อาจยังมีข้อมูลใหม่ สำรองข้อมูลบอทต่างหาก สร้าง/ตรวจช่องผูกกลุ่มให้ครบ จากนั้นตั้ง CALENDAR_GROUPS_ENABLED=1 ในบอททั้งสองเครื่อง ลงทะเบียนคำสั่งและเริ่มบริการใหม่พร้อมแผนย้อนกลับ สวิตช์นี้แทน scheduler เดิมทั้งระบบ ไม่ใช่แยกกลุ่ม อย่าเปิดขณะยังมีช่องที่ใช้ระบบเก่า
 

@@ -273,3 +273,9 @@ Tutel’s public promotional website describes the Discord music and live-radio 
 ## Calendar Feedback inbox
 
 The main panel has an admin-only inbox for Calendar Feedback and private image attachments. See [Feedback integration](docs/FEEDBACK.md).
+
+## Group administration release / ระบบกลุ่ม 12 October 2026
+
+The Calendar button opens privileged group/user management. Legacy Calendar UI/scheduler/publisher are retired unless LEGACY_CALENDAR_ENABLED=1 is deliberately restored. Calendar owns bindings/jobs and its optional standalone Discord runtime; this application supplies the existing Discord transport while the new Calendar token is blank. Read the Calendar repository docs/ANNOUNCEMENTS-AND-ADMIN.md and docs/DISCORD-CALENDAR-BOT.md.
+
+Backup before the group-management release: [recovery points and rollback procedure](docs/GROUP-CALENDAR-ROLLBACK.md). Private databases and credentials are not published.

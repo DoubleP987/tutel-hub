@@ -21,8 +21,11 @@ const getCalendarClient = () =>
 await initializeAccounts();
 const stopScheduler = calendarConfigured()
   ? startGroupCalendarWorker(getCalendarClient)
-  : startReminderScheduler(getCalendarClient);
-const stopPublisher = startCalendarPublisher();
+  : process.env.LEGACY_CALENDAR_ENABLED === '1'
+    ? startReminderScheduler(getCalendarClient)
+    : () => {};
+const stopPublisher =
+  process.env.LEGACY_CALENDAR_ENABLED === '1' ? startCalendarPublisher() : () => {};
 const server = await startControlServer();
 
 if (clusterEnabled()) {

@@ -1,8 +1,5 @@
-import { calendarConfigured } from '../integrations/calendar/client.js';
+import { calendarConfigured, calendarRequest } from '../integrations/calendar/client.js';
 import { commands } from '../commands/definitions.js';
-import { listGuildConfigs } from '../integrations/calendar/legacy/events.js';
-import { reminderOptions } from '../integrations/calendar/legacy/options.js';
-import { calendarEnabled } from '../commands/calendar-visibility.js';
 import { canRunBot } from '../cluster/state.js';
 
 let timer = null;
@@ -22,13 +19,11 @@ export async function syncCalendarCommands(client) {
   running = true;
 
   try {
-    const configs = await listGuildConfigs();
+    let enabled = calendarConfigured();
+    if (enabled) enabled = (await calendarRequest('/runtime-info')).mode === 'shared';
     const definition = commands.find((command) => command.name === 'calendar');
 
     for (const guild of client.guilds.cache.values()) {
-      const config = configs.find((item) => item.guild_id === guild.id);
-      const enabled = calendarConfigured() || calendarEnabled(config, reminderOptions(guild.id));
-
       if (enabled) {
         enabledGuilds.add(guild.id);
       } else {

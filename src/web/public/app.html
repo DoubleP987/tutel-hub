@@ -12,7 +12,6 @@
     <link rel="icon" href="/icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <script src="/preferences.js"></script>
-    <script src="/calendar-view.js" defer></script>
   </head>
   <body class="app-page">
     <header class="topbar">
@@ -30,17 +29,9 @@
     <div class="layout">
       <aside class="sidebar">
         <div class="side-title">เมนู</div>
-        <a class="nav-item" href="https://calendar.toomtoom.online/" target="_blank" rel="noopener">
+        <button class="nav-item admin-only active" data-page="calendar-admin">
           ▦
-          <span>ปฏิทินใหม่</span>
-        </a>
-        <button class="nav-item active" data-page="calendar">
-          ▦
-          <span>ปฏิทินเดิม (เก็บไว้)</span>
-        </button>
-        <button class="nav-item admin-only" data-page="calendar-admin">
-          ▦
-          <span>จัดการทุกกลุ่ม</span>
+          <span>ปฏิทินและผู้ใช้</span>
         </button>
         <button class="nav-item admin-only" data-page="control">
           ◉
@@ -55,10 +46,7 @@
           <span>กล่อง Feedback</span>
           <span id="feedback-unread" class="badge" hidden></span>
         </button>
-        <button class="nav-item admin-only" data-page="settings">
-          ⚙
-          <span>ตั้งค่าแจ้งเตือน</span>
-        </button>
+
         <div class="side-note">
           เวลาทั้งหมดแสดงตามเวลาไทย
           <br />
@@ -74,30 +62,6 @@
         </button>
       </aside>
       <main class="content">
-        <section id="calendar-page" class="page">
-          <div class="page-heading">
-            <div>
-              <p class="eyebrow">PERSONAL CALENDAR</p>
-              <h1>ปฏิทิน</h1>
-              <p class="muted">วันสำคัญ วันหยุด และรายการเตือนของ Tutel</p>
-            </div>
-            <button id="new-event" class="primary admin-only">＋ เพิ่มกิจกรรม</button>
-          </div>
-          <div id="calendar-workspace"></div>
-          <div class="below-calendar">
-            <div>
-              <h3 id="selected-title">รายการที่กำลังจะถึง</h3>
-              <div id="event-list" class="event-list"></div>
-            </div>
-            <aside id="calendar-tip" class="calendar-tip">
-              <b>แจ้งเตือนถึง Discord</b>
-              <p>
-                กดช่องวันหรือปุ่ม ＋ เพื่อเพิ่มกิจกรรม เลือกหมวด เวลา ข้อความ
-                และช่องรับแจ้งเตือนได้ในเมนูตั้งค่าแจ้งเตือน
-              </p>
-            </aside>
-          </div>
-        </section>
         <section id="calendar-admin-page" class="page hidden">
           <div class="page-heading">
             <div>
@@ -470,9 +434,9 @@
       <p id="detail-description"></p>
     </dialog>
     <div id="toast" class="toast"></div>
-    <script src="/app.js" defer></script>
+    <script src="/app.js?v=20261012-management" defer></script>
     <script src="/bot-logs.js" defer></script>
-    <script src="/calendar-admin.js" defer></script>
+    <script src="/calendar-admin.js?v=20261012-management" defer></script>
     <script src="/feedback-inbox.js" defer></script>
   </body>
 </html>

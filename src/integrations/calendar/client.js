@@ -35,6 +35,7 @@ export async function calendarRequest(
     headers: {
       Authorization: `Bearer ${process.env[kind === 'control' ? 'CALENDAR_CONTROL_SECRET' : 'CALENDAR_BOT_SECRET']}`,
       'Content-Type': 'application/json',
+      'x-calendar-transport': 'shared',
       ...(actor ? { 'x-calendar-actor': String(actor).slice(0, 100) } : {}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),

@@ -232,7 +232,7 @@
         el(
           'span',
           'muted',
-          `${invitation.uses}/${invitation.max_uses} · ${invitation.revoked ? 'ยกเลิกแล้ว' : new Date(invitation.expires_at).toLocaleDateString('th-TH')}`,
+          `${invitation.uses}/${invitation.max_uses} · ${invitation.revoked ? 'ยกเลิกแล้ว' : invitation.expires_at === 0 ? 'ไม่มีวันหมดอายุ' : new Date(invitation.expires_at).toLocaleDateString('th-TH')}`,
         ),
       );
 
@@ -460,7 +460,19 @@
       ],
       'member',
     );
-    input(node, 'อายุ (วัน)', 'days', '7', 'number');
+    select(
+      node,
+      'อายุคำเชิญ',
+      'days',
+      [
+        ['0', 'ไม่มีวันหมดอายุ'],
+        ['1', '1 วัน'],
+        ['7', '7 วัน'],
+        ['14', '14 วัน'],
+        ['30', '30 วัน'],
+      ],
+      '0',
+    );
     input(node, 'จำนวนการใช้', 'maxUses', '1', 'number');
     submit(node, 'สร้างคำเชิญ');
   }

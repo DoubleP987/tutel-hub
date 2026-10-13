@@ -1,3 +1,4 @@
+import { controlBasePath } from '../paths.js';
 import { timingSafeEqual } from 'node:crypto';
 import { getSession } from '../../auth/sessions.js';
 
@@ -15,7 +16,7 @@ export function cookies(req) {
 }
 
 export function clearCookie(res, name, httpOnly = true, secure = true) {
-  const parts = [name + '=', 'Path=/', 'SameSite=Strict', 'Max-Age=0'];
+  const parts = [name + '=', `Path=${controlBasePath || '/'}`, 'SameSite=Strict', 'Max-Age=0'];
 
   if (httpOnly) {
     parts.push('HttpOnly');
@@ -71,7 +72,7 @@ export function csrf(req, res, next) {
 export function setSessionCookie(res, token, secure) {
   const parts = [
     'tutel_sid=' + encodeURIComponent(token),
-    'Path=/',
+    `Path=${controlBasePath || '/'}`,
     'HttpOnly',
     'SameSite=Strict',
     'Max-Age=28800',

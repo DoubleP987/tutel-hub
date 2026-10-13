@@ -14,7 +14,9 @@ async function loadToken() {
     document.cookie =
       'tutel_pre=' +
       encodeURIComponent(token) +
-      '; Path=/; SameSite=Strict' +
+      '; Path=' +
+      (window.TUTEL_PANEL_BASE || '/') +
+      '; SameSite=Strict' +
       (location.protocol === 'https:' ? '; Secure' : '');
   }
 
@@ -27,7 +29,7 @@ form.addEventListener('submit', async (e) => {
   const data = Object.fromEntries(new FormData(form));
 
   try {
-    const response = await fetch('/api/login', {
+    const response = await fetch(window.tutelPanelPath('/api/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, csrf: await loadToken() }),

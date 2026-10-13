@@ -1,3 +1,4 @@
+import { controlBasePath } from '../web/paths.js';
 import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'node:crypto';
 import { data } from '../database/connection.js';
 import { canRunBot, clusterEnabled } from './state.js';
@@ -5,6 +6,8 @@ import { clusterStatus, nodeId } from './runtime.js';
 
 const routes = [
   /^\/api\/bot(?:\/logs)?$/,
+  /^\/api\/calendar-admin\/overview$/,
+  /^\/api\/calendar-admin\/groups\/[a-zA-Z0-9-]+\/bindings$/,
   /^\/api\/control\/music(?:\/source)?$/,
   /^\/api\/guilds(?:\/\d+\/channels)?$/,
   /^\/api\/settings\/discord(?:\/test)?$/,
@@ -49,7 +52,12 @@ export async function forwardActiveBot(req, res, next) {
     return next();
   }
 
-  const path = req.path;
+  const original = req.originalUrl;
+  const logicalUrl =
+    controlBasePath && original.startsWith(controlBasePath + '/')
+      ? original.slice(controlBasePath.length)
+      : original;
+  const path = new URL(logicalUrl, 'http://localhost').pathname;
 
   if (!routes.some((route) => route.test(path))) {
     return next();
@@ -58,7 +66,7 @@ export async function forwardActiveBot(req, res, next) {
   const status = await clusterStatus();
 
   if (!status.botEnabled || !status.activeNode) {
-    if (path === '/api/bot/logs') {
+    if (path === '/api/bot/logs' || path === '/api/calendar-admin/overview') {
       return next();
     }
 
@@ -82,7 +90,7 @@ export async function forwardActiveBot(req, res, next) {
     executeBefore: new Date(Date.now() + 15000),
     expiresAt: new Date(Date.now() + 60000),
     payload: encrypt({
-      path: req.originalUrl,
+      path: logicalUrl,
       method: req.method,
       body: req.body,
       cookie: req.headers.cookie || '',
@@ -140,7 +148,7 @@ async function processJobs() {
         }
 
         const result = await fetch(
-          `http://127.0.0.1:${process.env.CONTROL_PORT || 3000}${path.pathname}${path.search}`,
+          `http://127.0.0.1:${process.env.CONTROL_PORT || 3000}${controlBasePath}${path.pathname}${path.search}`,
           {
             method: request.method,
             headers: {

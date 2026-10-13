@@ -291,3 +291,7 @@ Control Panel หลักรับ Feedback จากผู้ใช้ปฏ�
 The Calendar button opens privileged group/user management. Legacy Calendar UI/scheduler/publisher are retired unless LEGACY_CALENDAR_ENABLED=1 is deliberately restored. Calendar owns bindings/jobs and its optional standalone Discord runtime; this application supplies the existing Discord transport while the new Calendar token is blank. Read the Calendar repository docs/ANNOUNCEMENTS-AND-ADMIN.md and docs/DISCORD-CALENDAR-BOT.md.
 
 Backup before the group-management release: [recovery points and rollback procedure](docs/GROUP-CALENDAR-ROLLBACK.md). Private databases and credentials are not published.
+
+## Live deployment — 13 October 2026
+
+Calendar and the privileged `/admin` Panel run on ora; homeserver remains the primary music bot and ora is its SoundCloud standby. [Current hosts, URLs, limits and recovery](docs/ORA-DEPLOYMENT.md).

@@ -155,6 +155,11 @@ export async function playRequest(
 
     valid();
     const link = await resolveMusicLink(query, { signal: job.abort.signal });
+    if (process.env.MUSIC_SOURCE_OVERRIDE === 'soundcloud' && link.provider === 'youtube') {
+      throw new Error(
+        t('เครื่องสำรองนี้เล่นได้เฉพาะ SoundCloud กรุณาใช้ชื่อเพลงหรือลิงก์ SoundCloud'),
+      );
+    }
     valid();
     let playlist = link.playlist;
 

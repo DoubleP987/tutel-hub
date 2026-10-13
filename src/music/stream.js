@@ -15,6 +15,11 @@ export async function resolveTrack(query, source = 'youtube', { signal } = {}) {
   query = String(query || '').trim();
   const direct = /^https?:\/\//i.test(query);
   const link = musicLink(query);
+  if (process.env.MUSIC_SOURCE_OVERRIDE === 'soundcloud' && link.provider === 'youtube') {
+    throw new Error(
+      t('เครื่องสำรองนี้เล่นได้เฉพาะ SoundCloud กรุณาใช้ชื่อเพลงหรือลิงก์ SoundCloud'),
+    );
+  }
 
   if (link.singleUrl) {
     return youtubeTrack(link, { signal });

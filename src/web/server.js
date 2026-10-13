@@ -1,4 +1,5 @@
 import express from 'express';
+import { controlBasePath } from './paths.js';
 import helmet from 'helmet';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -105,7 +106,8 @@ export { app };
 
 export async function startControlServer() {
   const port = Number(process.env.CONTROL_PORT || 3000);
-  const server = app.listen(port, process.env.CONTROL_HOST || '127.0.0.1', () =>
+  const listener = controlBasePath ? express().use(controlBasePath, app) : app;
+  const server = listener.listen(port, process.env.CONTROL_HOST || '127.0.0.1', () =>
     console.log('[web] control panel listening on ' + port),
   );
   return server;

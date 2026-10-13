@@ -1,3 +1,4 @@
+import { controlBasePath, controlPath, panelHome, sendPanelHtml } from '../paths.js';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { getSession } from '../../auth/sessions.js';
@@ -5,7 +6,8 @@ import { cookies } from '../middleware/security.js';
 
 export function registerPagesRoutes(app, publicPath) {
   app.get('/calendar-new', (req, res) => {
-    const target = process.env.CALENDAR_APP_URL || 'http://127.0.0.1:3100';
+    const target =
+      process.env.CALENDAR_APP_URL || process.env.CALENDAR_WEB_URL || 'http://127.0.0.1:3100';
 
     try {
       const url = new URL(target);
@@ -25,14 +27,22 @@ export function registerPagesRoutes(app, publicPath) {
     }
   });
 
-  app.get('/login', (req, res) => {
+  app.get('/panel-base.js', (req, res) => {
+    res
+      .type('js')
+      .send(
+        `window.TUTEL_PANEL_BASE=${JSON.stringify(controlBasePath)};window.tutelPanelPath=(path)=>window.TUTEL_PANEL_BASE+path;`,
+      );
+  });
+
+  app.get('/login', async (req, res) => {
     let token = cookies(req).tutel_pre;
 
     if (!token) {
       token = randomBytes(24).toString('base64url');
       const c = [
         'tutel_pre=' + encodeURIComponent(token),
-        'Path=/',
+        `Path=${controlBasePath || '/'}`,
         'SameSite=Strict',
         'Max-Age=900',
       ];
@@ -44,7 +54,7 @@ export function registerPagesRoutes(app, publicPath) {
       res.append('Set-Cookie', c.join('; '));
     }
 
-    res.sendFile(resolve(publicPath, 'login.html'));
+    await sendPanelHtml(res, publicPath, 'login.html');
   });
 
   app.get('/login.js', (req, res) => res.sendFile(resolve(publicPath, 'login.js')));
@@ -55,34 +65,38 @@ export function registerPagesRoutes(app, publicPath) {
 
   app.get('/', async (req, res) => {
     const s = await getSession(cookies(req).tutel_sid);
-    res.redirect(s?.user.role === 'viewer' ? '/viewer' : s ? '/admin' : '/login');
+    if (controlBasePath && s?.user.role === 'admin')
+      return sendPanelHtml(res, publicPath, 'app.html');
+    res.redirect(
+      s?.user.role === 'viewer' ? controlPath('/viewer') : s ? panelHome() : controlPath('/login'),
+    );
   });
 
   app.get('/admin', async (req, res) => {
     const s = await getSession(cookies(req).tutel_sid);
 
     if (!s) {
-      return res.redirect('/login');
+      return res.redirect(controlPath('/login'));
     }
 
     if (s.user.role !== 'admin') {
-      return res.redirect('/viewer');
+      return res.redirect(controlPath('/viewer'));
     }
 
-    res.sendFile(resolve(publicPath, 'app.html'));
+    await sendPanelHtml(res, publicPath, 'app.html');
   });
 
   app.get('/viewer', async (req, res) => {
     const s = await getSession(cookies(req).tutel_sid);
 
     if (!s) {
-      return res.redirect('/login');
+      return res.redirect(controlPath('/login'));
     }
 
     if (s.user.role !== 'viewer') {
-      return res.redirect('/admin');
+      return res.redirect(panelHome());
     }
 
-    res.sendFile(resolve(publicPath, 'app.html'));
+    await sendPanelHtml(res, publicPath, 'app.html');
   });
 }

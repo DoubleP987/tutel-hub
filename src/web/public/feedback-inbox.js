@@ -170,7 +170,7 @@
 
     for (const [index, image] of item.images.entries()) {
       const link = el('a');
-      link.href = '/api/calendar-admin/feedback/images/' + image.id;
+      link.href = window.tutelPanelPath('/api/calendar-admin/feedback/images/' + image.id);
       link.target = '_blank';
       link.rel = 'noopener';
       const img = el('img');

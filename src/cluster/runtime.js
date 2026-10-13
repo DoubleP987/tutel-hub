@@ -6,7 +6,8 @@ import { clusterEnabled, canRunBot, setLeaseDeadline } from './state.js';
 
 export const nodeId = process.env.CLUSTER_NODE_ID || 'standalone';
 const primary = process.env.CLUSTER_PRIMARY_NODE || 'homeserver';
-const nodes = ['homeserver', 'oracle'];
+const secondary = process.env.CLUSTER_SECONDARY_NODE || 'oracle';
+const nodes = [...new Set([primary, secondary])];
 const localLifetime = 6000n * 1000000n;
 const serverLifetime = 12000;
 let timer;
@@ -26,7 +27,7 @@ function collection(name) {
 
 async function initialize() {
   if (!nodes.includes(nodeId)) {
-    throw new Error('CLUSTER_NODE_ID must be homeserver or oracle');
+    throw new Error('CLUSTER_NODE_ID must match CLUSTER_PRIMARY_NODE or CLUSTER_SECONDARY_NODE');
   }
 
   await collection('cluster_leases').updateOne(
@@ -60,7 +61,7 @@ export async function clusterStatus() {
 
 export async function setClusterTarget(target, enabled = true) {
   if (!['auto', ...nodes].includes(target)) {
-    throw new Error('เลือก auto, homeserver หรือ oracle');
+    throw new Error(`เลือก auto หรือเครื่องที่กำหนด: ${nodes.join(', ')}`);
   }
 
   await collection('cluster_leases').updateOne(
@@ -71,7 +72,7 @@ export async function setClusterTarget(target, enabled = true) {
 }
 
 export async function shutdownLocalNode() {
-  const next = nodeId === 'homeserver' ? 'oracle' : 'homeserver';
+  const next = nodeId === primary ? secondary : primary;
   return setClusterTarget(next, true);
 }
 

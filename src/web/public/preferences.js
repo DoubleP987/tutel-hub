@@ -115,7 +115,9 @@
     installDialog = document.createElement('dialog');
     installDialog.className = 'install-dialog';
     installDialog.innerHTML =
-      '<img src="/app-icon.png" alt="" width="64" height="64"><h2>ติดตั้ง Tutel📅</h2><p>เปิดใช้งานจากหน้าจอหลักได้สะดวกขึ้น</p><div class="actions"><button class="ghost" data-later>ไว้ทีหลัง</button><button class="primary" data-install>ติดตั้ง</button></div>';
+      '<img src="' +
+      window.tutelPanelPath('/app-icon.png') +
+      '" alt="" width="64" height="64"><h2>ติดตั้ง Tutel📅</h2><p>เปิดใช้งานจากหน้าจอหลักได้สะดวกขึ้น</p><div class="actions"><button class="ghost" data-later>ไว้ทีหลัง</button><button class="primary" data-install>ติดตั้ง</button></div>';
     document.body.append(installDialog);
     installDialog.querySelector('[data-later]').onclick = deferInstall;
 
@@ -185,7 +187,9 @@
       welcome.setAttribute('role', 'status');
       welcome.setAttribute('aria-label', 'กำลังเปิด Tutel');
       welcome.innerHTML =
-        '<div class="launch-orbit"><img src="/app-icon.png" alt=""></div><h1>Tutel📅</h1><p>ปฏิทินของคุณ พร้อมทุกวัน</p><div class="launch-dots" aria-hidden="true"><i></i><i></i><i></i></div>';
+        '<div class="launch-orbit"><img src="' +
+        window.tutelPanelPath('/app-icon.png') +
+        '" alt=""></div><h1>Tutel📅</h1><p>ปฏิทินของคุณ พร้อมทุกวัน</p><div class="launch-dots" aria-hidden="true"><i></i><i></i><i></i></div>';
       document.body.append(welcome);
       setTimeout(
         () => {
@@ -297,7 +301,7 @@
     refresh();
     showInstall();
 
-    if ('serviceWorker' in navigator && window.isSecureContext) {
+    if ('serviceWorker' in navigator && window.isSecureContext && !window.TUTEL_PANEL_BASE) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   });

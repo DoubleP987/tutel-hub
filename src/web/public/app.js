@@ -48,10 +48,10 @@ async function api(path, options = {}) {
     headers['x-csrf-token'] = state.csrf;
   }
 
-  const r = await fetch(path, { ...options, headers });
+  const r = await fetch(window.tutelPanelPath(path), { ...options, headers });
 
   if (r.status === 401) {
-    location.href = '/login';
+    location.href = window.tutelPanelPath('/login');
     throw new Error('กรุณาเข้าสู่ระบบใหม่');
   }
 
@@ -132,14 +132,14 @@ async function forcePasswordChange() {
     const current = prompt('บัญชีเริ่มต้นต้องเปลี่ยนรหัสผ่านก่อนใช้งาน\\nกรอกรหัสผ่านปัจจุบัน');
 
     if (current === null) {
-      location.href = '/login';
+      location.href = window.tutelPanelPath('/login');
       return;
     }
 
     const next = prompt('ตั้งรหัสผ่านใหม่อย่างน้อย 10 ตัวอักษร');
 
     if (next === null) {
-      location.href = '/login';
+      location.href = window.tutelPanelPath('/login');
       return;
     }
 
@@ -174,7 +174,7 @@ function wire() {
 
   $('#logout').onclick = async () => {
     await api('/api/logout', { method: 'POST' });
-    location.href = '/login';
+    location.href = window.tutelPanelPath('/login');
   };
 
   $('#bot-toggle').onclick = toggleBot;

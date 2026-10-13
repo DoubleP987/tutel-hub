@@ -1,3 +1,4 @@
+import { controlPath, panelHome } from '../paths.js';
 import { createSession, deleteSession } from '../../auth/sessions.js';
 import { userByName, changePassword } from '../../auth/accounts.js';
 import { verifyPassword } from '../../auth/passwords.js';
@@ -16,15 +17,18 @@ export function registerAuthenticationRoutes(app) {
   app.post('/api/login', async (req, res) => {
     const ip = req.ip || 'unknown';
     const now = Date.now();
-    const attempt = loginLimits.get(ip) || { count: 0, until: 0 };
-
+    const windowMs = 15 * 60 * 1000;
+    for (const [address, entry] of loginLimits) {
+      if (entry.expiresAt <= now) loginLimits.delete(address);
+    }
+    let attempt = loginLimits.get(ip);
+    if (!attempt) {
+      if (loginLimits.size >= 2048)
+        return res.status(429).json({ error: 'ลองเข้าสู่ระบบใหม่ภายหลัง' });
+      attempt = { count: 0, until: 0, expiresAt: now + windowMs };
+    }
     if (attempt.until > now) {
       return res.status(429).json({ error: 'ลองเข้าสู่ระบบใหม่ภายหลัง' });
-    }
-
-    if (attempt.count >= 8 && attempt.until < now) {
-      attempt.count = 0;
-      attempt.until = now + 15 * 60 * 1000;
     }
 
     const pre = cookies(req).tutel_pre;
@@ -39,7 +43,8 @@ export function registerAuthenticationRoutes(app) {
       attempt.count++;
 
       if (attempt.count >= 8) {
-        attempt.until = now + 15 * 60 * 1000;
+        attempt.until = now + windowMs;
+        attempt.expiresAt = attempt.until;
       }
 
       loginLimits.set(ip, attempt);
@@ -53,7 +58,7 @@ export function registerAuthenticationRoutes(app) {
     res.json({
       role: user.role,
       mustChange: !!user.must_change,
-      redirect: user.role === 'viewer' ? '/viewer' : '/admin',
+      redirect: user.role === 'viewer' ? controlPath('/viewer') : panelHome(),
     });
   });
 

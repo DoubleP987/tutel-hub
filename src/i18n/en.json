@@ -392,5 +392,6 @@
   "เปลี่ยน Loop: {0}": "Changed loop: {0}",
   "เปลี่ยนการตั้งค่าเพลง": "Changed music settings",
   "เปลี่ยนแหล่งเพลงเป็น {0}": "Changed music source to {0}",
-  "กำลังข้ามเพลง…": "Skipping song…"
+  "กำลังข้ามเพลง…": "Skipping song…",
+  "เครื่องสำรองนี้เล่นได้เฉพาะ SoundCloud กรุณาใช้ชื่อเพลงหรือลิงก์ SoundCloud": "This standby supports SoundCloud only. Use a song name or SoundCloud link."
 }

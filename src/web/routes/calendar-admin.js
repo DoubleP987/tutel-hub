@@ -1,3 +1,4 @@
+import { forwardActiveBot } from '../../cluster/jobs.js';
 import { calendarConfigured, calendarRequest } from '../../integrations/calendar/client.js';
 import { auth, admin, csrf } from '../middleware/security.js';
 import { getCalendarDiscordClient } from '../../bot/runtime.js';
@@ -59,6 +60,16 @@ export function registerCalendarAdmin(app) {
     }
 
     try {
+      if (
+        (req.method === 'GET' && path === '/overview') ||
+        (req.method === 'POST' && path.endsWith('/bindings'))
+      ) {
+        let forwarded = true;
+        await forwardActiveBot(req, res, () => {
+          forwarded = false;
+        });
+        if (forwarded) return;
+      }
       if (req.method === 'GET' && /^\/feedback\/images\/[a-zA-Z0-9-]+$/.test(path)) {
         const bytes = await calendarRequest(path, { kind: 'control', image: true });
         return res

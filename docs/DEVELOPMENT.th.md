@@ -1,5 +1,7 @@
 # คู่มือผู้พัฒนา Tutel บอทเพลง
 
+> Deployment update, 13 October 2026: live Calendar and `/admin` Panel now run on ora. Music primary is homeserver, standby is ora; oracle applications are retired. [Current deployment and recovery](ORA-DEPLOYMENT.md). Earlier dated deployment descriptions below are historical.
+
 [English](DEVELOPMENT.md) · [ขั้นตอนส่งงาน](../CONTRIBUTING.md) · [repo ปฏิทิน](https://github.com/DoubleP987/tutel-calendar)
 
 ปรับปรุง 10 ตุลาคม 2569 คู่มือนี้อธิบายโค้ดปัจจุบัน การมีโค้ดใน repo ไม่ได้หมายความว่า worker Calendar รุ่นใหม่เปิดใช้จริงแล้ว

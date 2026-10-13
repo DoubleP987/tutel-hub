@@ -28,7 +28,9 @@
 
     try {
       const response = await fetch(
-        `/api/bot/logs?after=${cursor}&instance=${encodeURIComponent(instance)}`,
+        window.tutelPanelPath(
+          `/api/bot/logs?after=${cursor}&instance=${encodeURIComponent(instance)}`,
+        ),
         {
           cache: 'no-store',
           signal: AbortSignal.timeout(8000),

@@ -1,5 +1,7 @@
 # Developer handbook: Tutel music bot
 
+> Deployment update, 13 October 2026: live Calendar and `/admin` Panel now run on ora. Music primary is homeserver, standby is ora; oracle applications are retired. [Current deployment and recovery](ORA-DEPLOYMENT.md). Earlier dated deployment descriptions below are historical.
+
 [ภาษาไทย](DEVELOPMENT.th.md) · [Contribution workflow](../CONTRIBUTING.md) · [Calendar repository](https://github.com/DoubleP987/tutel-calendar)
 
 Updated 10 October 2026. This guide describes the current source. Production activation is a separate operation; the new Calendar worker is not yet the active production reminder system.

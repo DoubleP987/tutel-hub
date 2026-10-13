@@ -45,7 +45,10 @@ export async function clusterStatus() {
 
   const [lease, status] = await Promise.all([
     collection('cluster_leases').findOne({ _id: 'bot' }),
-    collection('cluster_nodes').find().project({ _id: 0 }).toArray(),
+    collection('cluster_nodes')
+      .find({ _id: { $in: nodes } })
+      .project({ _id: 0 })
+      .toArray(),
   ]);
   return {
     enabled: true,
